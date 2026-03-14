@@ -96,7 +96,7 @@ The orchestrator:
 | `TaskBoard` | Pending task cards + draft cards + "Add task" + collapsible shipped features |
 | `TaskDetail` | Detail panel for selected task/draft: status, name, notes, queue button |
 | `CardForm` | New task form with skill auto-suggest from keywords |
-| `CommandQueue` | Queue list + `/orchestrator next` copy button |
+| `CommandQueue` | Queue list + one-click launch button + copy fallback |
 | `ActivityFeed` | Recent activity log (single `activity` array — no separate sessions) |
 
 ## File system access
@@ -119,6 +119,27 @@ Warm neutral palette:
 - Success (shipped): `#5a9e72`
 
 Layout: 2x2 grid — `[TaskBoard | Detail]` over `[Queue | Activity]`
+
+## One-click launch (`claudecode://` protocol)
+
+Dev Manager can launch Claude Code directly from the browser via a custom URL protocol.
+
+### Setup (one-time)
+Run `install-protocol.cmd` — registers `claudecode://` in Windows Registry (`HKCU`). No admin needed.
+
+### How it works
+1. User sets project path once in the queue panel (stored in localStorage per project)
+2. "Launch orchestrator" button opens `claudecode:<project-path>`
+3. `claude-launcher.cmd` receives the URL, opens Windows Terminal, runs `claude "/orchestrator next"`
+
+### Files
+| File | Purpose |
+|------|---------|
+| `install-protocol.cmd` | One-time: registers `claudecode://` protocol in Windows Registry |
+| `claude-launcher.cmd` | Handler: parses URL, launches Windows Terminal + Claude Code |
+
+### Fallback
+Copy button (clipboard icon) still available for manual paste into terminal.
 
 ## What NOT to do
 

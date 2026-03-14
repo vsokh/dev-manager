@@ -1143,8 +1143,18 @@ function TaskDetail({ task, draft, onQueue, onQueueDraft, onUpdateTask, notes, o
   `;
 }
 
-function CommandQueue({ queue, onCopy, onRemove, onClear, copiedId }) {
+function CommandQueue({ queue, onLaunch, onCopy, onRemove, onClear, copiedId, launchState, projectPath, onSetPath }) {
   const itemKey = (item) => item.task || item.cardId;
+  const [editingPath, setEditingPath] = useState(false);
+  const [pathInput, setPathInput] = useState(projectPath || '');
+
+  const handleSavePath = () => {
+    if (pathInput.trim()) {
+      onSetPath(pathInput.trim());
+      setEditingPath(false);
+    }
+  };
+
   return h`
     <div>
       ${queue.length === 0 ? h`
@@ -1152,9 +1162,7 @@ function CommandQueue({ queue, onCopy, onRemove, onClear, copiedId }) {
           padding: '20px 16px', textAlign: 'center', color: 'var(--text-light)', fontSize: '12px',
           lineHeight: 1.6,
         }}>
-          Queue tasks from the detail panel, then run <code style=${{
-            background: 'var(--bg)', padding: '1px 6px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '11px',
-          }}>/orchestrator next</code> in Claude Code.
+          Queue tasks from the detail panel, then launch the orchestrator.
         </div>
       ` : h`
         <div>
@@ -1181,20 +1189,71 @@ function CommandQueue({ queue, onCopy, onRemove, onClear, copiedId }) {
             </div>
           `)}
           <div style=${{ display: 'flex', gap: '8px', padding: '10px 12px' }}>
-            <button onClick=${() => onCopy(null)} style=${{
+            <button onClick=${onLaunch} style=${{
               flex: 1, padding: '8px 12px',
-              background: copiedId === 'all' ? 'var(--success)' : 'var(--accent)',
+              background: launchState === 'launched' ? 'var(--success)' : 'var(--accent)',
               color: 'white',
               border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '13px',
-              fontWeight: 600, fontFamily: 'monospace', cursor: 'pointer',
-              transition: 'all 0.2s', letterSpacing: '-0.3px',
-            }}>${copiedId === 'all' ? 'Copied!' : '/orchestrator next'}</button>
+              fontWeight: 600, cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            }}>${launchState === 'launched' ? 'Launched!' : h`${'▶'} Launch orchestrator`}</button>
+            <button onClick=${() => onCopy(null)} title="Copy command" style=${{
+              padding: '8px 10px', background: 'var(--surface)', color: copiedId === 'all' ? 'var(--success)' : 'var(--text-light)',
+              border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '12px',
+              fontWeight: 500, cursor: 'pointer',
+            }}>${copiedId === 'all' ? '✓' : '⧉'}</button>
             <button onClick=${onClear} style=${{
               padding: '8px 10px', background: 'var(--surface)', color: 'var(--text-light)',
               border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '12px',
               fontWeight: 500, fontFamily: 'var(--font)', cursor: 'pointer',
             }}>Clear</button>
           </div>
+
+          ${editingPath ? h`
+            <div style=${{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '6px' }}>
+              <input
+                type="text"
+                value=${pathInput}
+                onInput=${(e) => setPathInput(e.target.value)}
+                onKeyDown=${(e) => e.key === 'Enter' && handleSavePath()}
+                placeholder="C:\\Users\\you\\Projects\\my-project"
+                style=${{
+                  flex: 1, padding: '6px 8px', fontSize: '12px', fontFamily: 'monospace',
+                  border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg)', color: 'var(--text)',
+                }}
+              />
+              <button onClick=${handleSavePath} style=${{
+                padding: '6px 10px', background: 'var(--accent)', color: 'white',
+                border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+                fontWeight: 600, cursor: 'pointer',
+              }}>Save</button>
+              <button onClick=${() => setEditingPath(false)} style=${{
+                padding: '6px 8px', background: 'none', color: 'var(--text-light)',
+                border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+                cursor: 'pointer',
+              }}>Cancel</button>
+            </div>
+          ` : h`
+            <div style=${{
+              padding: '4px 12px 8px', display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '11px', color: 'var(--text-light)',
+            }}>
+              ${projectPath ? h`
+                <span style=${{ fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>${projectPath}</span>
+                <button onClick=${() => { setPathInput(projectPath); setEditingPath(true); }} style=${{
+                  background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer',
+                  fontSize: '11px', textDecoration: 'underline', flexShrink: 0,
+                }}>edit</button>
+              ` : h`
+                <button onClick=${() => setEditingPath(true)} style=${{
+                  background: 'none', border: 'none', color: 'var(--amber)', cursor: 'pointer',
+                  fontSize: '11px', textDecoration: 'underline',
+                }}>Set project path to enable one-click launch</button>
+              `}
+            </div>
+          `}
         </div>
       `}
     </div>
@@ -1351,6 +1410,32 @@ function App() {
     updateData({ queue: [] });
   };
 
+  // Project path for protocol launcher
+  const [projectPath, setProjectPathState] = useState(() => {
+    try {
+      const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
+      return paths[projectName] || '';
+    } catch { return ''; }
+  });
+  const [launchState, setLaunchState] = useState(null); // null | 'launched'
+
+  const setProjectPath = (path) => {
+    setProjectPathState(path);
+    try {
+      const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
+      paths[projectName] = path;
+      localStorage.setItem('dm_project_paths', JSON.stringify(paths));
+    } catch {}
+  };
+
+  const handleLaunch = () => {
+    if (!projectPath) return; // shouldn't happen — UI shows "set path" instead
+    const url = 'claudecode:' + projectPath.replace(/\\/g, '/');
+    window.open(url, '_blank');
+    setLaunchState('launched');
+    setTimeout(() => setLaunchState(null), 3000);
+  };
+
   const handleCopyCommand = async () => {
     const text = '/orchestrator next';
     setCopiedId('all');
@@ -1430,7 +1515,7 @@ function App() {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <${SectionHeader} title="Queue" count=${queue.length > 0 ? queue.length : null} />
-            <${CommandQueue} queue=${queue} onCopy=${handleCopyCommand} onRemove=${handleRemoveFromQueue} onClear=${handleClearQueue} copiedId=${copiedId} />
+            <${CommandQueue} queue=${queue} onLaunch=${handleLaunch} onCopy=${handleCopyCommand} onRemove=${handleRemoveFromQueue} onClear=${handleClearQueue} copiedId=${copiedId} launchState=${launchState} projectPath=${projectPath} onSetPath=${setProjectPath} />
           </div>
 
           <div style=${{
