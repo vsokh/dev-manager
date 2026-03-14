@@ -84,25 +84,25 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   const getCardStyle = (task) => {
     const isSelected = selectedTask === task.id;
     const base = {
-      background: 'var(--surface)',
-      borderRadius: 'var(--radius-sm)', padding: '12px 16px',
+      background: 'var(--dm-surface)',
+      borderRadius: 'var(--dm-radius-sm)', padding: '12px 16px',
       cursor: 'pointer', transition: 'all 0.15s',
       minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
     };
     if (task.status === STATUS.IN_PROGRESS) {
       const waiting = isWaiting(task);
-      const color = waiting ? 'var(--amber)' : 'var(--accent)';
+      const color = waiting ? 'var(--dm-amber)' : 'var(--dm-accent)';
       return {
         ...base,
         border: '2px solid ' + color,
-        boxShadow: isSelected ? '0 2px 8px ' + (waiting ? 'rgba(196,132,90,0.25)' : 'rgba(106,141,190,0.25)') : 'var(--shadow-sm)',
+        boxShadow: isSelected ? '0 2px 8px ' + (waiting ? 'var(--dm-amber-shadow)' : 'var(--dm-accent-shadow)') : 'var(--dm-shadow-sm)',
       };
     }
     if (task.status === STATUS.DONE) {
       return {
         ...base,
-        border: isSelected ? '2px solid var(--success)' : '1px solid var(--success)',
-        boxShadow: isSelected ? '0 2px 8px rgba(90,158,114,0.2)' : 'var(--shadow-sm)',
+        border: isSelected ? '2px solid var(--dm-success)' : '1px solid var(--dm-success)',
+        boxShadow: isSelected ? '0 2px 8px var(--dm-success-shadow)' : 'var(--dm-shadow-sm)',
         opacity: 0.75,
       };
     }
@@ -110,23 +110,23 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
       return {
         ...base,
         border: isSelected ? '2px solid ' + PAUSED_COLOR : '1px dashed ' + PAUSED_COLOR,
-        boxShadow: isSelected ? '0 2px 8px rgba(155,139,180,0.2)' : 'var(--shadow-sm)',
+        boxShadow: isSelected ? '0 2px 8px var(--dm-paused-shadow)' : 'var(--dm-shadow-sm)',
         opacity: 0.85,
       };
     }
     if (task.status === STATUS.BLOCKED) {
       return {
         ...base,
-        border: isSelected ? '2px solid var(--text-light)' : '1px solid var(--border)',
-        boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.1)' : 'var(--shadow-sm)',
+        border: isSelected ? '2px solid var(--dm-text-light)' : '1px solid var(--dm-border)',
+        boxShadow: isSelected ? '0 2px 8px var(--dm-dark-shadow)' : 'var(--dm-shadow-sm)',
         opacity: 0.6,
       };
     }
     // pending (default)
     return {
       ...base,
-      border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
-      boxShadow: isSelected ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)',
+      border: isSelected ? '2px solid var(--dm-accent)' : '1px solid var(--dm-border)',
+      boxShadow: isSelected ? '0 2px 8px var(--dm-accent-shadow)' : 'var(--dm-shadow-sm)',
     };
   };
 
@@ -147,18 +147,18 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               onClick={() => onSelectTask(task.id)}
               className={task.status === STATUS.IN_PROGRESS ? 'task-card-in-progress' : undefined}
               style={getCardStyle(task)}
-              onMouseOver={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
-              onMouseOut={e => e.currentTarget.style.boxShadow = selectedTask === task.id ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)'}
+              onMouseOver={e => e.currentTarget.style.boxShadow = 'var(--dm-shadow-md)'}
+              onMouseOut={e => e.currentTarget.style.boxShadow = selectedTask === task.id ? '0 2px 8px var(--dm-accent-shadow)' : 'var(--dm-shadow-sm)'}
             >
               <div style={{ fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                 {task.manual ? <span title="Manual task" style={{
                   fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '3px',
-                  background: 'var(--border)', color: 'var(--text-light)', letterSpacing: '0.03em',
+                  background: 'var(--dm-border)', color: 'var(--dm-text-light)', letterSpacing: '0.03em',
                 }}>YOU</span> : null}
                 {task.name}
               </div>
               {task.dependsOn && task.dependsOn.length > 0 ? (
-                <div style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   after: {task.dependsOn.map(depId => {
                     const dep = tasks.find(t => t.id === depId);
                     return dep ? dep.name : '?';
@@ -166,38 +166,38 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                 </div>
               ) : null}
               {task.status === STATUS.BLOCKED && task.blockedReason ? (
-                <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '4px', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '11px', color: 'var(--dm-text-light)', marginTop: '4px', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   Blocked: {task.blockedReason.length > 50 ? task.blockedReason.slice(0, 50) + '...' : task.blockedReason}
                 </div>
               ) : null}
               {task.status === STATUS.IN_PROGRESS && task.progress ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                  <div className="progress-text-shimmer" style={{ fontSize: '11px', color: isWaiting(task) ? 'var(--amber)' : 'var(--accent)', lineHeight: 1.3, flex: 1 }}>
+                  <div className="progress-text-shimmer" style={{ fontSize: '11px', color: isWaiting(task) ? 'var(--dm-amber)' : 'var(--dm-accent)', lineHeight: 1.3, flex: 1 }}>
                     {task.progress}
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); onPauseTask(task.id); }}
                     title="Pause — save progress, resume later"
                     style={{
-                      padding: '1px 6px', background: 'none', border: '1px solid var(--border)',
-                      borderRadius: '3px', cursor: 'pointer', color: 'var(--text-light)',
-                      fontSize: '10px', fontFamily: 'var(--font)', lineHeight: 1.4,
+                      padding: '1px 6px', background: 'none', border: '1px solid var(--dm-border)',
+                      borderRadius: '3px', cursor: 'pointer', color: 'var(--dm-text-light)',
+                      fontSize: '10px', fontFamily: 'var(--dm-font)', lineHeight: 1.4,
                       flexShrink: 0, transition: 'all 0.15s',
                     }}
                     onMouseOver={e => { e.target.style.borderColor = PAUSED_COLOR; e.target.style.color = PAUSED_COLOR; }}
-                    onMouseOut={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = 'var(--text-light)'; }}
+                    onMouseOut={e => { e.target.style.borderColor = 'var(--dm-border)'; e.target.style.color = 'var(--dm-text-light)'; }}
                   >&#9646;&#9646;</button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onCancelTask(task.id); }}
                     title="Cancel — discard progress, reset to pending"
                     style={{
-                      padding: '1px 6px', background: 'none', border: '1px solid var(--border)',
-                      borderRadius: '3px', cursor: 'pointer', color: 'var(--text-light)',
-                      fontSize: '10px', fontFamily: 'var(--font)', lineHeight: 1.4,
+                      padding: '1px 6px', background: 'none', border: '1px solid var(--dm-border)',
+                      borderRadius: '3px', cursor: 'pointer', color: 'var(--dm-text-light)',
+                      fontSize: '10px', fontFamily: 'var(--dm-font)', lineHeight: 1.4,
                       flexShrink: 0, transition: 'all 0.15s',
                     }}
-                    onMouseOver={e => { e.target.style.borderColor = 'var(--danger)'; e.target.style.color = 'var(--danger)'; }}
-                    onMouseOut={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = 'var(--text-light)'; }}
+                    onMouseOver={e => { e.target.style.borderColor = 'var(--dm-danger)'; e.target.style.color = 'var(--dm-danger)'; }}
+                    onMouseOut={e => { e.target.style.borderColor = 'var(--dm-border)'; e.target.style.color = 'var(--dm-text-light)'; }}
                   >&#10005;</button>
                 </div>
               ) : null}
@@ -223,24 +223,24 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               return (
                 <div key={ep.name} style={{
                   padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600,
-                  background: colors.bg || "var(--bg)", color: colors.text || "var(--text-light)",
+                  background: colors.bg || "var(--dm-bg)", color: colors.text || "var(--dm-text-light)",
                   position: "relative", overflow: "hidden",
                 }}>
                   <span>{ep.name} {ep.done}/{ep.total}</span>
                   <div style={{
                     position: "absolute", bottom: 0, left: 0, width: "100%", height: "3px",
-                    background: colors.border || "var(--border)", opacity: 0.3,
+                    background: colors.border || "var(--dm-border)", opacity: 0.3,
                   }} />
                   <div style={{
                     position: "absolute", bottom: 0, left: 0, width: pct + "%", height: "3px",
-                    background: colors.text || "var(--accent)", transition: "width 0.3s",
+                    background: colors.text || "var(--dm-accent)", transition: "width 0.3s",
                   }} />
                 </div>
               );
             })}
           </div>
         ) : null}
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
           Up next
         </div>
         {pendingTasks.length >= 2 ? (() => {
@@ -267,10 +267,10 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                       onClick={() => setActiveFilter(f.value)}
                       style={{
                         fontSize: '11px', padding: '3px 10px', borderRadius: '12px',
-                        cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500,
-                        transition: 'all 0.15s', border: isActive ? '1px solid var(--accent)' : '1px solid var(--border)',
-                        background: isActive ? 'var(--accent)' : 'transparent',
-                        color: isActive ? 'white' : 'var(--text-light)',
+                        cursor: 'pointer', fontFamily: 'var(--dm-font)', fontWeight: 500,
+                        transition: 'all 0.15s', border: isActive ? '1px solid var(--dm-accent)' : '1px solid var(--dm-border)',
+                        background: isActive ? 'var(--dm-accent)' : 'transparent',
+                        color: isActive ? 'white' : 'var(--dm-text-light)',
                       }}
                     >
                       {f.label} {count}
@@ -287,9 +287,9 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                 onBlur={() => setSearchFocused(false)}
                 style={{
                   fontSize: '12px', padding: '4px 10px',
-                  border: searchFocused ? '1px solid var(--accent)' : '1px solid var(--border)',
-                  borderRadius: '12px', background: 'var(--bg)', color: 'var(--text)',
-                  outline: 'none', fontFamily: 'var(--font)', width: '160px',
+                  border: searchFocused ? '1px solid var(--dm-accent)' : '1px solid var(--dm-border)',
+                  borderRadius: '12px', background: 'var(--dm-bg)', color: 'var(--dm-text)',
+                  outline: 'none', fontFamily: 'var(--dm-font)', width: '160px',
                 }}
               />
             </div>
@@ -310,10 +310,10 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingGroup(null); }}
                   autoFocus
                   style={{
-                    fontSize: '10px', fontWeight: 600, color: 'var(--text-light)', marginBottom: '6px',
+                    fontSize: '10px', fontWeight: 600, color: 'var(--dm-text-light)', marginBottom: '6px',
                     textTransform: 'uppercase', letterSpacing: '0.04em',
-                    background: 'var(--bg)', border: '1px solid var(--accent)', borderRadius: '3px',
-                    padding: '2px 6px', outline: 'none', fontFamily: 'var(--font)',
+                    background: 'var(--dm-bg)', border: '1px solid var(--dm-accent)', borderRadius: '3px',
+                    padding: '2px 6px', outline: 'none', fontFamily: 'var(--dm-font)',
                   }}
                 />
               ) : (
@@ -321,7 +321,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   onClick={() => { setEditingGroup(groupName); setEditGroupName(groupName); }}
                   title="Click to rename epic"
                   style={{
-                    fontSize: '10px', fontWeight: 600, color: (epicColors[groupName] || {}).text || 'var(--text-light)',
+                    fontSize: '10px', fontWeight: 600, color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)',
                     marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em',
                     cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', transition: 'all 0.15s',
                     background: (epicColors[groupName] || {}).bg || 'transparent',
@@ -335,7 +335,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                     const total = tasks.filter(t => t.group === groupName).length;
                     const done = tasks.filter(t => t.group === groupName && t.status === STATUS.DONE).length;
                     return (
-                      <span style={{ fontSize: "9px", fontWeight: 500, color: "var(--text-light)", marginLeft: "6px", letterSpacing: "normal", textTransform: "none" }}>
+                      <span style={{ fontSize: "9px", fontWeight: 500, color: "var(--dm-text-light)", marginLeft: "6px", letterSpacing: "normal", textTransform: "none" }}>
                         {done}/{total}
                       </span>
                     );
@@ -350,7 +350,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         ))}
         {pendingTasks.length === 0 && !showNewForm ? (
           <div style={{
-            padding: '20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '13px',
+            padding: '20px', textAlign: 'center', color: 'var(--dm-text-light)', fontSize: '13px',
             width: '100%',
           }}>
             No tasks yet
@@ -358,7 +358,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         ) : null}
         {pendingTasks.length > 0 && filteredPendingTasks.length === 0 && !showNewForm ? (
           <div style={{
-            padding: '20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '13px',
+            padding: '20px', textAlign: 'center', color: 'var(--dm-text-light)', fontSize: '13px',
             width: '100%',
           }}>
             No matching tasks
@@ -368,15 +368,15 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
           <div
             onClick={() => setShowNewForm(true)}
             style={{
-              border: '2px dashed var(--border)',
-              borderRadius: 'var(--radius-sm)', padding: '12px 16px',
+              border: '2px dashed var(--dm-border)',
+              borderRadius: 'var(--dm-radius-sm)', padding: '12px 16px',
               cursor: 'pointer', transition: 'all 0.15s',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--text-light)', fontSize: '13px', fontWeight: 500,
+              color: 'var(--dm-text-light)', fontSize: '13px', fontWeight: 500,
               marginTop: '8px',
             }}
-            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
-            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-light)'; }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--dm-accent)'; e.currentTarget.style.color = 'var(--dm-accent)'; }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--dm-border)'; e.currentTarget.style.color = 'var(--dm-text-light)'; }}
           >+ Add task</div>
         ) : null}
         {showNewForm ? (
@@ -395,13 +395,13 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               onClick={onArrange}
               style={{
                 padding: '5px 14px', background: 'none',
-                color: 'var(--amber)', border: '1px solid var(--amber)',
-                borderRadius: 'var(--radius-sm)', fontSize: '12px',
-                fontWeight: 600, fontFamily: 'var(--font)',
+                color: 'var(--dm-amber)', border: '1px solid var(--dm-amber)',
+                borderRadius: 'var(--dm-radius-sm)', fontSize: '12px',
+                fontWeight: 600, fontFamily: 'var(--dm-font)',
                 cursor: 'pointer', transition: 'all 0.15s',
               }}
-              onMouseOver={e => { e.target.style.background = 'var(--amber)'; e.target.style.color = 'white'; }}
-              onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--amber)'; }}
+              onMouseOver={e => { e.target.style.background = 'var(--dm-amber)'; e.target.style.color = 'white'; }}
+              onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--dm-amber)'; }}
             >
               Arrange tasks
             </button>
@@ -413,13 +413,13 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   onClick={onQueueAll}
                   style={{
                     padding: '5px 14px', background: 'none',
-                    color: 'var(--accent)', border: '1px solid var(--accent)',
-                    borderRadius: 'var(--radius-sm)', fontSize: '12px',
-                    fontWeight: 600, fontFamily: 'var(--font)',
+                    color: 'var(--dm-accent)', border: '1px solid var(--dm-accent)',
+                    borderRadius: 'var(--dm-radius-sm)', fontSize: '12px',
+                    fontWeight: 600, fontFamily: 'var(--dm-font)',
                     cursor: 'pointer', transition: 'all 0.15s',
                   }}
-                  onMouseOver={e => { e.target.style.background = 'var(--accent)'; e.target.style.color = 'white'; }}
-                  onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--accent)'; }}
+                  onMouseOver={e => { e.target.style.background = 'var(--dm-accent)'; e.target.style.color = 'white'; }}
+                  onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--dm-accent)'; }}
                 >
                   Queue all ({pendingNotQueued.length})
                 </button>
@@ -438,13 +438,13 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               padding: '8px 0', userSelect: 'none',
             }}
           >
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Done
             </span>
             <span style={{
-              fontSize: '11px', fontWeight: 600, color: 'var(--text-light)',
+              fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-light)',
             }}>{doneTasks.length}</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-light)', transform: showCompleted ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>&#9660;</span>
+            <span style={{ fontSize: '11px', color: 'var(--dm-text-light)', transform: showCompleted ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>&#9660;</span>
           </div>
           {showCompleted ? (
             <div style={{ paddingTop: '4px' }}>
@@ -452,7 +452,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                 <div key={groupName} style={{ marginBottom: '8px' }}>
                   <div style={{
                     fontSize: '10px', fontWeight: 600, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em',
-                    color: (epicColors[groupName] || {}).text || 'var(--text-light)', opacity: 0.6,
+                    color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)', opacity: 0.6,
                     display: 'inline-block', padding: '1px 5px', borderRadius: '3px',
                     background: (epicColors[groupName] || {}).bg || 'transparent',
                   }}>
@@ -461,15 +461,15 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {groupTasks.map(t => (
                       <div key={t.id} onClick={() => onSelectTask(t.id)} style={{
-                        border: selectedTask === t.id ? '1px solid var(--text-light)' : '1px solid var(--border)',
-                        borderRadius: 'var(--radius-sm)', padding: '5px 10px',
+                        border: selectedTask === t.id ? '1px solid var(--dm-text-light)' : '1px solid var(--dm-border)',
+                        borderRadius: 'var(--dm-radius-sm)', padding: '5px 10px',
                         cursor: 'pointer', transition: 'all 0.15s', opacity: 0.75,
                       }}>
-                        <span style={{ fontWeight: 400, fontSize: '11px', color: 'var(--text-light)' }}>{t.name}</span>
+                        <span style={{ fontWeight: 400, fontSize: '11px', color: 'var(--dm-text-light)' }}>{t.name}</span>
                         {t.commitRef ? (
                           <span style={{
                             fontFamily: 'monospace', fontSize: '9px', fontWeight: 600,
-                            background: 'var(--accent-light)', color: 'var(--accent)',
+                            background: 'var(--dm-accent-light)', color: 'var(--dm-accent)',
                             padding: '0 4px', borderRadius: '3px', marginLeft: '5px',
                           }}>{t.commitRef}</span>
                         ) : null}

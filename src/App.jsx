@@ -112,8 +112,8 @@ export function App() {
         {/* Top row: Tasks + Detail */}
         <div className="dm-grid-top">
           <div style={{
-            background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-sm)',
+            background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+            boxShadow: 'var(--dm-shadow-sm)',
           }}>
             <SectionHeader title="Product" />
             <div style={{ padding: '16px' }}>
@@ -138,8 +138,8 @@ export function App() {
             <div className={'dm-detail-backdrop' + (selectedTask ? ' open' : '')} onClick={() => setSelectedTask(null)} />
           )}
           <div className={'dm-detail-panel' + (selectedTask ? ' open' : '')} style={{
-            background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-sm)',
+            background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+            boxShadow: 'var(--dm-shadow-sm)',
           }}>
             <SectionHeader title="Detail" />
             <TaskDetail
@@ -161,16 +161,16 @@ export function App() {
         {/* Bottom row: Queue + Activity */}
         <div className="dm-grid-bottom">
           <div style={{
-            background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-sm)',
+            background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+            boxShadow: 'var(--dm-shadow-sm)',
           }}>
             <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
             <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} launchedId={queueActions.launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
           </div>
 
           <div style={{
-            background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-sm)',
+            background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
+            boxShadow: 'var(--dm-shadow-sm)',
           }}>
             <SectionHeader title="Activity" />
             <ActivityFeed activity={activity} onRemove={handleRemoveActivity} />

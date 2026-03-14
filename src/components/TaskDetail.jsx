@@ -144,7 +144,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
   if (!task) return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      height: '100%', color: 'var(--text-light)', fontSize: '13px',
+      height: '100%', color: 'var(--dm-text-light)', fontSize: '13px',
       padding: '40px 20px', textAlign: 'center', gap: '8px',
     }}>
       <div style={{ fontSize: '24px', opacity: 0.4 }}>&#9678;</div>
@@ -167,10 +167,10 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     <div
       style={{
         padding: '20px', overflow: 'auto', height: '100%',
-        border: dragging ? '2px dashed var(--accent)' : '2px solid transparent',
-        borderRadius: 'var(--radius)',
+        border: dragging ? '2px dashed var(--dm-accent)' : '2px solid transparent',
+        borderRadius: 'var(--dm-radius)',
         transition: 'border-color 0.2s',
-        background: dragging ? 'var(--accent-light)' : undefined,
+        background: dragging ? 'var(--dm-accent-light)' : undefined,
       }}
       onPaste={handlePaste}
       onDragEnter={handleDragEnter}
@@ -192,7 +192,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           }}
           className={`badge ${badgeClass}`}
           style={{
-            cursor: 'pointer', border: 'none', fontFamily: 'var(--font)',
+            cursor: 'pointer', border: 'none', fontFamily: 'var(--dm-font)',
             transition: 'all 0.15s', appearance: 'none', padding: '4px 20px 4px 10px',
             backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'8\' height=\'5\'%3E%3Cpath d=\'M0 0l4 5 4-5z\' fill=\'currentColor\'/%3E%3C/svg%3E")',
             backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center',
@@ -201,17 +201,17 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         >
           {statusOptions.map(s => {
             const colors = {
-              [STATUS.PENDING]: '#888',
-              [STATUS.IN_PROGRESS]: 'var(--accent)',
+              [STATUS.PENDING]: 'var(--dm-text-light)',
+              [STATUS.IN_PROGRESS]: 'var(--dm-accent)',
               [STATUS.PAUSED]: PAUSED_COLOR,
-              [STATUS.DONE]: 'var(--success)',
-              [STATUS.BLOCKED]: 'var(--danger, #c45)',
+              [STATUS.DONE]: 'var(--dm-success)',
+              [STATUS.BLOCKED]: 'var(--dm-danger)',
             };
-            return <option key={s} value={s} style={{ background: 'var(--surface)', color: colors[s] || 'var(--text)' }}>{s}</option>;
+            return <option key={s} value={s} style={{ background: 'var(--dm-surface)', color: colors[s] || 'var(--dm-text)' }}>{s}</option>;
           })}
         </select>
         {pastedFeedback && (
-          <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600, animation: 'fadeIn 0.2s' }}>
+          <span style={{ fontSize: '11px', color: 'var(--dm-accent)', fontWeight: 600, animation: 'fadeIn 0.2s' }}>
             Pasted!
           </span>
         )}
@@ -219,8 +219,8 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
       {task.status === STATUS.IN_PROGRESS && task.progress ? (
         <div className="progress-text-shimmer" style={{
-          fontSize: '12px', color: 'var(--accent)', marginBottom: '12px',
-          padding: '8px 12px', background: 'var(--accent-light)', borderRadius: 'var(--radius-sm)',
+          fontSize: '12px', color: 'var(--dm-accent)', marginBottom: '12px',
+          padding: '8px 12px', background: 'var(--dm-accent-light)', borderRadius: 'var(--dm-radius-sm)',
           fontWeight: 500, lineHeight: 1.4,
         }}>
           {task.progress}
@@ -236,12 +236,12 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
             onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
             placeholder="Why is this blocked?"
             style={{
-              width: '100%', fontSize: '12px', fontFamily: 'var(--font)',
-              padding: '6px 8px', border: '1px solid var(--border)', borderRadius: '6px',
-              background: 'var(--bg)', outline: 'none',
+              width: '100%', fontSize: '12px', fontFamily: 'var(--dm-font)',
+              padding: '6px 8px', border: '1px solid var(--dm-border)', borderRadius: '6px',
+              background: 'var(--dm-bg)', outline: 'none',
               transition: 'border-color 0.15s', lineHeight: 1.5,
             }}
-            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onFocus={e => e.target.style.borderColor = 'var(--dm-accent)'}
           />
         </div>
       ) : null}
@@ -255,8 +255,8 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           autoFocus
           style={{
             width: '100%', fontSize: '14px', fontWeight: 600, lineHeight: 1.4,
-            padding: '4px 8px', border: '1px solid var(--accent)', borderRadius: '4px',
-            fontFamily: 'var(--font)', background: 'var(--surface)', marginBottom: '16px',
+            padding: '4px 8px', border: '1px solid var(--dm-accent)', borderRadius: '4px',
+            fontFamily: 'var(--dm-font)', background: 'var(--dm-surface)', marginBottom: '16px',
             outline: 'none',
           }}
         />
@@ -268,7 +268,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
             cursor: 'pointer', padding: '4px 8px', borderRadius: '4px',
             transition: 'background 0.15s',
           }}
-          onMouseOver={e => e.target.style.background = 'var(--bg)'}
+          onMouseOver={e => e.target.style.background = 'var(--dm-bg)'}
           onMouseOut={e => e.target.style.background = 'transparent'}
           title="Click to edit"
         >
@@ -298,12 +298,12 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         if (history.length === 0) return null;
 
         const dotColor = {
-          [STATUS.CREATED]: 'var(--text-light)',
-          [STATUS.PENDING]: 'var(--text-light)',
-          [STATUS.IN_PROGRESS]: 'var(--accent)',
+          [STATUS.CREATED]: 'var(--dm-text-light)',
+          [STATUS.PENDING]: 'var(--dm-text-light)',
+          [STATUS.IN_PROGRESS]: 'var(--dm-accent)',
           [STATUS.PAUSED]: PAUSED_COLOR,
-          [STATUS.BLOCKED]: 'var(--danger, #c45)',
-          [STATUS.DONE]: 'var(--success)',
+          [STATUS.BLOCKED]: 'var(--dm-danger)',
+          [STATUS.DONE]: 'var(--dm-success)',
         };
         const label = {
           [STATUS.CREATED]: 'Created',
@@ -316,7 +316,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
         return (
           <div style={{ marginBottom: '12px', paddingLeft: '4px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Timeline
             </div>
             {history.map((entry, i) => {
@@ -327,20 +327,20 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
                 <div key={i}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor[entry.status] || 'var(--text-light)', flexShrink: 0 }} />
-                      {!isLast && <div style={{ width: '1px', flex: 1, minHeight: '12px', background: 'var(--border)' }} />}
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor[entry.status] || 'var(--dm-text-light)', flexShrink: 0 }} />
+                      {!isLast && <div style={{ width: '1px', flex: 1, minHeight: '12px', background: 'var(--dm-border)' }} />}
                     </div>
                     <div style={{ paddingBottom: '4px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>{label[entry.status] || entry.status}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text)' }}>{formatDate(entry.at)}</div>
+                      <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)' }}>{label[entry.status] || entry.status}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--dm-text)' }}>{formatDate(entry.at)}</div>
                     </div>
                   </div>
                   {duration && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{ width: '12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                        <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
+                        <div style={{ width: '1px', height: '16px', background: 'var(--dm-border)' }} />
                       </div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic' }}>{duration}</div>
+                      <div style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>{duration}</div>
                     </div>
                   )}
                 </div>
@@ -351,7 +351,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       })()}
 
       <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Epic</span>
+        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Epic</span>
         {task.group && epicColorMap[task.group] ? (
           <span style={{
             width: "8px", height: "8px", borderRadius: "50%",
@@ -365,12 +365,12 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           placeholder="None"
           list="epic-list"
           style={{
-            flex: 1, padding: '3px 8px', fontSize: '12px', fontFamily: 'var(--font)',
-            border: '1px solid var(--border)', borderRadius: '4px',
-            background: 'var(--bg)', outline: 'none',
+            flex: 1, padding: '3px 8px', fontSize: '12px', fontFamily: 'var(--dm-font)',
+            border: '1px solid var(--dm-border)', borderRadius: '4px',
+            background: 'var(--dm-bg)', outline: 'none',
           }}
-          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-          onBlur={e => e.target.style.borderColor = 'var(--border)'}
+          onFocus={e => e.target.style.borderColor = 'var(--dm-accent)'}
+          onBlur={e => e.target.style.borderColor = 'var(--dm-border)'}
         />
         <datalist id="epic-list">
           {(epics || []).map(e => (
@@ -380,22 +380,22 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       </div>
 
       <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: task.supervision ? 'var(--amber)' : 'var(--text-light)' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: task.supervision ? 'var(--dm-amber)' : 'var(--dm-text-light)' }}>
           <input
             type="checkbox"
             checked={!!task.supervision}
             onChange={e => onUpdateTask(task.id, { supervision: e.target.checked || undefined })}
-            style={{ accentColor: 'var(--amber)', cursor: 'pointer' }}
+            style={{ accentColor: 'var(--dm-amber)', cursor: 'pointer' }}
           />
           <span style={{ fontWeight: 600 }}>Needs review</span>
         </label>
         {task.supervision ? (
-          <span style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic' }}>Complex or risky — review plan carefully</span>
+          <span style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>Complex or risky — review plan carefully</span>
         ) : null}
       </div>
 
       <div style={{ marginBottom: '16px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {task.manual ? 'Steps / Notes' : 'Notes for Claude'}
         </div>
         <textarea
@@ -405,25 +405,25 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           placeholder={task.manual ? 'What you need to do...' : 'Instructions for Claude...'}
           rows="4"
           style={{
-            width: '100%', fontSize: '12px', fontFamily: 'var(--font)',
-            padding: '8px', border: '1px solid var(--border)', borderRadius: '6px',
-            background: 'var(--bg)', resize: 'vertical', outline: 'none',
+            width: '100%', fontSize: '12px', fontFamily: 'var(--dm-font)',
+            padding: '8px', border: '1px solid var(--dm-border)', borderRadius: '6px',
+            background: 'var(--dm-bg)', resize: 'vertical', outline: 'none',
             transition: 'border-color 0.15s', lineHeight: 1.5,
           }}
-          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          onFocus={e => e.target.style.borderColor = 'var(--dm-accent)'}
         />
       </div>
 
       {/* Attachments section */}
       <div style={{ marginBottom: '16px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Screenshots
         </div>
         {attachments.length === 0 ? (
           <div style={{
-            fontSize: '11px', color: 'var(--text-light)', fontStyle: 'italic',
+            fontSize: '11px', color: 'var(--dm-text-light)', fontStyle: 'italic',
             padding: '12px', textAlign: 'center',
-            border: '1px dashed var(--border)', borderRadius: '6px',
+            border: '1px dashed var(--dm-border)', borderRadius: '6px',
           }}>
             Paste or drop screenshots here
           </div>
@@ -432,23 +432,23 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
             {attachments.map(att => (
               <div
                 key={att.id}
-                style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}
+                style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--dm-border)' }}
                 className="attachment-thumb"
               >
                 {thumbUrls[att.id] ? (
                   <img
                     src={thumbUrls[att.id]}
                     alt={att.filename}
-                    style={{ display: 'block', maxWidth: '100%', maxHeight: '120px', objectFit: 'contain', background: 'var(--bg)' }}
+                    style={{ display: 'block', maxWidth: '100%', maxHeight: '120px', objectFit: 'contain', background: 'var(--dm-bg)' }}
                   />
                 ) : (
-                  <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', fontSize: '11px', color: 'var(--text-light)' }}>
+                  <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dm-bg)', fontSize: '11px', color: 'var(--dm-text-light)' }}>
                     Loading...
                   </div>
                 )}
                 <div style={{
-                  fontSize: '10px', color: 'var(--text-muted)', padding: '3px 6px',
-                  background: 'var(--bg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  fontSize: '10px', color: 'var(--dm-text-muted)', padding: '3px 6px',
+                  background: 'var(--dm-bg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {att.filename}
                 </div>
@@ -458,11 +458,11 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
                   style={{
                     position: 'absolute', top: '4px', right: '4px',
                     width: '20px', height: '20px', borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.6)', color: 'white',
+                    background: 'var(--dm-overlay-dark)', color: 'white',
                     border: 'none', cursor: 'pointer', fontSize: '12px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     opacity: 0, transition: 'opacity 0.15s',
-                    lineHeight: 1, padding: 0, fontFamily: 'var(--font)',
+                    lineHeight: 1, padding: 0, fontFamily: 'var(--dm-font)',
                   }}
                   title="Delete attachment"
                 >
@@ -486,7 +486,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         };
         return (
           <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Depends on {selected.length > 0 ? <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>({selected.length})</span> : null}
             </div>
             {selected.length > 0 ? (
@@ -499,13 +499,13 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
                     style={{
                       padding: '3px 10px',
                       fontSize: '11px',
-                      fontFamily: 'var(--font)',
+                      fontFamily: 'var(--dm-font)',
                       fontWeight: 600,
                       borderRadius: '99px',
                       cursor: 'pointer',
                       transition: 'all 0.15s',
-                      border: '1px solid var(--accent)',
-                      background: 'var(--accent)',
+                      border: '1px solid var(--dm-accent)',
+                      background: 'var(--dm-accent)',
                       color: 'white',
                     }}
                   >
@@ -524,14 +524,14 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
                     style={{
                       padding: '3px 10px',
                       fontSize: '11px',
-                      fontFamily: 'var(--font)',
+                      fontFamily: 'var(--dm-font)',
                       fontWeight: 400,
                       borderRadius: '99px',
                       cursor: 'pointer',
                       transition: 'all 0.15s',
-                      border: '1px dashed var(--border)',
+                      border: '1px dashed var(--dm-border)',
                       background: 'transparent',
-                      color: 'var(--text-light)',
+                      color: 'var(--dm-text-light)',
                     }}
                   >
                     + {t.name}
@@ -548,9 +548,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onClick={() => onUpdateTask(task.id, { status: STATUS.DONE })}
           style={{
             width: '100%', padding: '8px 16px',
-            background: 'var(--success)', color: 'white',
-            border: 'none', borderRadius: 'var(--radius-sm)',
-            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font)',
+            background: 'var(--dm-success)', color: 'white',
+            border: 'none', borderRadius: 'var(--dm-radius-sm)',
+            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--dm-font)',
             cursor: 'pointer', transition: 'opacity 0.2s',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
           }}
@@ -564,9 +564,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onClick={() => onQueue(task)}
           style={{
             width: '100%', padding: '8px 16px',
-            background: 'var(--accent)', color: 'white',
-            border: 'none', borderRadius: 'var(--radius-sm)',
-            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font)',
+            background: 'var(--dm-accent)', color: 'white',
+            border: 'none', borderRadius: 'var(--dm-radius-sm)',
+            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--dm-font)',
             cursor: 'pointer', transition: 'opacity 0.2s',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
           }}
@@ -581,13 +581,13 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         onClick={() => { if (confirm('Delete "' + (task.fullName || task.name) + '"?')) onDeleteTask(task.id); }}
         style={{
           width: '100%', padding: '6px 16px', marginTop: '8px',
-          background: 'none', color: 'var(--text-light)',
-          border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-          fontSize: '12px', fontFamily: 'var(--font)',
+          background: 'none', color: 'var(--dm-text-light)',
+          border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)',
+          fontSize: '12px', fontFamily: 'var(--dm-font)',
           cursor: 'pointer', transition: 'all 0.15s',
         }}
-        onMouseOver={e => { e.target.style.color = 'var(--danger)'; e.target.style.borderColor = 'var(--danger)'; }}
-        onMouseOut={e => { e.target.style.color = 'var(--text-light)'; e.target.style.borderColor = 'var(--border)'; }}
+        onMouseOver={e => { e.target.style.color = 'var(--dm-danger)'; e.target.style.borderColor = 'var(--dm-danger)'; }}
+        onMouseOut={e => { e.target.style.color = 'var(--dm-text-light)'; e.target.style.borderColor = 'var(--dm-border)'; }}
       >Delete task</button>
     </div>
   );

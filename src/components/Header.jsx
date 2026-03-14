@@ -17,12 +17,12 @@ export function Header({ projectName, status, onDisconnect }) {
 
   return (
     <header className="dm-header" style={{
-      background: 'var(--surface)',
-      borderBottom: '1px solid var(--border)',
+      background: 'var(--dm-surface)',
+      borderBottom: '1px solid var(--dm-border)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      boxShadow: 'var(--shadow-sm)',
+      boxShadow: 'var(--dm-shadow-sm)',
       position: 'sticky',
       top: 0,
       zIndex: 10,
@@ -33,24 +33,24 @@ export function Header({ projectName, status, onDisconnect }) {
           title="Switch project"
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--text-light)', fontSize: '14px', fontFamily: 'var(--font)',
+            color: 'var(--dm-text-light)', fontSize: '14px', fontFamily: 'var(--dm-font)',
             padding: '2px 6px', borderRadius: '4px', transition: 'all 0.15s',
           }}
-          onMouseOver={e => { e.target.style.color = 'var(--accent)'; e.target.style.background = 'var(--accent-light)'; }}
-          onMouseOut={e => { e.target.style.color = 'var(--text-light)'; e.target.style.background = 'none'; }}
+          onMouseOver={e => { e.target.style.color = 'var(--dm-accent)'; e.target.style.background = 'var(--dm-accent-light)'; }}
+          onMouseOut={e => { e.target.style.color = 'var(--dm-text-light)'; e.target.style.background = 'none'; }}
         >←</button>
-        <span style={{ fontWeight: 700, fontSize: '18px', color: 'var(--text)' }}>{projectName}</span>
-        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: status === 'error' ? 'var(--danger)' : 'var(--success)', flexShrink: 0 }} title={status === 'error' ? 'Sync error' : 'Connected'} />
-        <span style={{ color: 'var(--text-light)', fontSize: '14px' }}>/</span>
-        <span style={{ fontWeight: 500, fontSize: '16px', color: 'var(--text-muted)' }}>Dev Manager</span>
+        <span style={{ fontWeight: 700, fontSize: '18px', color: 'var(--dm-text)' }}>{projectName}</span>
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: status === 'error' ? 'var(--dm-danger)' : 'var(--dm-success)', flexShrink: 0 }} title={status === 'error' ? 'Sync error' : 'Connected'} />
+        <span style={{ color: 'var(--dm-text-light)', fontSize: '14px' }}>/</span>
+        <span style={{ fontWeight: 500, fontSize: '16px', color: 'var(--dm-text-muted)' }}>Dev Manager</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {status === 'synced' ? (
-          <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 500 }}>
+          <span style={{ fontSize: '12px', color: 'var(--dm-accent)', fontWeight: 500 }}>
             Synced from Claude!
           </span>
         ) : status === 'error' ? (
-          <span style={{ fontSize: '11px', color: 'var(--danger)' }}>Sync error</span>
+          <span style={{ fontSize: '11px', color: 'var(--dm-danger)' }}>Sync error</span>
         ) : null}
         <button
           onClick={toggleTheme}
@@ -58,10 +58,10 @@ export function Header({ projectName, status, onDisconnect }) {
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
             fontSize: '16px', padding: '4px', lineHeight: 1,
-            color: 'var(--text-light)', transition: 'color 0.15s',
+            color: 'var(--dm-text-light)', transition: 'color 0.15s',
           }}
-          onMouseOver={e => e.target.style.color = 'var(--text)'}
-          onMouseOut={e => e.target.style.color = 'var(--text-light)'}
+          onMouseOver={e => e.target.style.color = 'var(--dm-text)'}
+          onMouseOut={e => e.target.style.color = 'var(--dm-text-light)'}
         >{dark ? '☀' : '☽'}</button>
       </div>
     </header>

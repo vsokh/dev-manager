@@ -22,25 +22,25 @@ export function UndoToast({ entry, onUndo, onDismiss }) {
       opacity: visible ? 1 : 0,
       transition: 'transform 0.2s ease, opacity 0.2s ease',
       zIndex: 1000,
-      background: 'var(--surface)',
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--radius-sm)',
-      boxShadow: 'var(--shadow-md)',
+      background: 'var(--dm-surface)',
+      border: '1px solid var(--dm-border)',
+      borderRadius: 'var(--dm-radius-sm)',
+      boxShadow: 'var(--dm-shadow-md)',
       padding: '10px 16px',
       display: 'flex',
       alignItems: 'center',
       gap: '12px',
       fontSize: '13px',
-      color: 'var(--text)',
+      color: 'var(--dm-text)',
       pointerEvents: visible ? 'auto' : 'none',
     }}>
-      <span style={{ color: 'var(--text-muted)' }}>{entry?.label}</span>
+      <span style={{ color: 'var(--dm-text-muted)' }}>{entry?.label}</span>
       <button
         onClick={onUndo}
         style={{
           background: 'none',
           border: 'none',
-          color: 'var(--accent)',
+          color: 'var(--dm-accent)',
           fontWeight: 600,
           fontSize: '13px',
           cursor: 'pointer',
@@ -48,7 +48,7 @@ export function UndoToast({ entry, onUndo, onDismiss }) {
           borderRadius: '4px',
           fontFamily: 'inherit',
         }}
-        onMouseEnter={e => e.target.style.background = 'var(--accent-light)'}
+        onMouseEnter={e => e.target.style.background = 'var(--dm-accent-light)'}
         onMouseLeave={e => e.target.style.background = 'none'}
       >
         Undo
@@ -58,7 +58,7 @@ export function UndoToast({ entry, onUndo, onDismiss }) {
         style={{
           background: 'none',
           border: 'none',
-          color: 'var(--text-light)',
+          color: 'var(--dm-text-light)',
           cursor: 'pointer',
           padding: '2px 4px',
           fontSize: '16px',

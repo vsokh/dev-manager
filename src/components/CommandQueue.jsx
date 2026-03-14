@@ -86,11 +86,11 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
   const getButtonStyle = (item) => {
     const status = getItemStatus(item);
     const isLaunched = launchedId === itemKey(item);
-    if (isLaunched) return { bg: 'var(--success)', icon: '\u2713' };
+    if (isLaunched) return { bg: 'var(--dm-success)', icon: '\u2713' };
     if (status === 'paused') return { bg: PAUSED_COLOR, icon: '\u25B6' }; // purple play = resume
-    if (status === 'waiting') return { bg: 'var(--amber)', icon: '\u25CF' };
-    if (status === 'working') return { bg: 'var(--accent)', icon: '\u25CF' };
-    return { bg: 'var(--accent)', icon: '\u25B6' };
+    if (status === 'waiting') return { bg: 'var(--dm-amber)', icon: '\u25CF' };
+    if (status === 'working') return { bg: 'var(--dm-accent)', icon: '\u25CF' };
+    return { bg: 'var(--dm-accent)', icon: '\u25B6' };
   };
 
   const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
@@ -104,18 +104,18 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
     const isManual = task?.manual;
     const isActive = status === 'waiting' || status === 'working';
     const isPaused = status === 'paused';
-    const rowBg = isActive ? (status === 'waiting' ? 'rgba(196,132,90,0.06)' : 'rgba(106,141,190,0.06)')
-      : isPaused ? 'rgba(155,139,180,0.06)' : undefined;
+    const rowBg = isActive ? (status === 'waiting' ? 'var(--dm-amber-bg-subtle)' : 'var(--dm-accent-bg-subtle)')
+      : isPaused ? 'var(--dm-paused-bg-subtle)' : undefined;
     return (
       <div key={key} style={{
         display: 'flex', alignItems: 'center', gap: '6px',
-        padding: '6px 12px', borderBottom: '1px solid var(--border)',
+        padding: '6px 12px', borderBottom: '1px solid var(--dm-border)',
         background: rowBg,
       }}>
         {isManual ? (
           <span title="Manual task" style={{
             padding: '3px 6px', fontSize: '9px', fontWeight: 700, flexShrink: 0,
-            background: 'var(--border)', color: 'var(--text-light)', borderRadius: '3px',
+            background: 'var(--dm-border)', color: 'var(--dm-text-light)', borderRadius: '3px',
             letterSpacing: '0.03em',
           }}>YOU</span>
         ) : (
@@ -125,7 +125,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
             style={{
               padding: '4px 8px', background: btn.bg,
-              color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
+              color: 'white', border: 'none', borderRadius: 'var(--dm-radius-sm)',
               fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
               flexShrink: 0, lineHeight: 1,
             }}
@@ -136,7 +136,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           {isActive && task?.progress ? (
             <span className="progress-text-shimmer" style={{
               fontSize: '10px', display: 'block', marginTop: '1px',
-              color: status === 'waiting' ? 'var(--amber)' : 'var(--accent)',
+              color: status === 'waiting' ? 'var(--dm-amber)' : 'var(--dm-accent)',
             }}>{task.progress}</span>
           ) : null}
           {isPaused ? (
@@ -162,7 +162,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           title="Remove from queue"
           style={{
             padding: '2px 6px', background: 'none', border: 'none',
-            cursor: 'pointer', color: 'var(--text-light)', fontSize: '14px',
+            cursor: 'pointer', color: 'var(--dm-text-light)', fontSize: '14px',
             lineHeight: 1,
           }}
         >x</button>
@@ -176,15 +176,15 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
         {onQueueAll && (tasks || []).some(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id)) ? (
           <button onClick={onQueueAll} style={{
-            padding: '4px 10px', background: 'none', color: 'var(--accent)',
-            border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
-            fontFamily: 'var(--font)', cursor: 'pointer',
+            padding: '4px 10px', background: 'none', color: 'var(--dm-accent)',
+            border: '1px solid var(--dm-accent)', borderRadius: 'var(--dm-radius-sm)', fontSize: '11px',
+            fontFamily: 'var(--dm-font)', cursor: 'pointer',
           }}>Queue all</button>
         ) : null}
         <button onClick={onClear} style={{
-          padding: '4px 10px', background: 'none', color: 'var(--text-light)',
-          border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
-          fontFamily: 'var(--font)', cursor: 'pointer',
+          padding: '4px 10px', background: 'none', color: 'var(--dm-text-light)',
+          border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)', fontSize: '11px',
+          fontFamily: 'var(--dm-font)', cursor: 'pointer',
         }}>Unqueue all</button>
       </div>
     </div>
@@ -200,7 +200,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
               display: 'flex', alignItems: 'center', padding: '0 16px',
             }}>
               <div style={{
-                width: '1px', height: '12px', background: 'var(--border)',
+                width: '1px', height: '12px', background: 'var(--dm-border)',
                 marginLeft: '11px',
               }} />
             </div>
@@ -209,7 +209,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           <div style={{
             padding: '4px 12px 2px',
             fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
-            letterSpacing: '0.06em', color: 'var(--text-light)',
+            letterSpacing: '0.06em', color: 'var(--dm-text-light)',
             display: 'flex', alignItems: 'center', gap: '8px',
           }}>
             <span>Phase {idx + 1}</span>
@@ -224,14 +224,14 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                   })))}
                   title="Launch all tasks in this phase"
                   style={{
-                    padding: '1px 8px', background: 'none', color: 'var(--accent)',
-                    border: '1px solid var(--accent)', borderRadius: '4px',
+                    padding: '1px 8px', background: 'none', color: 'var(--dm-accent)',
+                    border: '1px solid var(--dm-accent)', borderRadius: '4px',
                     fontSize: '10px', fontWeight: 600, cursor: 'pointer',
                     textTransform: 'none', letterSpacing: 'normal',
                     transition: 'all 0.15s',
                   }}
-                  onMouseOver={e => { e.target.style.background = 'var(--accent)'; e.target.style.color = 'white'; }}
-                  onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--accent)'; }}
+                  onMouseOver={e => { e.target.style.background = 'var(--dm-accent)'; e.target.style.color = 'white'; }}
+                  onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--dm-accent)'; }}
                 >&#9654; Launch phase</button>
               </>
             ) : null}
@@ -247,8 +247,8 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             const isManual = task?.manual;
             const isActive = status === 'waiting' || status === 'working';
             const isPaused = status === 'paused';
-            const rowBg = isActive ? (status === 'waiting' ? 'rgba(196,132,90,0.06)' : 'rgba(106,141,190,0.06)')
-              : isPaused ? 'rgba(155,139,180,0.06)' : undefined;
+            const rowBg = isActive ? (status === 'waiting' ? 'var(--dm-amber-bg-subtle)' : 'var(--dm-accent-bg-subtle)')
+              : isPaused ? 'var(--dm-paused-bg-subtle)' : undefined;
             return (
               <div key={key} style={{
                 display: 'flex', alignItems: 'stretch',
@@ -260,15 +260,15 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                   paddingLeft: '4px',
                 }}>
                   <div style={{
-                    width: '1px', flex: isLast ? '0 0 50%' : '1', background: 'var(--border)',
+                    width: '1px', flex: isLast ? '0 0 50%' : '1', background: 'var(--dm-border)',
                   }} />
                   <div style={{
-                    width: '8px', height: '1px', background: 'var(--border)',
+                    width: '8px', height: '1px', background: 'var(--dm-border)',
                     alignSelf: 'flex-end', marginRight: '-4px',
                   }} />
                   {!isLast ? (
                     <div style={{
-                      width: '1px', flex: '1', background: 'var(--border)',
+                      width: '1px', flex: '1', background: 'var(--dm-border)',
                     }} />
                   ) : null}
                 </div>
@@ -288,7 +288,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                       className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
                       style={{
                         padding: '4px 8px', background: btn.bg,
-                        color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
+                        color: 'white', border: 'none', borderRadius: 'var(--dm-radius-sm)',
                         fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
                         flexShrink: 0, lineHeight: 1,
                       }}
@@ -299,7 +299,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                     {isActive && task?.progress ? (
                       <span className="progress-text-shimmer" style={{
                         fontSize: '10px', display: 'block', marginTop: '1px',
-                        color: status === 'waiting' ? 'var(--amber)' : 'var(--accent)',
+                        color: status === 'waiting' ? 'var(--dm-amber)' : 'var(--dm-accent)',
                       }}>{task.progress}</span>
                     ) : null}
                     {isPaused ? (
@@ -325,7 +325,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                     title="Remove from queue"
                     style={{
                       padding: '2px 6px', background: 'none', border: 'none',
-                      cursor: 'pointer', color: 'var(--text-light)', fontSize: '14px',
+                      cursor: 'pointer', color: 'var(--dm-text-light)', fontSize: '14px',
                       lineHeight: 1,
                     }}
                   >x</button>
@@ -338,15 +338,15 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
         {onQueueAll && (tasks || []).some(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id)) ? (
           <button onClick={onQueueAll} style={{
-            padding: '4px 10px', background: 'none', color: 'var(--accent)',
-            border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
-            fontFamily: 'var(--font)', cursor: 'pointer',
+            padding: '4px 10px', background: 'none', color: 'var(--dm-accent)',
+            border: '1px solid var(--dm-accent)', borderRadius: 'var(--dm-radius-sm)', fontSize: '11px',
+            fontFamily: 'var(--dm-font)', cursor: 'pointer',
           }}>Queue all</button>
         ) : null}
         <button onClick={onClear} style={{
-          padding: '4px 10px', background: 'none', color: 'var(--text-light)',
-          border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
-          fontFamily: 'var(--font)', cursor: 'pointer',
+          padding: '4px 10px', background: 'none', color: 'var(--dm-text-light)',
+          border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)', fontSize: '11px',
+          fontFamily: 'var(--dm-font)', cursor: 'pointer',
         }}>Unqueue all</button>
       </div>
     </div>
@@ -356,7 +356,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
     <div>
       {queue.length === 0 ? (
         <div style={{
-          padding: '20px 16px', textAlign: 'center', color: 'var(--text-light)', fontSize: '12px',
+          padding: '20px 16px', textAlign: 'center', color: 'var(--dm-text-light)', fontSize: '12px',
           lineHeight: 1.6,
         }}>
           Queue tasks from the detail panel, then launch each in its own terminal.
@@ -364,7 +364,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
       ) : phases ? renderPhases() : renderFlatList()}
 
       {editingPath ? (
-        <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '6px' }}>
+        <div style={{ padding: '8px 12px', borderTop: '1px solid var(--dm-border)', display: 'flex', gap: '6px' }}>
           <input
             type="text"
             value={pathInput}
@@ -374,37 +374,37 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             autoFocus
             style={{
               flex: 1, padding: '6px 8px', fontSize: '12px', fontFamily: 'monospace',
-              border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-              background: 'var(--bg)', color: 'var(--text)',
+              border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)',
+              background: 'var(--dm-bg)', color: 'var(--dm-text)',
             }}
           />
           <button onClick={handleSavePath} style={{
-            padding: '6px 10px', background: 'var(--accent)', color: 'white',
-            border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+            padding: '6px 10px', background: 'var(--dm-accent)', color: 'white',
+            border: 'none', borderRadius: 'var(--dm-radius-sm)', fontSize: '11px',
             fontWeight: 600, cursor: 'pointer',
           }}>Save</button>
           <button onClick={() => setEditingPath(false)} style={{
-            padding: '6px 8px', background: 'none', color: 'var(--text-light)',
-            border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+            padding: '6px 8px', background: 'none', color: 'var(--dm-text-light)',
+            border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)', fontSize: '11px',
             cursor: 'pointer',
           }}>Cancel</button>
         </div>
       ) : (
         <div style={{
           padding: '4px 12px 6px', display: 'flex', alignItems: 'center', gap: '6px',
-          fontSize: '11px', color: 'var(--text-light)', borderTop: queue.length > 0 ? 'none' : '1px solid var(--border)',
+          fontSize: '11px', color: 'var(--dm-text-light)', borderTop: queue.length > 0 ? 'none' : '1px solid var(--dm-border)',
         }}>
           {projectPath ? (
             <>
               <span style={{ fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, opacity: 0.7 }}>{projectPath}</span>
               <button onClick={() => { setPathInput(projectPath); setEditingPath(true); }} style={{
-                background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer',
+                background: 'none', border: 'none', color: 'var(--dm-text-light)', cursor: 'pointer',
                 fontSize: '11px', textDecoration: 'underline', flexShrink: 0,
               }}>edit</button>
             </>
           ) : (
             <button onClick={() => setEditingPath(true)} style={{
-              background: 'none', border: 'none', color: 'var(--amber)', cursor: 'pointer',
+              background: 'none', border: 'none', color: 'var(--dm-amber)', cursor: 'pointer',
               fontSize: '11px', textDecoration: 'underline',
             }}>Set project path to enable launch</button>
           )}

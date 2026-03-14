@@ -31,16 +31,16 @@ export function CardForm({ card, onSave, onCancel, groups }) {
   };
 
   const inputStyle = {
-    width: '100%', padding: '6px 8px', fontSize: '13px', fontFamily: 'var(--font)',
-    border: '1px solid var(--border)', borderRadius: '6px', background: 'var(--surface)',
+    width: '100%', padding: '6px 8px', fontSize: '13px', fontFamily: 'var(--dm-font)',
+    border: '1px solid var(--dm-border)', borderRadius: '6px', background: 'var(--dm-surface)',
     outline: 'none',
   };
 
   return (
     <form onSubmit={handleSubmit} style={{
-      background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: 'var(--radius)', padding: '16px', marginBottom: '16px',
-      boxShadow: 'var(--shadow-md)',
+      background: 'var(--dm-surface)', border: '1px solid var(--dm-border)',
+      borderRadius: 'var(--dm-radius)', padding: '16px', marginBottom: '16px',
+      boxShadow: 'var(--dm-shadow-md)',
     }}>
       <input
         value={title} onInput={e => setTitle(e.target.value)}
@@ -68,16 +68,16 @@ export function CardForm({ card, onSave, onCancel, groups }) {
       />
       <label style={{
         display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px',
-        fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer', userSelect: 'none',
+        fontSize: '12px', color: 'var(--dm-text-muted)', cursor: 'pointer', userSelect: 'none',
       }}>
         <input type="checkbox" checked={manual} onChange={e => setManual(e.target.checked)} />
         Manual task <span style={{ fontSize: '10px', opacity: 0.7 }}>(done by you, not Claude)</span>
       </label>
       {!manual ? <div style={{ marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>Skills</span>
+          <span style={{ fontSize: '11px', color: 'var(--dm-text-muted)', fontWeight: 500 }}>Skills</span>
           {!userEditedSkills && suggested.length > 0 ? (
-            <span style={{ fontSize: '10px', color: 'var(--accent)', fontStyle: 'italic' }}>auto-detected</span>
+            <span style={{ fontSize: '10px', color: 'var(--dm-accent)', fontStyle: 'italic' }}>auto-detected</span>
           ) : null}
         </div>
         <input
@@ -85,16 +85,16 @@ export function CardForm({ card, onSave, onCancel, groups }) {
           onInput={e => { setManualSkills(e.target.value); setUserEditedSkills(true); }}
           onFocus={() => { if (!userEditedSkills) { setManualSkills(suggested.join(', ')); setUserEditedSkills(true); } }}
           placeholder="Auto-detected from title, or type manually..."
-          style={{ ...inputStyle, fontSize: '12px', color: userEditedSkills ? 'var(--text)' : 'var(--accent)' }}
+          style={{ ...inputStyle, fontSize: '12px', color: userEditedSkills ? 'var(--dm-text)' : 'var(--dm-accent)' }}
         />
         {suggested.length > 0 && !userEditedSkills ? (
           <div style={{ marginTop: '6px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-light)', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '10px', color: 'var(--dm-text-light)', lineHeight: 1.5 }}>
               matched: {matches.map(m => (
                 <code key={m.word} style={{
-                  background: 'var(--accent-light)', padding: '0 4px', borderRadius: '3px',
+                  background: 'var(--dm-accent-light)', padding: '0 4px', borderRadius: '3px',
                   fontSize: '10px', fontFamily: 'monospace', marginRight: '3px',
-                  color: 'var(--accent)',
+                  color: 'var(--dm-accent)',
                 }}>"{m.word}"</code>
               ))}
             </div>
@@ -104,15 +104,15 @@ export function CardForm({ card, onSave, onCancel, groups }) {
       <div style={{ display: 'flex', gap: '8px' }}>
         {onCancel ? (
           <button type="button" onClick={onCancel} style={{
-            padding: '6px 12px', background: 'var(--bg)', color: 'var(--text-muted)',
-            border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '12px',
-            fontWeight: 500, fontFamily: 'var(--font)', cursor: 'pointer',
+            padding: '6px 12px', background: 'var(--dm-bg)', color: 'var(--dm-text-muted)',
+            border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)', fontSize: '12px',
+            fontWeight: 500, fontFamily: 'var(--dm-font)', cursor: 'pointer',
           }}>Cancel</button>
         ) : null}
         <button type="submit" style={{
-          flex: 1, padding: '6px 12px', background: 'var(--accent)', color: 'white',
-          border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '12px',
-          fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer',
+          flex: 1, padding: '6px 12px', background: 'var(--dm-accent)', color: 'white',
+          border: 'none', borderRadius: 'var(--dm-radius-sm)', fontSize: '12px',
+          fontWeight: 600, fontFamily: 'var(--dm-font)', cursor: 'pointer',
         }}>{card ? 'Save' : 'Add task'}</button>
       </div>
     </form>

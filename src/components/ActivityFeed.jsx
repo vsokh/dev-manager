@@ -30,7 +30,7 @@ export function ActivityFeed({ activity, onRemove }) {
   if (entries.length === 0) {
     return (
       <div style={{
-        padding: '20px 16px', textAlign: 'center', color: 'var(--text-light)', fontSize: '12px',
+        padding: '20px 16px', textAlign: 'center', color: 'var(--dm-text-light)', fontSize: '12px',
       }}>
         No activity yet
       </div>
@@ -48,12 +48,12 @@ export function ActivityFeed({ activity, onRemove }) {
           {/* Colored dot */}
           <span style={{
             width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-            background: e.completed ? 'var(--success)' : 'var(--border)',
+            background: e.completed ? 'var(--dm-success)' : 'var(--dm-border)',
           }} />
 
           {/* Label */}
           <span style={{
-            flex: 1, fontSize: '12px', color: 'var(--text)',
+            flex: 1, fontSize: '12px', color: 'var(--dm-text)',
             fontWeight: e.isToday ? 500 : 400,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{e.label}</span>
@@ -62,14 +62,14 @@ export function ActivityFeed({ activity, onRemove }) {
           {e.commitRef ? (
             <span style={{
               fontFamily: 'monospace', fontSize: '10px', fontWeight: 600,
-              background: 'var(--accent-light)', color: 'var(--accent)',
+              background: 'var(--dm-accent-light)', color: 'var(--dm-accent)',
               padding: '0 5px', borderRadius: '3px', flexShrink: 0,
             }}>{e.commitRef}</span>
           ) : null}
 
           {/* Timestamp */}
           <span style={{
-            fontSize: '10px', color: 'var(--text-light)',
+            fontSize: '10px', color: 'var(--dm-text-light)',
             flexShrink: 0, minWidth: '36px', textAlign: 'right',
           }}>{e.date}</span>
 
@@ -78,7 +78,7 @@ export function ActivityFeed({ activity, onRemove }) {
             onClick={() => onRemove(e.key)}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--text-light)', fontSize: '11px', padding: '0 2px',
+              color: 'var(--dm-text-light)', fontSize: '11px', padding: '0 2px',
               lineHeight: 1, opacity: 0, transition: 'opacity 0.15s',
             }}
             className="activity-remove"
