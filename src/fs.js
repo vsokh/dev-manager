@@ -90,6 +90,40 @@ export async function readState(projectHandle) {
   }
 }
 
+// Save an attachment file to .devmanager/attachments/{taskId}/{filename}
+export async function saveAttachment(projectHandle, taskId, filename, blob) {
+  const dmDir = await ensureDevManagerDir(projectHandle);
+  const attachDir = await dmDir.getDirectoryHandle('attachments', { create: true });
+  const taskDir = await attachDir.getDirectoryHandle(String(taskId), { create: true });
+  const fileHandle = await taskDir.getFileHandle(filename, { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+  return `.devmanager/attachments/${taskId}/${filename}`;
+}
+
+// Delete an attachment
+export async function deleteAttachment(projectHandle, taskId, filename) {
+  try {
+    const dmDir = await projectHandle.getDirectoryHandle('.devmanager');
+    const attachDir = await dmDir.getDirectoryHandle('attachments');
+    const taskDir = await attachDir.getDirectoryHandle(String(taskId));
+    await taskDir.removeEntry(filename);
+  } catch {}
+}
+
+// Read an attachment as object URL (for displaying)
+export async function readAttachmentUrl(projectHandle, taskId, filename) {
+  try {
+    const dmDir = await projectHandle.getDirectoryHandle('.devmanager');
+    const attachDir = await dmDir.getDirectoryHandle('attachments');
+    const taskDir = await attachDir.getDirectoryHandle(String(taskId));
+    const fileHandle = await taskDir.getFileHandle(filename);
+    const file = await fileHandle.getFile();
+    return URL.createObjectURL(file);
+  } catch { return null; }
+}
+
 export function createDefaultState(projectName) {
   return {
     savedAt: new Date().toISOString(),

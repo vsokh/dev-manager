@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useProject } from './hooks/useProject.js';
+import { saveAttachment, deleteAttachment } from './fs.js';
 import { ProjectPicker } from './components/ProjectPicker.jsx';
 import { Header } from './components/Header.jsx';
 import { SectionHeader } from './components/SectionHeader.jsx';
@@ -53,7 +54,7 @@ function sortByDependencies(queueItems, allTasks) {
 
 export function App() {
   const project = useProject();
-  const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName } = project;
+  const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle } = project;
 
   // Selection state (local only)
   const [selectedTask, setSelectedTask] = useState(null);
@@ -136,6 +137,33 @@ export function App() {
     const newActivity = addActivity((task?.name || 'Task') + ' deleted');
     updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, activity: newActivity });
     setSelectedTask(null);
+  };
+
+  const handleAddAttachment = async (taskId, file) => {
+    if (!dirHandle) return;
+    try {
+      const filename = file.name;
+      const path = await saveAttachment(dirHandle, taskId, filename, file);
+      const attachment = { id: 'att_' + Date.now(), filename, path };
+      const task = tasks.find(t => t.id === taskId);
+      const attachments = [...(task?.attachments || []), attachment];
+      handleUpdateTask(taskId, { attachments });
+    } catch (err) {
+      console.error('Failed to save attachment:', err);
+    }
+  };
+
+  const handleDeleteAttachment = async (taskId, attachmentId) => {
+    if (!dirHandle) return;
+    try {
+      const task = tasks.find(t => t.id === taskId);
+      const att = (task?.attachments || []).find(a => a.id === attachmentId);
+      if (att) await deleteAttachment(dirHandle, taskId, att.filename);
+      const attachments = (task?.attachments || []).filter(a => a.id !== attachmentId);
+      handleUpdateTask(taskId, { attachments });
+    } catch (err) {
+      console.error('Failed to delete attachment:', err);
+    }
   };
 
   const handleQueue = (task) => {
@@ -260,6 +288,9 @@ export function App() {
               onDeleteTask={handleDeleteTask}
               notes={taskNotes[selectedTask] || ''}
               onUpdateNotes={handleUpdateNotes}
+              dirHandle={dirHandle}
+              onAddAttachment={handleAddAttachment}
+              onDeleteAttachment={handleDeleteAttachment}
             />
           </div>
         </div>

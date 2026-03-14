@@ -1,14 +1,111 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { readAttachmentUrl } from '../fs.js';
 
-export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes }) {
+export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [localNote, setLocalNote] = useState('');
+  const [pastedFeedback, setPastedFeedback] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [thumbUrls, setThumbUrls] = useState({});
+  const dragCounter = useRef(0);
 
   useEffect(() => {
     setLocalNote(notes || '');
     setEditing(false);
   }, [task?.id, notes]);
+
+  // Load thumbnail URLs when task/attachments change
+  useEffect(() => {
+    if (!task || !dirHandle || !task.attachments?.length) {
+      setThumbUrls({});
+      return;
+    }
+
+    let cancelled = false;
+    const urls = {};
+
+    (async () => {
+      for (const att of task.attachments) {
+        if (cancelled) break;
+        const url = await readAttachmentUrl(dirHandle, task.id, att.filename);
+        if (url) urls[att.id] = url;
+      }
+      if (!cancelled) setThumbUrls(urls);
+    })();
+
+    return () => {
+      cancelled = true;
+      // Revoke old URLs to prevent memory leaks
+      Object.values(urls).forEach(u => { try { URL.revokeObjectURL(u); } catch {} });
+    };
+  }, [task?.id, task?.attachments, dirHandle]);
+
+  // Clean up thumb URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(thumbUrls).forEach(u => { try { URL.revokeObjectURL(u); } catch {} });
+    };
+  }, []);
+
+  const handleImageFile = useCallback((file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const ext = file.type === 'image/png' ? 'png' : file.type === 'image/jpeg' ? 'jpg' : 'png';
+    const filename = `screenshot-${Date.now()}.${ext}`;
+    const renamedFile = new File([file], filename, { type: file.type });
+    onAddAttachment(task.id, renamedFile);
+    setPastedFeedback(true);
+    setTimeout(() => setPastedFeedback(false), 1500);
+  }, [task?.id, onAddAttachment]);
+
+  const handlePaste = useCallback((e) => {
+    if (!task || !onAddAttachment) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        handleImageFile(blob);
+        return;
+      }
+    }
+  }, [task, onAddAttachment, handleImageFile]);
+
+  const handleDragEnter = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    setDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) setDragging(false);
+  }, []);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(false);
+    dragCounter.current = 0;
+    if (!task || !onAddAttachment) return;
+    const files = e.dataTransfer?.files;
+    if (files) {
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          handleImageFile(file);
+        }
+      }
+    }
+  }, [task, onAddAttachment, handleImageFile]);
 
   if (!task) return (
     <div style={{
@@ -16,7 +113,7 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
       height: '100%', color: 'var(--text-light)', fontSize: '13px',
       padding: '40px 20px', textAlign: 'center', gap: '8px',
     }}>
-      <div style={{ fontSize: '24px', opacity: 0.4 }}>◎</div>
+      <div style={{ fontSize: '24px', opacity: 0.4 }}>&#9678;</div>
       Click a task to see details
     </div>
   );
@@ -29,8 +126,23 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
     : task.status === 'in-progress' ? 'badge-in-progress'
     : 'badge-pending';
 
+  const attachments = task.attachments || [];
+
   return (
-    <div style={{ padding: '20px', overflow: 'auto', height: '100%' }}>
+    <div
+      style={{
+        padding: '20px', overflow: 'auto', height: '100%',
+        border: dragging ? '2px dashed var(--accent)' : '2px solid transparent',
+        borderRadius: 'var(--radius)',
+        transition: 'border-color 0.2s',
+        background: dragging ? 'var(--accent-light)' : undefined,
+      }}
+      onPaste={handlePaste}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <button
           onClick={() => {
@@ -41,8 +153,13 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
           style={{ cursor: 'pointer', border: 'none', fontFamily: 'var(--font)', transition: 'all 0.15s' }}
           title="Click to cycle status"
         >
-          {task.status} ↻
+          {task.status} &#8635;
         </button>
+        {pastedFeedback && (
+          <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600, animation: 'fadeIn 0.2s' }}>
+            Pasted!
+          </span>
+        )}
       </div>
 
       {task.status === 'in-progress' && task.progress ? (
@@ -113,6 +230,66 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
         />
       </div>
 
+      {/* Attachments section */}
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          Screenshots
+        </div>
+        {attachments.length === 0 ? (
+          <div style={{
+            fontSize: '11px', color: 'var(--text-light)', fontStyle: 'italic',
+            padding: '12px', textAlign: 'center',
+            border: '1px dashed var(--border)', borderRadius: '6px',
+          }}>
+            Paste or drop screenshots here
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {attachments.map(att => (
+              <div
+                key={att.id}
+                style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border)' }}
+                className="attachment-thumb"
+              >
+                {thumbUrls[att.id] ? (
+                  <img
+                    src={thumbUrls[att.id]}
+                    alt={att.filename}
+                    style={{ display: 'block', maxWidth: '100%', maxHeight: '120px', objectFit: 'contain', background: 'var(--bg)' }}
+                  />
+                ) : (
+                  <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', fontSize: '11px', color: 'var(--text-light)' }}>
+                    Loading...
+                  </div>
+                )}
+                <div style={{
+                  fontSize: '10px', color: 'var(--text-muted)', padding: '3px 6px',
+                  background: 'var(--bg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {att.filename}
+                </div>
+                <button
+                  onClick={() => onDeleteAttachment(task.id, att.id)}
+                  className="attachment-delete-btn"
+                  style={{
+                    position: 'absolute', top: '4px', right: '4px',
+                    width: '20px', height: '20px', borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.6)', color: 'white',
+                    border: 'none', cursor: 'pointer', fontSize: '12px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    opacity: 0, transition: 'opacity 0.15s',
+                    lineHeight: 1, padding: 0, fontFamily: 'var(--font)',
+                  }}
+                  title="Delete attachment"
+                >
+                  &#215;
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {(() => {
         const otherTasks = (tasks || []).filter(t => t.id !== task.id && (t.status === 'pending' || t.status === 'in-progress'));
         if (otherTasks.length === 0) return null;
@@ -169,7 +346,7 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
           onMouseOver={e => e.target.style.opacity = '0.85'}
           onMouseOut={e => e.target.style.opacity = '1'}
         >
-          Queue ▶
+          Queue &#9654;
         </button>
       ) : null}
 

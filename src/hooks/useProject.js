@@ -154,5 +154,5 @@ export function useProject() {
     return () => clearInterval(pollTimer.current);
   }, [connected, dirHandle]);
 
-  return { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName };
+  return { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle };
 }

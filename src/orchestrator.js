@@ -121,6 +121,9 @@ Output a brief status:
 
 Same as \`next\` but for a specific task. Read manager notes, explore codebase, present plan, delegate, review, report.
 
+If the task has attachments (screenshots), read them from \`.devmanager/attachments/{taskId}/\` using the Read tool.
+These are visual references from the manager — screenshots of designs, bugs, or expected behavior.
+
 ---
 
 ## \`/orchestrator arrange\`

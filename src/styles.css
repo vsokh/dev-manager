@@ -96,6 +96,9 @@ input, textarea { color: var(--text); }
 /* Activity row — show remove button on hover */
 .activity-row:hover .activity-remove { opacity: 1 !important; }
 
+/* Attachment thumbnails — show delete button on hover */
+.attachment-thumb:hover .attachment-delete-btn { opacity: 1 !important; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
