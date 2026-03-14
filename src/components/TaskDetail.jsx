@@ -211,15 +211,37 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
         </div>
       ) : null}
 
+      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Epic</span>
+        <input
+          value={task.group || ''}
+          onInput={e => onUpdateTask(task.id, { group: e.target.value || undefined })}
+          placeholder="None"
+          list="epic-list"
+          style={{
+            flex: 1, padding: '3px 8px', fontSize: '12px', fontFamily: 'var(--font)',
+            border: '1px solid var(--border)', borderRadius: '4px',
+            background: 'var(--bg)', outline: 'none',
+          }}
+          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
+        />
+        <datalist id="epic-list">
+          {(tasks || []).map(t => t.group).filter(Boolean).filter((g, i, a) => a.indexOf(g) === i).map(g => (
+            <option key={g} value={g} />
+          ))}
+        </datalist>
+      </div>
+
       <div style={{ marginBottom: '16px' }}>
         <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Notes for Claude
+          {task.manual ? 'Steps / Notes' : 'Notes for Claude'}
         </div>
         <textarea
           value={localNote}
           onInput={e => setLocalNote(e.target.value)}
           onBlur={() => onUpdateNotes(task.id, localNote)}
-          placeholder="Add notes..."
+          placeholder={task.manual ? 'What you need to do...' : 'Instructions for Claude...'}
           rows="4"
           style={{
             width: '100%', fontSize: '12px', fontFamily: 'var(--font)',
@@ -360,7 +382,23 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
         );
       })()}
 
-      {task.status === 'pending' || task.status === 'paused' ? (
+      {(task.status === 'pending' || task.status === 'paused') && task.manual ? (
+        <button
+          onClick={() => onUpdateTask(task.id, { status: 'done' })}
+          style={{
+            width: '100%', padding: '8px 16px',
+            background: 'var(--success)', color: 'white',
+            border: 'none', borderRadius: 'var(--radius-sm)',
+            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font)',
+            cursor: 'pointer', transition: 'opacity 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          }}
+          onMouseOver={e => e.target.style.opacity = '0.85'}
+          onMouseOut={e => e.target.style.opacity = '1'}
+        >
+          Mark done &#10003;
+        </button>
+      ) : (task.status === 'pending' || task.status === 'paused') && !task.manual ? (
         <button
           onClick={() => onQueue(task)}
           style={{

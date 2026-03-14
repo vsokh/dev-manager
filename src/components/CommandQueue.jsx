@@ -99,6 +99,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
     const status = getItemStatus(item);
     const btn = getButtonStyle(item);
     const task = taskMap.get(item.task);
+    const isManual = task?.manual;
     const isActive = status === 'waiting' || status === 'working';
     const isPaused = status === 'paused';
     const rowBg = isActive ? (status === 'waiting' ? 'rgba(196,132,90,0.06)' : 'rgba(106,141,190,0.06)')
@@ -109,17 +110,25 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
         padding: '6px 12px', borderBottom: '1px solid var(--border)',
         background: rowBg,
       }}>
-        <button
-          onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
-          title={isPaused ? 'Resume task' : projectPath ? 'Launch in terminal' : 'Set project path first'}
-          className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
-          style={{
-            padding: '4px 8px', background: btn.bg,
-            color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
-            fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
-            flexShrink: 0, lineHeight: 1,
-          }}
-        >{btn.icon}</button>
+        {isManual ? (
+          <span title="Manual task" style={{
+            padding: '3px 6px', fontSize: '9px', fontWeight: 700, flexShrink: 0,
+            background: 'var(--border)', color: 'var(--text-light)', borderRadius: '3px',
+            letterSpacing: '0.03em',
+          }}>YOU</span>
+        ) : (
+          <button
+            onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
+            title={isPaused ? 'Resume task' : projectPath ? 'Launch in terminal' : 'Set project path first'}
+            className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
+            style={{
+              padding: '4px 8px', background: btn.bg,
+              color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
+              fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+              flexShrink: 0, lineHeight: 1,
+            }}
+          >{btn.icon}</button>
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.taskName}</span>
           {isActive && task?.progress ? (
@@ -233,6 +242,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             const status = getItemStatus(item);
             const btn = getButtonStyle(item);
             const task = taskMap.get(item.task);
+            const isManual = task?.manual;
             const isActive = status === 'waiting' || status === 'working';
             const isPaused = status === 'paused';
             const rowBg = isActive ? (status === 'waiting' ? 'rgba(196,132,90,0.06)' : 'rgba(106,141,190,0.06)')
@@ -265,17 +275,23 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                   display: 'flex', alignItems: 'center', gap: '6px',
                   padding: '4px 8px 4px 4px', flex: 1, minWidth: 0,
                 }}>
-                  <button
-                    onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
-                    title={isPaused ? 'Resume task' : projectPath ? 'Launch in terminal' : 'Set project path first'}
-                    className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
-                    style={{
-                      padding: '4px 8px', background: btn.bg,
-                      color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
-                      fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
-                      flexShrink: 0, lineHeight: 1,
-                    }}
-                  >{btn.icon}</button>
+                  {isManual ? (
+                    <span title="Manual task (you)" style={{
+                      padding: '4px 8px', fontSize: '12px', flexShrink: 0, lineHeight: 1,
+                    }}>&#9997;</span>
+                  ) : (
+                    <button
+                      onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
+                      title={isPaused ? 'Resume task' : projectPath ? 'Launch in terminal' : 'Set project path first'}
+                      className={isActive && !isLaunched ? 'task-card-in-progress' : undefined}
+                      style={{
+                        padding: '4px 8px', background: btn.bg,
+                        color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
+                        fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                        flexShrink: 0, lineHeight: 1,
+                      }}
+                    >{btn.icon}</button>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.taskName}</span>
                     {isActive && task?.progress ? (

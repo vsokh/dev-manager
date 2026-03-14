@@ -164,6 +164,19 @@ export function useProject() {
         let queue = [...(stateData.queue || [])];
 
         for (const [taskId, prog] of Object.entries(progressEntries)) {
+          // Handle arrange completion (non-task progress file)
+          if (taskId === 'arrange' && prog.status === 'done') {
+            activity.unshift({
+              id: 'act_' + Date.now() + '_arrange',
+              time: Date.now(),
+              label: prog.label || 'Tasks arranged into dependency graph',
+            });
+            await deleteProgressFile(dirHandle, 'arrange');
+            needsWrite = true;
+            stateChanged = true;
+            continue;
+          }
+
           const id = Number(taskId);
           const idx = tasks.findIndex(t => t.id === id);
           if (idx === -1) continue;

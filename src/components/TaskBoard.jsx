@@ -1,8 +1,31 @@
 import React, { useState, useMemo } from 'react';
 import { CardForm } from './CardForm.jsx';
 
-export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask }) {
+export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask }) {
   const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'done'), [tasks]);
+  const doneTasks = useMemo(() => tasks.filter(t => t.status === 'done'), [tasks]);
+  const allGroups = useMemo(() => [...new Set(tasks.map(t => t.group).filter(Boolean))], [tasks]);
+  const pendingGroups = useMemo(() => {
+    const grouped = new Map();
+    grouped.set(null, []); // ungrouped
+    for (const t of pendingTasks) {
+      const g = t.group || null;
+      if (!grouped.has(g)) grouped.set(g, []);
+      grouped.get(g).push(t);
+    }
+    // Remove empty null group
+    if (grouped.get(null).length === 0) grouped.delete(null);
+    return grouped;
+  }, [pendingTasks]);
+  const doneGroups = useMemo(() => {
+    const grouped = new Map();
+    for (const t of doneTasks) {
+      const g = t.group || 'Other';
+      if (!grouped.has(g)) grouped.set(g, []);
+      grouped.get(g).push(t);
+    }
+    return grouped;
+  }, [doneTasks]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
 
@@ -60,14 +83,7 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
     };
   };
 
-  return (
-    <div>
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
-          Up next
-        </div>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          {pendingTasks.map(task => (
+  const renderTaskCard = (task) => (
             <div
               key={task.id}
               onClick={() => onSelectTask(task.id)}
@@ -76,7 +92,13 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
               onMouseOver={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
               onMouseOut={e => e.currentTarget.style.boxShadow = selectedTask === task.id ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)'}
             >
-              <div style={{ fontWeight: 600, fontSize: '13px' }}>{task.name}</div>
+              <div style={{ fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                {task.manual ? <span title="Manual task" style={{
+                  fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '3px',
+                  background: 'var(--border)', color: 'var(--text-light)', letterSpacing: '0.03em',
+                }}>YOU</span> : null}
+                {task.name}
+              </div>
               {task.dependsOn && task.dependsOn.length > 0 ? (
                 <div style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   after: {task.dependsOn.map(depId => {
@@ -125,35 +147,54 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
                 </div>
               ) : null}
             </div>
-          ))}
-          {pendingTasks.length === 0 && !showNewForm ? (
-            <div style={{
-              padding: '20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '13px',
-              width: '100%',
-            }}>
-              No tasks yet
-            </div>
-          ) : null}
-          {!showNewForm ? (
-            <div
-              onClick={() => setShowNewForm(true)}
-              style={{
-                border: '2px dashed var(--border)',
-                borderRadius: 'var(--radius-sm)', padding: '12px 16px',
-                cursor: 'pointer', transition: 'all 0.15s',
-                minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--text-light)', fontSize: '13px', fontWeight: 500,
-              }}
-              onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
-              onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-light)'; }}
-            >+ Add task</div>
-          ) : null}
+  );
+
+  return (
+    <div>
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+          Up next
         </div>
+        {[...pendingGroups.entries()].map(([groupName, groupTasks]) => (
+          <div key={groupName || '__ungrouped'} style={{ marginBottom: groupName ? '12px' : '0' }}>
+            {groupName ? (
+              <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-light)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {groupName}
+              </div>
+            ) : null}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {groupTasks.map(renderTaskCard)}
+            </div>
+          </div>
+        ))}
+        {pendingTasks.length === 0 && !showNewForm ? (
+          <div style={{
+            padding: '20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '13px',
+            width: '100%',
+          }}>
+            No tasks yet
+          </div>
+        ) : null}
+        {!showNewForm ? (
+          <div
+            onClick={() => setShowNewForm(true)}
+            style={{
+              border: '2px dashed var(--border)',
+              borderRadius: 'var(--radius-sm)', padding: '12px 16px',
+              cursor: 'pointer', transition: 'all 0.15s',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--text-light)', fontSize: '13px', fontWeight: 500,
+              marginTop: '8px',
+            }}
+            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-light)'; }}
+          >+ Add task</div>
+        ) : null}
         {showNewForm ? (
           <div style={{ marginTop: '12px', maxWidth: '380px' }}>
             <CardForm
               card={null}
+              groups={allGroups}
               onSave={(task) => { onAddTask(task); setShowNewForm(false); }}
               onCancel={() => setShowNewForm(false)}
             />
@@ -199,7 +240,7 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
         ) : null}
       </div>
 
-      {features.length > 0 ? (
+      {doneTasks.length > 0 ? (
         <div>
           <div
             onClick={() => setShowCompleted(p => !p)}
@@ -209,32 +250,41 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
             }}
           >
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Shipped
+              Done
             </span>
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: '20px', height: '20px', borderRadius: '50%',
               background: 'var(--success-light)', color: 'var(--success)',
               fontSize: '11px', fontWeight: 700,
-            }}>{features.length}</span>
+            }}>{doneTasks.length}</span>
             <span style={{ fontSize: '11px', color: 'var(--text-light)', transform: showCompleted ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
           </div>
           {showCompleted ? (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingTop: '4px' }}>
-              {features.map(f => (
-                <div key={f.id} style={{
-                  background: 'var(--success-light)', border: '1px solid var(--success)',
-                  borderRadius: 'var(--radius-sm)', padding: '10px 14px',
-                  minWidth: '140px', flex: '1 1 140px', maxWidth: '220px',
-                }}>
-                  <div style={{ fontWeight: 600, fontSize: '13px', color: 'var(--success)', marginBottom: '2px' }}>
-                    {f.name}
+            <div style={{ paddingTop: '4px' }}>
+              {[...doneGroups.entries()].map(([groupName, groupTasks]) => (
+                <div key={groupName} style={{ marginBottom: '8px' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--success)', opacity: 0.6, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {groupName}
                   </div>
-                  {f.description ? (
-                    <div style={{ fontSize: '11px', color: 'var(--success)', opacity: 0.8, lineHeight: 1.4 }}>
-                      {f.description}
-                    </div>
-                  ) : null}
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {groupTasks.map(t => (
+                      <div key={t.id} onClick={() => onSelectTask(t.id)} style={{
+                        background: 'var(--success-light)', border: selectedTask === t.id ? '2px solid var(--success)' : '1px solid var(--success)',
+                        borderRadius: 'var(--radius-sm)', padding: '8px 12px',
+                        cursor: 'pointer', transition: 'all 0.15s',
+                      }}>
+                        <span style={{ fontWeight: 500, fontSize: '12px', color: 'var(--success)' }}>{t.name}</span>
+                        {t.commitRef ? (
+                          <span style={{
+                            fontFamily: 'monospace', fontSize: '9px', fontWeight: 600,
+                            background: 'rgba(90,158,114,0.15)', color: 'var(--success)',
+                            padding: '0 4px', borderRadius: '3px', marginLeft: '6px',
+                          }}>{t.commitRef}</span>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

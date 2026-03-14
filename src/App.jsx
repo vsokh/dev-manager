@@ -86,7 +86,7 @@ export function App() {
 
   // Convenience accessors
   const tasks = data.tasks || [];
-  const features = data.features || [];
+  // features array is legacy — done tasks now shown directly from tasks
   const queue = data.queue || [];
   const taskNotes = data.taskNotes || {};
   const activity = data.activity || [];
@@ -312,7 +312,6 @@ export function App() {
             <div style={{ padding: '16px' }}>
               <TaskBoard
                 tasks={tasks}
-                features={features}
                 selectedTask={selectedTask}
                 onSelectTask={handleSelectTask}
                 onAddTask={handleAddTask}

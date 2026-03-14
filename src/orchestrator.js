@@ -247,17 +247,24 @@ These are visual references from the manager — screenshots of designs, bugs, o
 
 ## \`/orchestrator arrange\`
 
-Analyze all pending tasks and determine their dependency graph. Do NOT execute anything — only arrange.
+Analyze all pending tasks: assign epics (feature groups) and determine dependency graph. Do NOT execute anything — only arrange.
 
 ### Steps:
-1. Read \`.devmanager/state.json\` — get all tasks where \`status\` is \`pending\`
+1. Read \`.devmanager/state.json\` — get all tasks where \`status\` is \`pending\` or \`paused\`
 2. Use an Explore agent to understand the codebase and how tasks relate
-3. For each task, determine which other tasks must be completed first
-4. Update each task's \`dependsOn\` array with the IDs of its prerequisites
-5. Write the updated tasks back to \`.devmanager/state.json\`
-6. Add an activity entry: \`{ "id": "act_{timestamp}", "time": {ms}, "label": "Tasks arranged into dependency graph" }\`
+3. **Assign epics**: group related tasks by feature area. Set the \`group\` field on each task (e.g. "Auth", "Events", "DevToolbar", "Profile"). Use existing group names if tasks already have them. Only tasks without a \`group\` need one assigned.
+4. **Set dependencies**: for each task, determine which other tasks must be completed first. Update \`dependsOn\` arrays.
+5. Write the updated tasks back to \`.devmanager/state.json\` — ONLY modify \`dependsOn\` and \`group\` fields, do NOT add activity entries, do NOT modify any other fields (name, status, notes, etc.)
+6. Write \`.devmanager/progress/arrange.json\`: \`{ "status": "done", "label": "Tasks arranged: epics + dependencies" }\`
+   Dev Manager will pick this up, add the activity entry with the correct timestamp, and delete the file.
 
-### Rules:
+### Epic rules:
+- Group by feature area, not by technical layer. "Auth" not "Frontend".
+- Keep epic names short (1-2 words). Consistent casing.
+- Reuse existing epic names when possible — check what \`group\` values already exist.
+- Every task should have an epic. If it doesn't fit anywhere, use "Other".
+
+### Dependency rules:
 - **MOST tasks should have NO dependencies.** Only add a dependency when task B literally cannot work without task A's output.
 - If two tasks touch different files or different features, they are independent — no dependency.
 - A task with no prerequisites gets \`dependsOn: []\` or omit the field entirely.
@@ -267,14 +274,18 @@ Analyze all pending tasks and determine their dependency graph. Do NOT execute a
 - The goal is maximum parallelism. When in doubt, don't add the dependency.
 
 ### Output to user:
-After writing state.json, present the dependency graph:
+After writing state.json, present the result:
 \`\`\`
+## Epics
+- Auth: Google login, Forgot password, OAuth error handling, Configure Google OAuth
+- DevToolbar: DevToolbar rework
+
+## Execution order
 Phase 1 (parallel): Task A, Task B
 Phase 2: Task C (after A), Task D (after A, B)
-Phase 3: Task E (after C, D)
 \`\`\`
 
-Dev Manager will pick up the changes within 3 seconds and show the graph visually.
+Dev Manager will pick up the changes within 3 seconds and show the groups visually.
 
 ---
 
@@ -372,9 +383,10 @@ Dev Manager will merge this into state.json, add an activity entry, remove the t
 
 1. **Manager notes override everything.** If the manager says "skip X, focus on Y" — do that.
 2. **Delegate, don't implement.** Use sub-agents for code changes. You plan and review.
-3. **Always write progress.** Update \`.devmanager/progress/{taskId}.json\` at every step so Dev Manager stays in sync. Never write to state.json directly — Dev Manager handles the merge.
+3. **NEVER add activity entries to state.json.** Dev Manager handles all activity timestamps. For task progress, write to \`.devmanager/progress/{taskId}.json\`. For arrange completion, write to \`.devmanager/progress/arrange.json\`. For notes, write to \`.devmanager/notes/{taskId}.md\`. The \`arrange\` command may update \`dependsOn\` arrays in state.json but NOTHING else — no activity, no new tasks, no status changes.
 4. **Always wait for approval.** Present the plan, then STOP. Never launch sub-agents without explicit user go-ahead.
 5. **Branch per task.** Always create \`task-{id}-{slug}\` branch before coding. Merge back to master when done. This enables safe parallel execution.
-6. **Keep it simple.** Don't over-engineer. Follow existing project patterns.
-7. **Everything in \`.devmanager/\`.** Specs, state — all Dev Manager files stay in one folder.
+6. **Never commit to master.** All code changes go to feature branches. Sub-agents must verify their branch before committing.
+7. **Keep it simple.** Don't over-engineer. Follow existing project patterns.
+8. **Stay in scope.** Only do what the task asks. Do NOT create new tasks, rearrange dependencies, or modify other tasks. If you discover something that needs a new task, tell the user — don't write it yourself.
 `;
