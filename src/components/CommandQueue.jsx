@@ -135,10 +135,30 @@ export function CommandQueue({ queue, tasks, onLaunch, onRemove, onClear, launch
             padding: '4px 12px 2px',
             fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
             letterSpacing: '0.06em', color: 'var(--text-light)',
+            display: 'flex', alignItems: 'center', gap: '8px',
           }}>
-            Phase {idx + 1}
+            <span>Phase {idx + 1}</span>
             {phaseItems.length > 1 ? (
-              <span style={{ fontWeight: 400, marginLeft: '6px', opacity: 0.7, textTransform: 'none', letterSpacing: 'normal' }}>parallel</span>
+              <>
+                <span style={{ fontWeight: 400, opacity: 0.7, textTransform: 'none', letterSpacing: 'normal' }}>parallel</span>
+                <button
+                  onClick={() => {
+                    phaseItems.forEach((item, i) => {
+                      setTimeout(() => onLaunch(itemKey(item), cmdForItem(item), item.taskName), i * 300);
+                    });
+                  }}
+                  title="Launch all tasks in this phase"
+                  style={{
+                    padding: '1px 8px', background: 'none', color: 'var(--accent)',
+                    border: '1px solid var(--accent)', borderRadius: '4px',
+                    fontSize: '10px', fontWeight: 600, cursor: 'pointer',
+                    textTransform: 'none', letterSpacing: 'normal',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseOver={e => { e.target.style.background = 'var(--accent)'; e.target.style.color = 'white'; }}
+                  onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--accent)'; }}
+                >▶ Launch phase</button>
+              </>
             ) : null}
           </div>
           {/* Phase items with tree lines */}
