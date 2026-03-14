@@ -5,7 +5,6 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [localNote, setLocalNote] = useState('');
-  const [localDescription, setLocalDescription] = useState('');
   const [pastedFeedback, setPastedFeedback] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [thumbUrls, setThumbUrls] = useState({});
@@ -14,7 +13,6 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
   useEffect(() => {
     setLocalNote(notes || '');
-    setLocalDescription(task?.description || '');
     setLocalBlockedReason(task?.blockedReason || '');
     setEditing(false);
   }, [task?.id, notes]);
@@ -251,22 +249,6 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         </h3>
       )}
 
-      <div style={{ marginBottom: '12px' }}>
-        <textarea
-          value={localDescription}
-          onInput={e => setLocalDescription(e.target.value)}
-          onBlur={() => onUpdateTask(task.id, { description: localDescription })}
-          placeholder="Add a description..."
-          rows="2"
-          style={{
-            width: '100%', fontSize: '12px', fontFamily: 'var(--font)',
-            padding: '8px', border: '1px solid var(--border)', borderRadius: '6px',
-            background: 'var(--bg)', resize: 'vertical', outline: 'none',
-            transition: 'border-color 0.15s', lineHeight: 1.5,
-          }}
-          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-        />
-      </div>
 
       {task.skills && task.skills.length > 0 ? (
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '12px' }}>
