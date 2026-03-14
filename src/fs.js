@@ -14,24 +14,43 @@ export function openFsDb() {
   });
 }
 
-export async function saveDirHandle(handle) {
+export async function saveDirHandle(handle, projectName) {
   const db = await openFsDb();
   const tx = db.transaction(FS_STORE, 'readwrite');
-  tx.objectStore(FS_STORE).put(handle, 'projectDir');
+  const store = tx.objectStore(FS_STORE);
+  store.put(handle, 'project_' + (projectName || handle.name));
+  store.put(projectName || handle.name, 'lastProject');
   return new Promise(r => { tx.oncomplete = r; });
 }
 
-export async function loadDirHandle() {
+export async function loadDirHandle(projectName) {
   const db = await openFsDb();
   const tx = db.transaction(FS_STORE, 'readonly');
-  const req = tx.objectStore(FS_STORE).get('projectDir');
-  return new Promise(r => { req.onsuccess = () => r(req.result || null); });
+  const store = tx.objectStore(FS_STORE);
+  // If projectName given, load that specific handle; otherwise load last used
+  if (projectName) {
+    const req = store.get('project_' + projectName);
+    return new Promise(r => { req.onsuccess = () => r(req.result || null); });
+  }
+  const lastReq = store.get('lastProject');
+  return new Promise(resolve => {
+    lastReq.onsuccess = () => {
+      const last = lastReq.result;
+      if (!last) return resolve(null);
+      const handleReq = store.get('project_' + last);
+      handleReq.onsuccess = () => resolve(handleReq.result || null);
+    };
+  });
 }
 
-export async function clearDirHandle() {
+export async function clearDirHandle(projectName) {
   const db = await openFsDb();
   const tx = db.transaction(FS_STORE, 'readwrite');
-  tx.objectStore(FS_STORE).delete('projectDir');
+  const store = tx.objectStore(FS_STORE);
+  if (projectName) {
+    store.delete('project_' + projectName);
+  }
+  store.delete('lastProject');
 }
 
 export async function verifyHandle(handle) {

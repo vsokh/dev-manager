@@ -31,7 +31,18 @@ export function useProject() {
   // Keep dataRef in sync
   useEffect(() => { dataRef.current = data; }, [data]);
 
+  // Flush any pending debounced save immediately
+  const flushSave = useCallback(async () => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+  }, []);
+
   const connectWithHandle = useCallback(async (handle) => {
+    // Flush any pending save from previous project before switching
+    await flushSave();
+
     setStatus('connecting');
     const name = handle.name;
     setProjectName(name);
@@ -52,24 +63,28 @@ export function useProject() {
     }
 
     // Use project name from state if available
-    if (stateData.project) setProjectName(stateData.project);
+    const resolvedName = stateData.project || name;
+    setProjectName(resolvedName);
+
+    // Remember this tab's project so refresh reconnects to the right one
+    try { sessionStorage.setItem('dm_tab_project', resolvedName); } catch {}
 
     // Ensure orchestrator skill exists in the project
     await ensureOrchestratorSkill(handle);
 
-    await saveDirHandle(handle);
+    await saveDirHandle(handle, resolvedName);
     setDirHandle(handle);
     setData(stateData);
     setConnected(true);
     setStatus('connected');
-  }, []);
+  }, [flushSave]);
 
-  // On mount: try to restore saved handle (but don't auto-connect -- need user gesture for permission)
+  // On mount: try to restore this tab's project (sessionStorage is per-tab)
   useEffect(() => {
     (async () => {
-      const handle = await loadDirHandle();
+      const tabProject = sessionStorage.getItem('dm_tab_project') || null;
+      const handle = await loadDirHandle(tabProject);
       if (handle && await verifyHandle(handle)) {
-        // Permission already granted, auto-connect
         await connectWithHandle(handle);
       }
     })();
@@ -78,22 +93,13 @@ export function useProject() {
   const connect = useCallback(async () => {
     setStatus('connecting');
 
-    // Try restoring saved handle first
-    let handle = await loadDirHandle();
-    if (handle) {
-      if (await verifyHandle(handle) || await requestAccess(handle)) {
-        await connectWithHandle(handle);
-        return;
-      }
-    }
-
-    // Pick new directory
+    // Always show directory picker — the "Last opened" button handles reconnection
     if (!window.showDirectoryPicker) {
       setStatus('error');
       return;
     }
     try {
-      handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
       await connectWithHandle(handle);
     } catch (e) {
       if (e.name !== 'AbortError') setStatus('error');
@@ -102,7 +108,9 @@ export function useProject() {
   }, [connectWithHandle]);
 
   const reconnect = useCallback(async () => {
-    const handle = await loadDirHandle();
+    // Load the handle for the specific last project (not just any stored handle)
+    const targetName = lastProjectName || null;
+    const handle = await loadDirHandle(targetName);
     if (handle) {
       if (await requestAccess(handle)) {
         await connectWithHandle(handle);
@@ -111,18 +119,26 @@ export function useProject() {
     }
     // If handle doesn't work, fall back to picker
     await connect();
-  }, [connect, connectWithHandle]);
+  }, [connect, connectWithHandle, lastProjectName]);
 
-  const disconnect = useCallback(() => {
-    clearTimeout(saveTimer.current);
+  const disconnect = useCallback(async () => {
+    // Flush pending save before disconnecting
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+      // Write current data to disk immediately
+      if (dirHandle && dataRef.current) {
+        await writeState(dirHandle, dataRef.current);
+      }
+    }
     clearInterval(pollTimer.current);
     setDirHandle(null);
     setConnected(false);
     setData(null);
     setProjectName('');
     setStatus('disconnected');
-    clearDirHandle();
-  }, []);
+    // Don't clear the handle from IndexedDB — keep it for reconnecting later
+  }, [dirHandle]);
 
   // Save function (debounced)
   const save = useCallback((newData) => {
