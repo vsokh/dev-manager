@@ -46,4 +46,5 @@ if "!cmd!"=="__launch_file" (
 
 :: Launch as new tab in existing Windows Terminal (or new window if none open)
 :: --suppressApplicationTitle prevents claude from overriding the tab name
-start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" cmd /k claude --dangerously-skip-permissions "!cmd!"
+:: "title" command persists the name after claude exits
+start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" cmd /k "title !title! && claude --dangerously-skip-permissions "!cmd!""

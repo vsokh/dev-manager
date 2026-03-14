@@ -227,7 +227,7 @@ export function App() {
 
     // Build wt.exe command with multiple new-tab segments
     const tabArgs = items.map(item =>
-      `new-tab --title "${shortTitle(item.taskName)}" --suppressApplicationTitle -d "${dir}" cmd /k claude --dangerously-skip-permissions "${item.cmd}"`
+      `new-tab --title "${shortTitle(item.taskName)}" --suppressApplicationTitle -d "${dir}" cmd /k "title ${shortTitle(item.taskName)} && claude --dangerously-skip-permissions ${item.cmd}"`
     ).join(' ; ');
     const script = `@echo off\r\nstart "" wt.exe -w 0 ${tabArgs}\r\n`;
 
