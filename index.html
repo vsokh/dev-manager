@@ -235,17 +235,13 @@ All project state. Dev Manager writes to it, you read and write back. Dev Manage
 ### 1. Read the queue
 Read \`.devmanager/state.json\`. Pick first item from \`queue\`.
 
-If empty: check \`drafts\`. If drafts exist, list them. Otherwise: "Nothing queued. Add tasks in Dev Manager."
+If empty: "Nothing queued. Add tasks in Dev Manager."
 
 ### 2. Understand the task
 
-**Existing task** \`{ "task": N, "taskName": "...", "notes": "..." }\`:
+Queue item format: \`{ "task": N, "taskName": "...", "notes": "..." }\`
 - Read spec at \`.devmanager/specs/{NN}-*.md\` if it exists
 - Read \`notes\` — manager's instructions (HIGH PRIORITY)
-
-**Draft task** \`{ "action": "promote-and-execute", "cardId": "...", "taskName": "...", "description": "...", "notes": "..." }\`:
-- Promote first: assign next ID, create spec at \`.devmanager/specs/{NN}-{slug}.md\`, add to \`tasks\` array
-- Then proceed as existing task
 
 ### 3. Plan the approach
 
@@ -306,7 +302,6 @@ When the sub-agent returns:
 Update \`.devmanager/state.json\`:
 - Remove executed item from \`queue\`
 - Update task in \`tasks\` array: \`status: "done"\`, \`completedAt: "YYYY-MM-DD"\`
-- Remove promoted draft from \`drafts\` if applicable
 - Add to \`activity\`: \`{ "id": "act_{timestamp}", "time": {ms}, "label": "{taskName} completed" }\`
 
 Then check if there are more items in the queue. If yes, ask: "Next up: {taskName}. Continue?"
@@ -354,7 +349,7 @@ Agent(description="Handle OAuth errors", prompt="...")
 
 ---
 
-## Spec file format (for promoted drafts)
+## Spec file format
 
 \`\`\`markdown
 # Task {N}: {title}
@@ -389,10 +384,8 @@ function createDefaultState(projectName) {
     project: projectName,
     tasks: [],
     features: [],
-    drafts: [],
     queue: [],
     taskNotes: {},
-    draftNotes: {},
     activity: [{ id: 'act_init', time: Date.now(), label: 'Project initialized' }],
   };
 }
@@ -739,11 +732,12 @@ function CardForm({ card, onSave, onCancel }) {
       ? manualSkills.split(',').map(s => s.trim()).filter(Boolean)
       : suggested;
     onSave({
-      id: card?.id || 'card_' + Date.now(),
-      title: title.trim(),
+      id: card?.id,
+      name: title.trim(),
+      fullName: title.trim(),
       description: description.trim(),
       skills: finalSkills,
-      createdAt: card?.createdAt || new Date().toISOString(),
+      status: card?.status || 'pending',
     });
   };
 
@@ -816,7 +810,7 @@ function CardForm({ card, onSave, onCancel }) {
   `;
 }
 
-function TaskBoard({ tasks, features, drafts, selectedTask, onSelectTask, onAddDraft, onDeleteDraft }) {
+function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTask }) {
   const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'done'), [tasks]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -843,38 +837,10 @@ function TaskBoard({ tasks, features, drafts, selectedTask, onSelectTask, onAddD
               onMouseOver=${e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
               onMouseOut=${e => e.currentTarget.style.boxShadow = selectedTask === task.id ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)'}
             >
-              <div style=${{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <span class="badge badge-pending" style=${{ fontSize: '10px' }}>${task.status}</span>
-              </div>
               <div style=${{ fontWeight: 600, fontSize: '13px' }}>${task.name}</div>
             </div>
           `)}
-          ${drafts.map(card => h`
-            <div
-              key=${card.id}
-              onClick=${() => onSelectTask('draft:' + card.id)}
-              style=${{
-                background: 'var(--surface)',
-                border: selectedTask === 'draft:' + card.id ? '2px solid var(--amber)' : '1px dashed var(--amber)',
-                borderRadius: 'var(--radius-sm)', padding: '12px 16px',
-                cursor: 'pointer', transition: 'all 0.15s',
-                boxShadow: selectedTask === 'draft:' + card.id ? '0 2px 8px rgba(196,132,90,0.2)' : 'var(--shadow-sm)',
-                minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
-              }}
-              onMouseOver=${e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
-              onMouseOut=${e => e.currentTarget.style.boxShadow = selectedTask === 'draft:' + card.id ? '0 2px 8px rgba(196,132,90,0.2)' : 'var(--shadow-sm)'}
-            >
-              <div style=${{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                <span class="badge" style=${{ fontSize: '10px', background: 'var(--amber-light)', color: 'var(--amber)' }}>draft</span>
-                <button onClick=${(e) => { e.stopPropagation(); onDeleteDraft(card.id); }} title="Remove" style=${{
-                  background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px',
-                  color: 'var(--text-light)', padding: '0 2px', lineHeight: 1,
-                }}>x</button>
-              </div>
-              <div style=${{ fontWeight: 600, fontSize: '13px' }}>${card.title}</div>
-            </div>
-          `)}
-          ${pendingTasks.length === 0 && drafts.length === 0 && !showNewForm ? h`
+          ${pendingTasks.length === 0 && !showNewForm ? h`
             <div style=${{
               padding: '20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '13px',
               width: '100%',
@@ -902,7 +868,7 @@ function TaskBoard({ tasks, features, drafts, selectedTask, onSelectTask, onAddD
           <div style=${{ marginTop: '12px', maxWidth: '380px' }}>
             <${CardForm}
               card=${null}
-              onSave=${(card) => { onAddDraft(card); setShowNewForm(false); }}
+              onSave=${(task) => { onAddTask(task); setShowNewForm(false); }}
               onCancel=${() => setShowNewForm(false)}
             />
           </div>
@@ -955,22 +921,17 @@ function TaskBoard({ tasks, features, drafts, selectedTask, onSelectTask, onAddD
   `;
 }
 
-function TaskDetail({ task, draft, onQueue, onQueueDraft, onUpdateTask, onDeleteTask, notes, onUpdateNotes, draftNotes, onUpdateDraftNotes }) {
+function TaskDetail({ task, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [localNote, setLocalNote] = useState('');
 
-  const item = task || draft;
-  const isDraft = !!draft;
-  const itemId = isDraft ? draft.id : task?.id;
-  const currentNotes = isDraft ? draftNotes : notes;
-
   useEffect(() => {
-    setLocalNote(currentNotes || '');
+    setLocalNote(notes || '');
     setEditing(false);
-  }, [itemId, currentNotes]);
+  }, [task?.id, notes]);
 
-  if (!item) return h`
+  if (!task) return h`
     <div style=${{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       height: '100%', color: 'var(--text-light)', fontSize: '13px',
@@ -980,70 +941,6 @@ function TaskDetail({ task, draft, onQueue, onQueueDraft, onUpdateTask, onDelete
       Click a task to see details
     </div>
   `;
-
-  if (isDraft) {
-    return h`
-      <div style=${{ padding: '20px', overflow: 'auto', height: '100%' }}>
-        <div style=${{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-          <span class="badge" style=${{ fontSize: '10px', background: 'var(--amber-light)', color: 'var(--amber)' }}>draft</span>
-        </div>
-
-        <h3 style=${{ fontSize: '14px', fontWeight: 600, marginBottom: '6px', lineHeight: 1.4, padding: '4px 0' }}>
-          ${draft.title}
-        </h3>
-
-        ${draft.description ? h`
-          <div style=${{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
-            ${draft.description}
-          </div>
-        ` : null}
-
-        ${draft.skills && draft.skills.length > 0 ? h`
-          <div style=${{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '16px' }}>
-            ${draft.skills.map(s => h`
-              <span key=${s} class="badge badge-accent" style=${{ fontSize: '10px' }}>${s}</span>
-            `)}
-          </div>
-        ` : null}
-
-        <div style=${{ marginBottom: '16px' }}>
-          <div style=${{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Notes for Claude
-          </div>
-          <textarea
-            value=${localNote}
-            onInput=${e => setLocalNote(e.target.value)}
-            onBlur=${() => onUpdateDraftNotes(draft.id, localNote)}
-            placeholder="Any extra instructions..."
-            rows="4"
-            style=${{
-              width: '100%', fontSize: '12px', fontFamily: 'var(--font)',
-              padding: '8px', border: '1px solid var(--border)', borderRadius: '6px',
-              background: 'var(--bg)', resize: 'vertical', outline: 'none',
-              transition: 'border-color 0.15s', lineHeight: 1.5,
-            }}
-            onFocus=${e => e.target.style.borderColor = 'var(--amber)'}
-          />
-        </div>
-
-        <button
-          onClick=${() => onQueueDraft(draft)}
-          style=${{
-            width: '100%', padding: '8px 16px',
-            background: 'var(--amber)', color: 'white',
-            border: 'none', borderRadius: 'var(--radius-sm)',
-            fontSize: '13px', fontWeight: 600, fontFamily: 'var(--font)',
-            cursor: 'pointer', transition: 'opacity 0.2s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-          }}
-          onMouseOver=${e => e.target.style.opacity = '0.85'}
-          onMouseOut=${e => e.target.style.opacity = '1'}
-        >
-          Queue \u25B6
-        </button>
-      </div>
-    `;
-  }
 
   const statusOptions = ['done', 'pending', 'blocked'];
   const currentIdx = statusOptions.indexOf(task.status);
@@ -1157,7 +1054,7 @@ function TaskDetail({ task, draft, onQueue, onQueueDraft, onUpdateTask, onDelete
 }
 
 function CommandQueue({ queue, onLaunch, onRemove, onClear, launchedId, projectPath, onSetPath }) {
-  const itemKey = (item) => item.task || item.cardId;
+  const itemKey = (item) => item.task;
   const [editingPath, setEditingPath] = useState(false);
   const [pathInput, setPathInput] = useState(projectPath || '');
 
@@ -1169,10 +1066,7 @@ function CommandQueue({ queue, onLaunch, onRemove, onClear, launchedId, projectP
   };
 
   // Build command for a queue item
-  const cmdForItem = (item) => {
-    if (item.task) return '/orchestrator task ' + item.task;
-    return '/orchestrator next';
-  };
+  const cmdForItem = (item) => '/orchestrator task ' + item.task;
 
   return h`
     <div>
@@ -1203,11 +1097,8 @@ function CommandQueue({ queue, onLaunch, onRemove, onClear, launchedId, projectP
                     flexShrink: 0, lineHeight: 1,
                   }}
                 >${isLaunched ? '✓' : '▶'}</button>
-                <div style=${{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  ${item.cardId ? h`
-                    <span class="badge" style=${{ fontSize: '9px', background: 'var(--amber-light)', color: 'var(--amber)', flexShrink: 0 }}>new</span>
-                  ` : null}
-                  <span style=${{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${item.taskName}</span>
+                <div style=${{ flex: 1, minWidth: 0 }}>
+                  <span style=${{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>${item.taskName}</span>
                 </div>
                 <button
                   onClick=${() => onRemove(key)}
@@ -1360,10 +1251,8 @@ function App() {
   // Convenience accessors
   const tasks = data.tasks || [];
   const features = data.features || [];
-  const drafts = data.drafts || [];
   const queue = data.queue || [];
   const taskNotes = data.taskNotes || {};
-  const draftNotes = data.draftNotes || {};
   const activity = data.activity || [];
 
   // Helpers to update data and trigger save
@@ -1393,14 +1282,12 @@ function App() {
     updateData({ taskNotes: { ...taskNotes, [id]: note } });
   };
 
-  const handleUpdateDraftNotes = (cardId, note) => {
-    updateData({ draftNotes: { ...draftNotes, [cardId]: note } });
-  };
-
-  const handleAddDraft = (card) => {
-    const newDrafts = [...drafts, card];
-    const newActivity = addActivity('Draft "' + card.title + '" added');
-    updateData({ drafts: newDrafts, activity: newActivity });
+  const handleAddTask = (taskData) => {
+    const maxId = tasks.reduce((max, t) => Math.max(max, typeof t.id === 'number' ? t.id : 0), 0);
+    const newTask = { ...taskData, id: maxId + 1 };
+    const newTasks = [...tasks, newTask];
+    const newActivity = addActivity('"' + newTask.name + '" added');
+    updateData({ tasks: newTasks, activity: newActivity });
   };
 
   const handleDeleteTask = (id) => {
@@ -1413,39 +1300,19 @@ function App() {
     setSelectedTask(null);
   };
 
-  const handleDeleteDraft = (id) => {
-    const newDrafts = drafts.filter(c => c.id !== id);
-    updateData({ drafts: newDrafts });
-  };
-
   const handleQueue = (task) => {
     if (queue.some(q => q.task === task.id)) return;
     const newQueue = [...queue, {
       task: task.id,
       taskName: task.name,
-      skills: task.skills,
       notes: taskNotes[task.id] || '',
     }];
     const newActivity = addActivity(task.name + ' queued');
     updateData({ queue: newQueue, activity: newActivity });
   };
 
-  const handleQueueDraft = (card) => {
-    if (queue.some(q => q.cardId === card.id)) return;
-    const newQueue = [...queue, {
-      action: 'promote-and-execute',
-      cardId: card.id,
-      taskName: card.title,
-      description: card.description || '',
-      skills: card.skills || [],
-      notes: draftNotes[card.id] || '',
-    }];
-    const newActivity = addActivity(card.title + ' queued');
-    updateData({ queue: newQueue, activity: newActivity });
-  };
-
   const handleRemoveFromQueue = (key) => {
-    const newQueue = queue.filter(q => (q.task || q.cardId) !== key);
+    const newQueue = queue.filter(q => q.task !== key);
     updateData({ queue: newQueue });
   };
 
@@ -1475,14 +1342,8 @@ function App() {
     setTimeout(() => setLaunchedId(null), 3000);
   };
 
-  // Selected task/draft data
-  const selectedTaskData = typeof selectedTask === 'string' && selectedTask.startsWith('draft:')
-    ? null
-    : tasks.find(t => t.id === selectedTask) || null;
-
-  const selectedDraftData = typeof selectedTask === 'string' && selectedTask.startsWith('draft:')
-    ? drafts.find(c => c.id === selectedTask.slice(6)) || null
-    : null;
+  // Selected task data
+  const selectedTaskData = tasks.find(t => t.id === selectedTask) || null;
 
   return h`
     <div style=${{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -1503,11 +1364,9 @@ function App() {
               <${TaskBoard}
                 tasks=${tasks}
                 features=${features}
-                drafts=${drafts}
                 selectedTask=${selectedTask}
                 onSelectTask=${handleSelectTask}
-                onAddDraft=${handleAddDraft}
-                onDeleteDraft=${handleDeleteDraft}
+                onAddTask=${handleAddTask}
               />
             </div>
           </div>
@@ -1519,15 +1378,11 @@ function App() {
             <${SectionHeader} title="Detail" />
             <${TaskDetail}
               task=${selectedTaskData}
-              draft=${selectedDraftData}
               onQueue=${handleQueue}
-              onQueueDraft=${handleQueueDraft}
               onUpdateTask=${handleUpdateTask}
               onDeleteTask=${handleDeleteTask}
               notes=${taskNotes[selectedTask] || ''}
               onUpdateNotes=${handleUpdateNotes}
-              draftNotes=${selectedDraftData ? (draftNotes[selectedDraftData.id] || '') : ''}
-              onUpdateDraftNotes=${handleUpdateDraftNotes}
             />
           </div>
         </div>

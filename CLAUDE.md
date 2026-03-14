@@ -58,20 +58,17 @@ Single source of truth for the bidirectional sync.
   "project": "my-project",
   "tasks": [{ "id": 1, "name": "...", "fullName": "...", "status": "pending|done|blocked" }],
   "features": [{ "id": "...", "name": "...", "description": "..." }],
-  "drafts": [{ "id": "card_123", "title": "...", "description": "...", "skills": [] }],
   "queue": [
-    { "task": 1, "taskName": "...", "notes": "..." },
-    { "action": "promote-and-execute", "cardId": "card_123", "taskName": "...", "description": "...", "skills": [], "notes": "..." }
+    { "task": 1, "taskName": "...", "notes": "..." }
   ],
   "taskNotes": { "1": "manager instructions..." },
-  "draftNotes": { "card_123": "extra context..." },
   "activity": [{ "id": "act_123", "time": 1234567890, "label": "Google login completed" }]
 }
 ```
 
 ### Specs directory: `.devmanager/specs/`
 
-When the orchestrator promotes a draft task, it creates a spec file at `.devmanager/specs/{NN}-{slug}.md`. Everything Dev Manager creates stays inside `.devmanager/`.
+When the orchestrator executes a task, it can create a spec file at `.devmanager/specs/{NN}-{slug}.md`. Everything Dev Manager creates stays inside `.devmanager/`.
 
 ## Orchestrator skill (tech lead)
 
