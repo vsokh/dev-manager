@@ -172,11 +172,20 @@ export function App() {
     updateData({ queue: [] });
   };
 
+  const launchProtocol = (url) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const handleArrange = () => {
     if (!projectPath) return;
     const path = projectPath.replace(/\\/g, '/');
     const url = 'claudecode:' + path + '?/orchestrator arrange?Arrange tasks';
-    window.open(url, '_self');
+    launchProtocol(url);
   };
 
   const handleRemoveActivity = (id) => {
@@ -201,7 +210,7 @@ export function App() {
     const words = taskName.split(/\s+/).filter(w => !filler.has(w.toLowerCase()));
     const title = words.slice(0, 2).join(' ') || taskName.split(/\s+/).slice(0, 2).join(' ');
     const url = 'claudecode:' + path + '?' + cmd + '?' + title;
-    window.open(url, '_self');
+    launchProtocol(url);
     setLaunchedId(itemKey);
     setTimeout(() => setLaunchedId(null), 3000);
   };
