@@ -1321,6 +1321,15 @@ function App() {
   // Selection state (local only)
   const [selectedTask, setSelectedTask] = useState(null);
 
+  // Project path for protocol launcher (per project, stored in localStorage)
+  const [projectPath, setProjectPathState] = useState(() => {
+    try {
+      const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
+      return paths[projectName] || '';
+    } catch { return ''; }
+  });
+  const [launchedId, setLaunchedId] = useState(null);
+
   // If not connected, show picker
   if (!connected || !data) {
     return h`<${ProjectPicker}
@@ -1416,15 +1425,6 @@ function App() {
   const handleClearQueue = () => {
     updateData({ queue: [] });
   };
-
-  // Project path for protocol launcher (per project, stored in localStorage)
-  const [projectPath, setProjectPathState] = useState(() => {
-    try {
-      const paths = JSON.parse(localStorage.getItem('dm_project_paths') || '{}');
-      return paths[projectName] || '';
-    } catch { return ''; }
-  });
-  const [launchedId, setLaunchedId] = useState(null);
 
   const setProjectPath = (path) => {
     setProjectPathState(path);
