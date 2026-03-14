@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useProject } from './hooks/useProject.js';
-import { saveAttachment, deleteAttachment, ensureDevManagerDir } from './fs.js';
+import { saveAttachment, deleteAttachment, ensureDevManagerDir, snapshotState } from './fs.js';
 import { ProjectPicker } from './components/ProjectPicker.jsx';
 import { Header } from './components/Header.jsx';
 import { SectionHeader } from './components/SectionHeader.jsx';
@@ -8,6 +8,7 @@ import { TaskBoard } from './components/TaskBoard.jsx';
 import { TaskDetail } from './components/TaskDetail.jsx';
 import { CommandQueue } from './components/CommandQueue.jsx';
 import { ActivityFeed } from './components/ActivityFeed.jsx';
+import { UndoToast } from './components/UndoToast.jsx';
 
 // Topological sort: dependencies come before dependents
 function sortByDependencies(queueItems, allTasks) {
@@ -62,6 +63,26 @@ export function App() {
   // Project path for protocol launcher (per project, stored in localStorage)
   const [projectPath, setProjectPathState] = useState('');
   const [launchedId, setLaunchedId] = useState(null);
+
+  // Undo stack: stores previous state before destructive operations
+  const [undoEntry, setUndoEntry] = useState(null);
+  const undoTimer = useRef(null);
+
+  const snapshotBeforeAction = useCallback((label) => {
+    if (dirHandle && data) {
+      snapshotState(dirHandle); // fire-and-forget backup to disk
+    }
+    clearTimeout(undoTimer.current);
+    setUndoEntry({ data: structuredClone(data), label, timestamp: Date.now() });
+    undoTimer.current = setTimeout(() => setUndoEntry(null), 8000);
+  }, [dirHandle, data]);
+
+  const handleUndo = useCallback(() => {
+    if (!undoEntry) return;
+    save(undoEntry.data);
+    clearTimeout(undoTimer.current);
+    setUndoEntry(null);
+  }, [undoEntry, save]);
 
   // Re-read project path when projectName changes (after connection)
   useEffect(() => {
@@ -146,6 +167,7 @@ export function App() {
 
   const handleDeleteTask = (id) => {
     const task = tasks.find(t => t.id === id);
+    snapshotBeforeAction((task?.name || 'Task') + ' deleted');
     // Remove the task and clean up dependsOn references in other tasks
     const newTasks = tasks.filter(t => t.id !== id).map(t =>
       t.dependsOn ? { ...t, dependsOn: t.dependsOn.filter(d => d !== id) } : t
@@ -173,6 +195,7 @@ export function App() {
 
   const handleDeleteAttachment = async (taskId, attachmentId) => {
     if (!dirHandle) return;
+    snapshotBeforeAction('Attachment deleted');
     try {
       const task = tasks.find(t => t.id === taskId);
       const att = (task?.attachments || []).find(a => a.id === attachmentId);
@@ -215,6 +238,8 @@ export function App() {
   };
 
   const handleClearQueue = () => {
+    if (queue.length === 0) return;
+    snapshotBeforeAction('Queue cleared');
     updateData({ queue: [] });
   };
 
@@ -283,6 +308,7 @@ export function App() {
   };
 
   const handleRemoveActivity = (id) => {
+    snapshotBeforeAction('Activity removed');
     const newActivity = activity.filter(a => a.id !== id);
     updateData({ activity: newActivity });
   };
@@ -386,6 +412,7 @@ export function App() {
           </div>
         </div>
       </div>
+      <UndoToast entry={undoEntry} onUndo={handleUndo} onDismiss={() => { clearTimeout(undoTimer.current); setUndoEntry(null); }} />
     </div>
   );
 }

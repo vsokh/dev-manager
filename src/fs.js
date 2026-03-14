@@ -168,3 +168,53 @@ export function createDefaultState(projectName) {
     activity: [{ id: 'act_init', time: Date.now(), label: 'Project initialized' }],
   };
 }
+
+// Snapshot state.json to .devmanager/backups/state-{timestamp}.json
+export async function snapshotState(projectHandle) {
+  try {
+    const dir = await projectHandle.getDirectoryHandle('.devmanager');
+    const fileHandle = await dir.getFileHandle('state.json');
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+
+    const backupDir = await dir.getDirectoryHandle('backups', { create: true });
+    const filename = 'state-' + Date.now() + '.json';
+    const backupHandle = await backupDir.getFileHandle(filename, { create: true });
+    const writable = await backupHandle.createWritable();
+    await writable.write(text);
+    await writable.close();
+
+    // Auto-prune: keep only last 10 backups
+    await pruneBackups(projectHandle, 10);
+    return filename;
+  } catch { return null; }
+}
+
+// List backup files (newest first)
+export async function listBackups(projectHandle) {
+  try {
+    const dir = await projectHandle.getDirectoryHandle('.devmanager');
+    const backupDir = await dir.getDirectoryHandle('backups');
+    const files = [];
+    for await (const [name, handle] of backupDir.entries()) {
+      if (name.startsWith('state-') && name.endsWith('.json') && handle.kind === 'file') {
+        const file = await handle.getFile();
+        files.push({ name, lastModified: file.lastModified });
+      }
+    }
+    return files.sort((a, b) => b.lastModified - a.lastModified);
+  } catch { return []; }
+}
+
+// Delete oldest backups beyond the keep limit
+export async function pruneBackups(projectHandle, keep = 10) {
+  try {
+    const files = await listBackups(projectHandle);
+    if (files.length <= keep) return;
+    const dir = await projectHandle.getDirectoryHandle('.devmanager');
+    const backupDir = await dir.getDirectoryHandle('backups');
+    for (const file of files.slice(keep)) {
+      await backupDir.removeEntry(file.name);
+    }
+  } catch {}
+}
