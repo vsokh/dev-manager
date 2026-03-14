@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CardForm } from './CardForm.jsx';
 
-export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTask, onQueueAll, queue }) {
+export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue }) {
   const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'done'), [tasks]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -110,28 +110,44 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
             />
           </div>
         ) : null}
-        {(() => {
-          const pendingNotQueued = tasks.filter(t => t.status === 'pending' && !(queue || []).some(q => q.task === t.id));
-          if (pendingNotQueued.length === 0) return null;
-          return (
-            <div style={{ marginTop: '8px' }}>
-              <button
-                onClick={onQueueAll}
-                style={{
-                  padding: '5px 14px', background: 'none',
-                  color: 'var(--accent)', border: '1px solid var(--accent)',
-                  borderRadius: 'var(--radius-sm)', fontSize: '12px',
-                  fontWeight: 600, fontFamily: 'var(--font)',
-                  cursor: 'pointer', transition: 'all 0.15s',
-                }}
-                onMouseOver={e => { e.target.style.background = 'var(--accent)'; e.target.style.color = 'white'; }}
-                onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--accent)'; }}
-              >
-                Queue all ({pendingNotQueued.length})
-              </button>
-            </div>
-          );
-        })()}
+        {pendingTasks.length >= 2 ? (
+          <div style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              onClick={onArrange}
+              style={{
+                padding: '5px 14px', background: 'none',
+                color: 'var(--amber)', border: '1px solid var(--amber)',
+                borderRadius: 'var(--radius-sm)', fontSize: '12px',
+                fontWeight: 600, fontFamily: 'var(--font)',
+                cursor: 'pointer', transition: 'all 0.15s',
+              }}
+              onMouseOver={e => { e.target.style.background = 'var(--amber)'; e.target.style.color = 'white'; }}
+              onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--amber)'; }}
+            >
+              Arrange tasks
+            </button>
+            {(() => {
+              const pendingNotQueued = tasks.filter(t => t.status === 'pending' && !(queue || []).some(q => q.task === t.id));
+              if (pendingNotQueued.length === 0) return null;
+              return (
+                <button
+                  onClick={onQueueAll}
+                  style={{
+                    padding: '5px 14px', background: 'none',
+                    color: 'var(--accent)', border: '1px solid var(--accent)',
+                    borderRadius: 'var(--radius-sm)', fontSize: '12px',
+                    fontWeight: 600, fontFamily: 'var(--font)',
+                    cursor: 'pointer', transition: 'all 0.15s',
+                  }}
+                  onMouseOver={e => { e.target.style.background = 'var(--accent)'; e.target.style.color = 'white'; }}
+                  onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--accent)'; }}
+                >
+                  Queue all ({pendingNotQueued.length})
+                </button>
+              );
+            })()}
+          </div>
+        ) : null}
       </div>
 
       {features.length > 0 ? (

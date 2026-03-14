@@ -123,6 +123,37 @@ Same as \`next\` but for a specific task. Read manager notes, explore codebase, 
 
 ---
 
+## \`/orchestrator arrange\`
+
+Analyze all pending tasks and determine their dependency graph. Do NOT execute anything — only arrange.
+
+### Steps:
+1. Read \`.devmanager/state.json\` — get all tasks where \`status\` is \`pending\`
+2. Use an Explore agent to understand the codebase and how tasks relate
+3. For each task, determine which other tasks must be completed first
+4. Update each task's \`dependsOn\` array with the IDs of its prerequisites
+5. Write the updated tasks back to \`.devmanager/state.json\`
+6. Add an activity entry: \`{ "id": "act_{timestamp}", "time": {ms}, "label": "Tasks arranged into dependency graph" }\`
+
+### Rules:
+- Only set dependencies between pending tasks (not done/blocked)
+- A task with no prerequisites gets \`dependsOn: []\` (or omit the field)
+- Don't create circular dependencies
+- Be conservative — only add a dependency if task B truly cannot start until task A is done
+- Consider: database/schema changes before features, design before implementation, features before testing
+
+### Output to user:
+After writing state.json, present the dependency graph:
+\`\`\`
+Phase 1 (parallel): Task A, Task B
+Phase 2: Task C (after A), Task D (after A, B)
+Phase 3: Task E (after C, D)
+\`\`\`
+
+Dev Manager will pick up the changes within 3 seconds and show the graph visually.
+
+---
+
 ## Sub-agent patterns
 
 ### Explore (read-only research)

@@ -172,6 +172,13 @@ export function App() {
     updateData({ queue: [] });
   };
 
+  const handleArrange = () => {
+    if (!projectPath) return;
+    const path = projectPath.replace(/\\/g, '/');
+    const url = 'claudecode:' + path + '?/orchestrator arrange?Arrange tasks';
+    window.open(url, '_self');
+  };
+
   const handleRemoveActivity = (id) => {
     const newActivity = activity.filter(a => a.id !== id);
     updateData({ activity: newActivity });
@@ -225,6 +232,7 @@ export function App() {
                 onSelectTask={handleSelectTask}
                 onAddTask={handleAddTask}
                 onQueueAll={handleQueueAll}
+                onArrange={handleArrange}
                 queue={queue}
               />
             </div>
