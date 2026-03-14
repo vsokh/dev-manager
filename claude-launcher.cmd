@@ -38,5 +38,5 @@ if defined title set "title=!title:+= !"
 if not defined cmd set "cmd=/orchestrator next"
 if not defined title set "title=Claude Code"
 
-:: Launch Windows Terminal with named tab
-start "" wt.exe --title "!title!" -d "!dir!" cmd /k claude "!cmd!"
+:: Launch as new tab in existing Windows Terminal (or new window if none open)
+start "" wt.exe -w 0 new-tab --title "!title!" -d "!dir!" cmd /k claude "!cmd!"
