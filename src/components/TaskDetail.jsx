@@ -1,22 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { readAttachmentUrl } from '../fs.js';
-
-const EPIC_PALETTE = [
-  { bg: 'rgba(106,141,190,0.12)', text: '#6a8dbe', border: 'rgba(106,141,190,0.3)' },
-  { bg: 'rgba(196,132,90,0.12)', text: '#c4845a', border: 'rgba(196,132,90,0.3)' },
-  { bg: 'rgba(155,139,180,0.12)', text: '#9b8bb4', border: 'rgba(155,139,180,0.3)' },
-  { bg: 'rgba(90,158,114,0.12)', text: '#5a9e72', border: 'rgba(90,158,114,0.3)' },
-  { bg: 'rgba(180,120,120,0.12)', text: '#b47878', border: 'rgba(180,120,120,0.3)' },
-  { bg: 'rgba(120,165,165,0.12)', text: '#78a5a5', border: 'rgba(120,165,165,0.3)' },
-  { bg: 'rgba(170,150,100,0.12)', text: '#aa9664', border: 'rgba(170,150,100,0.3)' },
-  { bg: 'rgba(140,130,170,0.12)', text: '#8c82aa', border: 'rgba(140,130,170,0.3)' },
-];
-
-function hashString(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
 
 export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }) {
   const [editing, setEditing] = useState(false);
@@ -128,6 +111,27 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     }
   }, [task, onAddAttachment, handleImageFile]);
 
+
+  const formatDate = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d)) return null;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
+      d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+
+  const formatDuration = (from, to) => {
+    if (!from || !to) return null;
+    const ms = new Date(to) - new Date(from);
+    if (ms < 0 || isNaN(ms)) return null;
+    const mins = Math.floor(ms / 60000);
+    const hrs = Math.floor(mins / 60);
+    const days = Math.floor(hrs / 24);
+    if (days > 0) return days + 'd ' + (hrs % 24) + 'h';
+    if (hrs > 0) return hrs + 'h ' + (mins % 60) + 'm';
+    return mins + 'm';
+  };
+
   if (!task) return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -199,25 +203,6 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         </div>
       ) : null}
 
-      {task.status === 'blocked' ? (
-        <div style={{ marginBottom: '12px' }}>
-          <input
-            value={localBlockedReason}
-            onInput={e => setLocalBlockedReason(e.target.value)}
-            onBlur={() => onUpdateTask(task.id, { blockedReason: localBlockedReason })}
-            onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); }}
-            placeholder="Why is this blocked?"
-            style={{
-              width: '100%', fontSize: '12px', fontFamily: 'var(--font)',
-              padding: '6px 8px', border: '1px solid var(--border)', borderRadius: '6px',
-              background: 'var(--bg)', outline: 'none',
-              transition: 'border-color 0.15s', lineHeight: 1.5,
-            }}
-            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-          />
-        </div>
-      ) : null}
-
       {editing ? (
         <input
           value={editName}
@@ -270,6 +255,72 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           {task.skills.map(s => (
             <span key={s} className="badge badge-accent" style={{ fontSize: '10px' }}>{s}</span>
           ))}
+        </div>
+      ) : null}
+
+
+      {task.createdAt ? (
+        <div style={{ marginBottom: '12px', paddingLeft: '4px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Timeline
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-light)', flexShrink: 0 }} />
+              {(task.startedAt || task.completedAt) && (
+                <div style={{ width: '1px', flex: 1, minHeight: '12px', background: 'var(--border)' }} />
+              )}
+            </div>
+            <div style={{ paddingBottom: '4px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Created</div>
+              <div style={{ fontSize: '12px', color: 'var(--text)' }}>{formatDate(task.createdAt)}</div>
+            </div>
+          </div>
+          {task.startedAt && formatDuration(task.createdAt, task.startedAt) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
+              </div>
+              <div style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                {formatDuration(task.createdAt, task.startedAt)}
+              </div>
+            </div>
+          )}
+          {task.startedAt && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
+                {task.completedAt && (
+                  <div style={{ width: '1px', flex: 1, minHeight: '12px', background: 'var(--border)' }} />
+                )}
+              </div>
+              <div style={{ paddingBottom: '4px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Started</div>
+                <div style={{ fontSize: '12px', color: 'var(--text)' }}>{formatDate(task.startedAt)}</div>
+              </div>
+            </div>
+          )}
+          {task.completedAt && task.startedAt && formatDuration(task.startedAt, task.completedAt) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
+              </div>
+              <div style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+                {formatDuration(task.startedAt, task.completedAt)}
+              </div>
+            </div>
+          )}
+          {task.completedAt && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', flexShrink: 0 }} />
+              </div>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Completed</div>
+                <div style={{ fontSize: '12px', color: 'var(--text)' }}>{formatDate(task.completedAt)}</div>
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
 

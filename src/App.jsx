@@ -120,7 +120,7 @@ export function App() {
 
   const handleAddTask = (taskData) => {
     const maxId = tasks.reduce((max, t) => Math.max(max, typeof t.id === 'number' ? t.id : 0), 0);
-    const newTask = { ...taskData, id: maxId + 1 };
+    const newTask = { ...taskData, id: maxId + 1, createdAt: new Date().toISOString() };
     const newTasks = [...tasks, newTask];
     const newActivity = addActivity('"' + newTask.name + '" added');
     updateData({ tasks: newTasks, activity: newActivity });
