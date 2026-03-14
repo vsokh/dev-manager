@@ -25,11 +25,13 @@ During execution, write to \`.devmanager/progress/{taskId}.json\`:
 \`\`\`json
 { "status": "in-progress", "progress": "Exploring codebase..." }
 \`\`\`
+Values: "Reading queue...", "Exploring codebase...", "Planning approach...", "Waiting for approval", "Delegating to sub-agent...", "Reviewing results...", "Merging to master..."
+
 On completion:
 \`\`\`json
-{ "status": "done", "completedAt": "YYYY-MM-DD", "commitRef": "<hash>", "branch": "<if merge failed>" }
+{ "status": "done", "completedAt": "YYYY-MM-DD", "commitRef": "<hash>", "branch": "<only if merge failed>" }
 \`\`\`
-Dev Manager polls every 3s — in-progress is a UI overlay, done triggers a merge into state.json.
+Dev Manager polls every 3s — in-progress is a UI overlay, done triggers merge into state.json.
 
 ---
 
@@ -37,83 +39,164 @@ Dev Manager polls every 3s — in-progress is a UI overlay, done triggers a merg
 
 ### 1. Read queue → pick task
 Read \`.devmanager/state.json\`. For \`next\`: pick first \`queue\` item. For \`task N\`: find task by ID.
+If queue empty: "Nothing queued. Add tasks in Dev Manager."
+Read \`notes\` field from queue item — these are manager's instructions (HIGH PRIORITY).
 Write progress: \`"Reading queue..."\`
 
-### 2. Check for previous work
-- \`.devmanager/notes/{taskId}.md\` exists? → Read it for context/plan.
-- \`git branch --list "task-{taskId}-*"\` exists? → Checkout branch.
-- Both exist → **resume**: present summary, skip to step 5 for remaining work.
-- Only notes → **plan done**: present plan for approval.
-- Neither → **fresh task**: continue to step 3.
+### 2. Check for previous work (resume detection)
+Check two things:
+- \`.devmanager/notes/{taskId}.md\` — exploration/plan from a prior session
+- \`git branch --list "task-{taskId}-*"\` — code changes on a feature branch
 
-### 3. Explore + plan (fresh only)
-Write progress: \`"Exploring codebase..."\` → use Explore agent → \`"Planning approach..."\`
+| Notes file | Branch | Action |
+|-----------|--------|--------|
+| yes | yes | **Resume with code.** Checkout branch, read notes, present remaining work, skip to step 5. |
+| yes | no | **Resume exploration.** Read notes, present plan for approval, skip to step 4. |
+| no | no | **Fresh task.** Continue to step 3. |
 
-**Save notes immediately** to \`.devmanager/notes/{taskId}.md\` (findings, plan, files, risks).
+### 3. Explore + plan (fresh tasks only)
+Write progress: \`"Exploring codebase..."\`
 
-Present plan. **STOP. Wait for approval.**
+Use an Explore agent to understand the codebase:
+\`\`\`
+Agent(subagent_type="Explore", prompt="Find all files related to [feature]. I need to understand [what].")
+\`\`\`
 
-### 4. Create branch (after approval)
+Write progress: \`"Planning approach..."\`
+
+Decide: what files change, technical approach, risks.
+
+**Save notes immediately** to \`.devmanager/notes/{taskId}.md\`:
+\`\`\`markdown
+# Task {taskId}: {taskName}
+## Manager notes
+{from queue item}
+## Exploration findings
+- {files found, patterns, relevant code}
+## Proposed plan
+1. Step one
+2. Step two
+## Files to modify
+- path/to/file.ts — {what changes}
+\`\`\`
+
+This file lives on master — survives session interruptions at any phase.
+
+Present the plan to the user. **STOP. Wait for approval.** Do NOT launch sub-agents until they say go.
+
+### 4. Create feature branch (after approval only)
 \`\`\`bash
 git checkout -b task-{taskId}-{slug}
 \`\`\`
-**Slug MUST be descriptive**: \`task-13-google-login\` ✅ | \`task-13\` ❌
 
-Update notes file: add \`## Branch\` and \`## Status\` checklist.
+**Branch naming is CRITICAL.** The slug MUST be a descriptive kebab-case summary:
+- \`task-13-google-login\` ✅
+- \`task-7-student-leader\` ✅
+- \`task-13\` ❌ — tells nothing about what the branch does
+- \`task\` ❌
 
-### 5. Delegate
-**Verify branch first**: \`git branch --show-current\` — must NOT be master.
+Generate slug: task name → lowercase → spaces to hyphens → remove special chars → max 30 chars.
 
-Launch sub-agent with prompt including:
-- Implementation details + file paths
-- **"You are on branch \`task-{id}-{slug}\`. Verify with \`git branch --show-current\`. NEVER commit to master."**
-- Build/test verification command
+Update notes file — add \`## Branch\` section and convert plan into a checklist:
+\`\`\`markdown
+## Branch
+task-{taskId}-{slug}
+## Status
+- [ ] Step one
+- [ ] Step two
+\`\`\`
+
+### 5. Delegate to sub-agent
+**Before launching, verify you are on the correct branch:**
+\`\`\`bash
+git branch --show-current  # must show task-{taskId}-{slug}, NOT master
+\`\`\`
+If it shows master, checkout the branch first.
 
 Write progress: \`"Delegating to sub-agent..."\`
 
-### 6. Review
+Launch implementation agent:
+\`\`\`
+Agent(subagent_type="general-purpose", prompt="...")
+\`\`\`
+
+The sub-agent prompt **MUST** include:
+- What to implement (from spec + manager notes)
+- Which files to modify (from exploration)
+- Technical constraints (from CLAUDE.md)
+- Build/test command to verify
+- **This exact block:**
+  "CRITICAL: You are on branch \`task-{taskId}-{slug}\`.
+  Verify with \`git branch --show-current\` before making changes.
+  If on master, run \`git checkout task-{taskId}-{slug}\` first.
+  NEVER commit to master. All commits go to this feature branch."
+
+### 6. Review result
 Write progress: \`"Reviewing results..."\`
-Check completeness + build. Fix issues or re-delegate. Update notes checklist.
+
+Check: all requirements met? Build passes? Anything wrong → fix or re-delegate.
+
+**Update notes file** — check off completed steps, add notes. This ensures the next session can resume if interrupted.
 
 ### 7. Merge to master
-\`\`\`bash
-git checkout master && git pull --ff-only 2>/dev/null && git merge task-{taskId}-{slug} --no-edit
-\`\`\`
-- **Success** → \`git branch -d task-{taskId}-{slug}\`
-- **Conflict** → \`git merge --abort && git checkout task-{taskId}-{slug} && git rebase master\`
-  - Rebase succeeds → checkout master, merge again, delete branch
-  - Rebase fails → \`git rebase --abort\`, report "done on branch \`task-{id}-{slug}\`, needs manual merge"
+Write progress: \`"Merging to master..."\`
 
-### 8. Report
-Write done progress file with \`commitRef\`. Dev Manager handles the rest.
+\`\`\`bash
+git checkout master
+git pull --ff-only 2>/dev/null
+git merge task-{taskId}-{slug} --no-edit
+\`\`\`
+
+- **Success** → \`git branch -d task-{taskId}-{slug}\` → continue to step 8
+- **Conflict** →
+  1. \`git merge --abort\`
+  2. \`git checkout task-{taskId}-{slug}\`
+  3. \`git rebase master\`
+  4. Rebase succeeds → \`git checkout master && git merge task-{taskId}-{slug} --no-edit\` → delete branch
+  5. Rebase fails → \`git rebase --abort\` → report: "Task done on branch \`task-{id}-{slug}\`. Needs manual merge."
+     Still write the done progress file with \`"branch": "task-{id}-{slug}"\`.
+
+### 8. Report back
+Write completion to \`.devmanager/progress/{taskId}.json\`:
+- \`commitRef\`: \`git log -1 --format=%h\`
+- \`completedAt\`: today's date (YYYY-MM-DD)
+- \`branch\`: only if merge failed
+
+Dev Manager will merge this into state.json, add activity, remove from queue, and clean up the progress file.
+
+If more items in queue: "Next up: {taskName}. Continue?"
 
 ---
 
 ## \`/orchestrator arrange\`
 
-Assign epics + dependencies. Do NOT execute anything.
+Assign epics (feature groups) + set dependencies. Do NOT execute anything.
 
-1. Read ALL tasks from state.json (pending, paused, done)
-2. Explore codebase to understand task relationships
-3. **Epics**: set \`group\` on tasks without one (short names: "Auth", "Events"). Reuse existing names. Skip tasks that already have a group.
-4. **Dependencies** (non-done only): set \`dependsOn\`. Most tasks should have NONE — max 1-2, only when B literally needs A's output.
-5. Write updated tasks — ONLY \`dependsOn\` and \`group\` fields
+1. Read ALL tasks from state.json (pending, paused, and done)
+2. Explore codebase to understand how tasks relate
+3. **Assign epics**: set \`group\` field on tasks that don't have one. Short names: "Auth", "Events", "Profile". Reuse existing group names. Every task should have one.
+4. **Set dependencies** (pending/paused only, NOT done): update \`dependsOn\` arrays.
+5. Write updated tasks — ONLY \`dependsOn\` and \`group\` fields. Do NOT touch name, status, or anything else.
 6. Write \`.devmanager/progress/arrange.json\`: \`{ "status": "done", "label": "Tasks arranged" }\`
+
+**Dependency rules:** Most tasks should have NO dependencies. Only add when B literally cannot work without A's output. Max 1-2 per task. Goal is maximum parallelism.
+
+**Epic rules:** Group by feature area ("Auth" not "Frontend"). Short, consistent names. Reuse existing ones.
 
 ---
 
 ## \`/orchestrator status\`
 
-Read state.json + \`git log --oneline -10\`. Output: pending tasks, queue count, recent activity.
+Read state.json + \`git log --oneline -10\`. Output: pending tasks, queue count, recent git activity.
 
 ---
 
 ## Key rules
 
-1. **Manager notes override everything.**
-2. **Delegate, don't implement.** Sub-agents do code. You plan + review.
-3. **NEVER write to state.json** (except arrange: \`dependsOn\`/\`group\` only). No activity, no new tasks, no status changes.
-4. **Wait for approval** before delegating.
-5. **Branch per task.** Descriptive slug. Never commit to master.
-6. **Stay in scope.** Don't create tasks or rearrange things unless asked.
+1. **Manager notes override everything.** If the manager says "skip X, focus on Y" — do that.
+2. **Delegate, don't implement.** Sub-agents write code. You plan, review, and coordinate.
+3. **NEVER write to state.json** (except arrange: \`dependsOn\`/\`group\` only). No activity entries, no new tasks, no status changes. All communication is through progress files.
+4. **Wait for approval** before delegating. Present plan, then STOP.
+5. **Branch per task.** Descriptive slug. Verify before delegating. Never commit to master.
+6. **Stay in scope.** Only do what the task asks. Don't create new tasks or rearrange things. If you discover something, tell the user.
 `;

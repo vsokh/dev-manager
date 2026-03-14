@@ -202,8 +202,14 @@ export function useProject() {
             if (prog.commitRef) actEntry.commitRef = prog.commitRef;
             if (prog.filesChanged) actEntry.filesChanged = prog.filesChanged;
             activity.unshift(actEntry);
-            // Delete the progress file
+            // Delete the progress file + notes file + launch script (cleanup)
             await deleteProgressFile(dirHandle, id);
+            try {
+              const dmDir = await dirHandle.getDirectoryHandle('.devmanager');
+              const notesDir = await dmDir.getDirectoryHandle('notes').catch(() => null);
+              if (notesDir) await notesDir.removeEntry(id + '.md').catch(() => {});
+              await dmDir.removeEntry('launch-' + id + '.cmd').catch(() => {});
+            } catch {}
             needsWrite = true;
           } else {
             // In-progress: overlay in memory only (transient)
