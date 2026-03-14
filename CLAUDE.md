@@ -2,7 +2,7 @@
 
 ## What is this
 
-Dev Manager is a standalone browser tool that pairs with Claude Code. A manager uses it to create tasks, write instructions, and queue work. Claude Code's orchestrator skill acts as a tech lead — reads the queue, plans the approach, delegates to sub-agents, reviews results, and writes back.
+Dev Manager is a browser tool that pairs with Claude Code. A manager uses it to create tasks, write instructions, and queue work. Claude Code's orchestrator skill acts as a tech lead — reads the queue, plans the approach, delegates to sub-agents, reviews results, and writes back.
 
 ## Two hats
 
@@ -12,15 +12,46 @@ The user wears two hats:
 
 The orchestrator is the bridge. It reads manager intent and translates it into technical execution.
 
+## Commands
+
+```bash
+npm run dev          # start dev server (http://localhost:5173)
+npm run build        # vite build
+npm run preview      # preview production build
+```
+
 ## Architecture
 
-Single self-contained `index.html` — no build step, no dependencies, no server.
+Vite + React 19 + JSX. No TypeScript. All inline styles with CSS custom properties.
 
-- **React 19** via ESM imports from esm.sh
-- **htm** tagged template literals (not JSX)
-- **File System Access API** for reading/writing project files
-- All inline styles, CSS custom properties in `:root`
-- Font: Onest (Google Fonts)
+```
+src/
+├── main.jsx                  # Entry point
+├── App.jsx                   # Root component, all state management
+├── styles.css                # CSS variables, reset, utility classes
+├── fs.js                     # File System Access API (read/write state, ensure dirs)
+├── skills.js                 # Skill keyword matching + auto-suggest
+├── orchestrator.js           # ORCHESTRATOR_SKILL_TEMPLATE string
+├── hooks/
+│   └── useProject.js         # Connect/disconnect, auto-save, poll for changes
+└── components/
+    ├── ProjectPicker.jsx     # Landing screen: "Open project" + last project shortcut
+    ├── Header.jsx            # Project name, sync dot, theme toggle, disconnect
+    ├── SectionHeader.jsx     # Reusable panel header bar
+    ├── CardForm.jsx          # New task form with skill auto-suggest
+    ├── TaskBoard.jsx         # Task cards + "Add task" + collapsible shipped features
+    ├── TaskDetail.jsx        # Detail panel: status, name, notes, queue/delete buttons
+    ├── CommandQueue.jsx      # Queue list with per-task launch buttons + path config
+    └── ActivityFeed.jsx      # Recent activity log (newest first)
+```
+
+### Key files outside src/
+
+| File | Purpose |
+|------|---------|
+| `orchestrator-skill.md` | Readable reference of the orchestrator skill |
+| `claude-launcher.cmd` | Protocol handler: parses URL, launches Windows Terminal + Claude Code |
+| `install-protocol.cmd` | One-time: registers `claudecode://` protocol in Windows Registry |
 
 ## How it works
 
@@ -30,7 +61,7 @@ Manager (Dev Manager)              Tech Lead (Orchestrator)              Develop
   Create tasks                              |                                    |
   Write notes ──► .devmanager/state.json ──►|                                    |
   Queue work                                |                                    |
-       |                           /orchestrator next                            |
+       |                      ▶ Launch (claudecode:// protocol)                  |
        |                                    |                                    |
        |                           1. Read queue + notes                         |
        |                           2. Explore codebase (Agent)                   |
@@ -41,13 +72,6 @@ Manager (Dev Manager)              Tech Lead (Orchestrator)              Develop
        |                                    |                                    |
   See results ◄── auto-sync (3s poll)       |                                    |
 ```
-
-## Project initialization
-
-When user opens a project folder, Dev Manager:
-1. Creates `.devmanager/state.json` if missing (empty project state)
-2. Creates `.claude/skills/orchestrator/SKILL.md` if missing (tech lead skill)
-3. Never overwrites existing files
 
 ## State file: `.devmanager/state.json`
 
@@ -72,7 +96,7 @@ When the orchestrator executes a task, it can create a spec file at `.devmanager
 
 ## Orchestrator skill (tech lead)
 
-Embedded in `index.html` as `ORCHESTRATOR_SKILL_TEMPLATE`. Auto-installed to `.claude/skills/orchestrator/SKILL.md` on first project open.
+Template in `src/orchestrator.js`. Auto-installed to `.claude/skills/orchestrator/SKILL.md` on project connect.
 
 The orchestrator:
 1. **Reads** the queue and manager notes from `.devmanager/state.json`
@@ -83,66 +107,46 @@ The orchestrator:
 6. **Reviews** the sub-agent's output (build passed? requirements met?)
 7. **Writes back** results to `.devmanager/state.json` so Dev Manager auto-syncs
 
-## Key components
+## One-click launch (`claudecode://` protocol)
 
-| Component | Purpose |
-|-----------|---------|
-| `useProject()` | Hook: connect/disconnect project folder, auto-save, poll for external changes |
-| `ProjectPicker` | Landing screen: "Open project" button + last project shortcut |
-| `Header` | Project name + sync status |
-| `TaskBoard` | Pending task cards + draft cards + "Add task" + collapsible shipped features |
-| `TaskDetail` | Detail panel for selected task/draft: status, name, notes, queue button |
-| `CardForm` | New task form with skill auto-suggest from keywords |
-| `CommandQueue` | Queue list + one-click launch button + copy fallback |
-| `ActivityFeed` | Recent activity log (single `activity` array — no separate sessions) |
+Each queued task has a ▶ button that opens a named terminal tab via custom URL protocol.
 
-## File system access
+### Setup (one-time)
+Run `install-protocol.cmd` — registers `claudecode://` in Windows Registry (`HKCU`). No admin needed.
+
+### URL format
+`claudecode:<path>?<command>?<tab-title>`
+
+### How it works
+1. User sets project path once in the queue panel (stored in localStorage per project)
+2. ▶ button opens `claudecode:<path>?/orchestrator task N?<short title>`
+3. `claude-launcher.cmd` receives the URL, opens a new tab in Windows Terminal with `--suppressApplicationTitle`
+
+## File System Access
 
 Uses the File System Access API (Chrome/Edge). The directory handle is persisted in IndexedDB (`devmanager_fs` database) so the project reconnects automatically on next visit.
 
-Key functions:
+Key functions in `src/fs.js`:
 - `ensureDevManagerDir(handle)` — creates `.devmanager/` in project
-- `ensureOrchestratorSkill(handle)` — creates `.claude/skills/orchestrator/SKILL.md`
+- `ensureOrchestratorSkill(handle)` — writes latest orchestrator skill template
 - `writeState(handle, data)` — writes `.devmanager/state.json`
 - `readState(handle)` — reads `.devmanager/state.json` + lastModified timestamp
 
 ## Design
 
-Warm neutral palette:
-- Background: `#f5f0eb`
-- Surface: `#fefcf9`
+Warm neutral palette with dark mode support (`[data-theme="dark"]`):
+- Background: `#f5f0eb` / dark: `#1a1816`
+- Surface: `#fefcf9` / dark: `#242220`
 - Accent (tasks): `#6a8dbe`
-- Amber (drafts): `#c4845a`
+- Amber: `#c4845a`
 - Success (shipped): `#5a9e72`
 
 Layout: 2x2 grid — `[TaskBoard | Detail]` over `[Queue | Activity]`
-
-## One-click launch (`claudecode://` protocol)
-
-Dev Manager can launch Claude Code directly from the browser via a custom URL protocol.
-
-### Setup (one-time)
-Run `install-protocol.cmd` — registers `claudecode://` in Windows Registry (`HKCU`). No admin needed.
-
-### How it works
-1. User sets project path once in the queue panel (stored in localStorage per project)
-2. "Launch orchestrator" button opens `claudecode:<project-path>`
-3. `claude-launcher.cmd` receives the URL, opens Windows Terminal, runs `claude "/orchestrator next"`
-
-### Files
-| File | Purpose |
-|------|---------|
-| `install-protocol.cmd` | One-time: registers `claudecode://` protocol in Windows Registry |
-| `claude-launcher.cmd` | Handler: parses URL, launches Windows Terminal + Claude Code |
-
-### Fallback
-Copy button (clipboard icon) still available for manual paste into terminal.
+Font: Onest (Google Fonts)
 
 ## What NOT to do
 
-- Don't add a build step — single HTML file, always
 - Don't add a server — client-side only via File System Access API
 - Don't embed project-specific data — all state comes from `.devmanager/state.json`
-- Don't use HTML entities in htm templates — use actual Unicode characters
 - Don't show implementation details to the manager (commit hashes, skill names, spec file paths, task IDs)
 - Don't let the orchestrator auto-execute without user approval
