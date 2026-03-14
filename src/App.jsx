@@ -8,6 +8,49 @@ import { TaskDetail } from './components/TaskDetail.jsx';
 import { CommandQueue } from './components/CommandQueue.jsx';
 import { ActivityFeed } from './components/ActivityFeed.jsx';
 
+// Topological sort: dependencies come before dependents
+function sortByDependencies(queueItems, allTasks) {
+  const taskMap = new Map(allTasks.map(t => [t.id, t]));
+  const queueIds = new Set(queueItems.map(q => q.task));
+
+  // Build adjacency: for each queued item, which other queued items must come before it?
+  const inDegree = new Map();
+  const edges = new Map(); // from → [to]
+  for (const item of queueItems) {
+    inDegree.set(item.task, 0);
+    edges.set(item.task, []);
+  }
+  for (const item of queueItems) {
+    const task = taskMap.get(item.task);
+    if (task && task.dependsOn) {
+      for (const depId of task.dependsOn) {
+        if (queueIds.has(depId)) {
+          edges.get(depId).push(item.task);
+          inDegree.set(item.task, (inDegree.get(item.task) || 0) + 1);
+        }
+      }
+    }
+  }
+
+  // Kahn's algorithm
+  const result = [];
+  const ready = queueItems.filter(q => (inDegree.get(q.task) || 0) === 0).map(q => q.task);
+  const itemMap = new Map(queueItems.map(q => [q.task, q]));
+  while (ready.length > 0) {
+    const id = ready.shift();
+    result.push(itemMap.get(id));
+    for (const next of (edges.get(id) || [])) {
+      inDegree.set(next, inDegree.get(next) - 1);
+      if (inDegree.get(next) === 0) ready.push(next);
+    }
+  }
+  // Append any remaining (cyclic) items at end
+  for (const item of queueItems) {
+    if (!result.includes(item)) result.push(item);
+  }
+  return result;
+}
+
 export function App() {
   const project = useProject();
   const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName } = project;
@@ -84,7 +127,10 @@ export function App() {
 
   const handleDeleteTask = (id) => {
     const task = tasks.find(t => t.id === id);
-    const newTasks = tasks.filter(t => t.id !== id);
+    // Remove the task and clean up dependsOn references in other tasks
+    const newTasks = tasks.filter(t => t.id !== id).map(t =>
+      t.dependsOn ? { ...t, dependsOn: t.dependsOn.filter(d => d !== id) } : t
+    );
     const newQueue = queue.filter(q => q.task !== id);
     const { [id]: _, ...newTaskNotes } = taskNotes;
     const newActivity = addActivity((task?.name || 'Task') + ' deleted');
@@ -94,12 +140,26 @@ export function App() {
 
   const handleQueue = (task) => {
     if (queue.some(q => q.task === task.id)) return;
-    const newQueue = [...queue, {
+    const unsorted = [...queue, {
       task: task.id,
       taskName: task.name,
       notes: taskNotes[task.id] || '',
     }];
+    const newQueue = sortByDependencies(unsorted, tasks);
     const newActivity = addActivity(task.name + ' queued');
+    updateData({ queue: newQueue, activity: newActivity });
+  };
+
+  const handleQueueAll = () => {
+    const pending = tasks.filter(t => t.status === 'pending' && !queue.some(q => q.task === t.id));
+    if (pending.length === 0) return;
+    const unsorted = [...queue, ...pending.map(t => ({
+      task: t.id,
+      taskName: t.name,
+      notes: taskNotes[t.id] || '',
+    }))];
+    const newQueue = sortByDependencies(unsorted, tasks);
+    const newActivity = addActivity(pending.length + ' tasks queued');
     updateData({ queue: newQueue, activity: newActivity });
   };
 
@@ -164,6 +224,8 @@ export function App() {
                 selectedTask={selectedTask}
                 onSelectTask={handleSelectTask}
                 onAddTask={handleAddTask}
+                onQueueAll={handleQueueAll}
+                queue={queue}
               />
             </div>
           </div>
@@ -175,6 +237,7 @@ export function App() {
             <SectionHeader title="Detail" />
             <TaskDetail
               task={selectedTaskData}
+              tasks={tasks}
               onQueue={handleQueue}
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
@@ -191,7 +254,7 @@ export function App() {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-            <CommandQueue queue={queue} onLaunch={handleLaunchTask} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} launchedId={launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
+            <CommandQueue queue={queue} tasks={tasks} onLaunch={handleLaunchTask} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} launchedId={launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
           </div>
 
           <div style={{

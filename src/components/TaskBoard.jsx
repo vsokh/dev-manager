@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { CardForm } from './CardForm.jsx';
 
-export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTask }) {
+export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTask, onQueueAll, queue }) {
   const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'done'), [tasks]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -62,6 +62,14 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
               onMouseOut={e => e.currentTarget.style.boxShadow = selectedTask === task.id ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)'}
             >
               <div style={{ fontWeight: 600, fontSize: '13px' }}>{task.name}</div>
+              {task.dependsOn && task.dependsOn.length > 0 ? (
+                <div style={{ fontSize: '10px', color: 'var(--text-light)', fontStyle: 'italic', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  after: {task.dependsOn.map(depId => {
+                    const dep = tasks.find(t => t.id === depId);
+                    return dep ? dep.name : '?';
+                  }).join(', ')}
+                </div>
+              ) : null}
               {task.status === 'in-progress' && task.progress ? (
                 <div className="progress-text-shimmer" style={{ fontSize: '11px', color: 'var(--accent)', marginTop: '4px', lineHeight: 1.3 }}>
                   {task.progress}
@@ -102,6 +110,28 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
             />
           </div>
         ) : null}
+        {(() => {
+          const pendingNotQueued = tasks.filter(t => t.status === 'pending' && !(queue || []).some(q => q.task === t.id));
+          if (pendingNotQueued.length === 0) return null;
+          return (
+            <div style={{ marginTop: '8px' }}>
+              <button
+                onClick={onQueueAll}
+                style={{
+                  padding: '5px 14px', background: 'none',
+                  color: 'var(--accent)', border: '1px solid var(--accent)',
+                  borderRadius: 'var(--radius-sm)', fontSize: '12px',
+                  fontWeight: 600, fontFamily: 'var(--font)',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+                onMouseOver={e => { e.target.style.background = 'var(--accent)'; e.target.style.color = 'white'; }}
+                onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--accent)'; }}
+              >
+                Queue all ({pendingNotQueued.length})
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {features.length > 0 ? (

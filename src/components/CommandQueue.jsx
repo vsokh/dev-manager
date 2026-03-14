@@ -1,6 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
-export function CommandQueue({ queue, onLaunch, onRemove, onClear, launchedId, projectPath, onSetPath }) {
+function computePhases(queue, tasks) {
+  const taskMap = new Map((tasks || []).map(t => [t.id, t]));
+  const queueIds = new Set(queue.map(q => q.task));
+
+  // Check if any queued task has dependencies on other queued tasks
+  const hasDeps = queue.some(q => {
+    const task = taskMap.get(q.task);
+    return task && task.dependsOn && task.dependsOn.some(d => queueIds.has(d));
+  });
+
+  if (!hasDeps) return null; // flat list, no phases needed
+
+  const assigned = new Map(); // taskId → phase number
+  const phases = []; // array of arrays of queue items
+
+  // Iteratively assign phases
+  let remaining = [...queue];
+  let phaseNum = 0;
+  while (remaining.length > 0) {
+    phaseNum++;
+    const thisPhase = [];
+    const stillRemaining = [];
+
+    for (const item of remaining) {
+      const task = taskMap.get(item.task);
+      const deps = (task && task.dependsOn) ? task.dependsOn.filter(d => queueIds.has(d)) : [];
+      const allDepsAssigned = deps.every(d => assigned.has(d) && assigned.get(d) < phaseNum);
+      if (allDepsAssigned) {
+        thisPhase.push(item);
+        assigned.set(item.task, phaseNum);
+      } else {
+        stillRemaining.push(item);
+      }
+    }
+
+    // Safety: if no progress, push remaining into current phase (cycle)
+    if (thisPhase.length === 0) {
+      for (const item of stillRemaining) {
+        thisPhase.push(item);
+        assigned.set(item.task, phaseNum);
+      }
+      stillRemaining.length = 0;
+    }
+
+    phases.push(thisPhase);
+    remaining = stillRemaining;
+  }
+
+  return phases;
+}
+
+export function CommandQueue({ queue, tasks, onLaunch, onRemove, onClear, launchedId, projectPath, onSetPath }) {
   const itemKey = (item) => item.task;
   const [editingPath, setEditingPath] = useState(false);
   const [pathInput, setPathInput] = useState(projectPath || '');
@@ -15,6 +66,149 @@ export function CommandQueue({ queue, onLaunch, onRemove, onClear, launchedId, p
   // Build command for a queue item
   const cmdForItem = (item) => '/orchestrator task ' + item.task;
 
+  const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
+
+  const renderItem = (item) => {
+    const key = itemKey(item);
+    const isLaunched = launchedId === key;
+    return (
+      <div key={key} style={{
+        display: 'flex', alignItems: 'center', gap: '6px',
+        padding: '6px 12px', borderBottom: '1px solid var(--border)',
+      }}>
+        <button
+          onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
+          title={projectPath ? 'Launch in terminal' : 'Set project path first'}
+          style={{
+            padding: '4px 8px', background: isLaunched ? 'var(--success)' : 'var(--accent)',
+            color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
+            fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+            flexShrink: 0, lineHeight: 1,
+          }}
+        >{isLaunched ? '\u2713' : '\u25B6'}</button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.taskName}</span>
+        </div>
+        <button
+          onClick={() => onRemove(key)}
+          title="Remove from queue"
+          style={{
+            padding: '2px 6px', background: 'none', border: 'none',
+            cursor: 'pointer', color: 'var(--text-light)', fontSize: '14px',
+            lineHeight: 1,
+          }}
+        >x</button>
+      </div>
+    );
+  };
+
+  const renderFlatList = () => (
+    <div>
+      {queue.map(renderItem)}
+      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end' }}>
+        <button onClick={onClear} style={{
+          padding: '4px 10px', background: 'none', color: 'var(--text-light)',
+          border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+          fontFamily: 'var(--font)', cursor: 'pointer',
+        }}>Clear queue</button>
+      </div>
+    </div>
+  );
+
+  const renderPhases = () => (
+    <div>
+      {phases.map((phaseItems, idx) => (
+        <div key={idx}>
+          {/* Phase connector line (between phases, not before the first) */}
+          {idx > 0 ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', padding: '0 16px',
+            }}>
+              <div style={{
+                width: '1px', height: '12px', background: 'var(--border)',
+                marginLeft: '11px',
+              }} />
+            </div>
+          ) : null}
+          {/* Phase label */}
+          <div style={{
+            padding: '4px 12px 2px',
+            fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
+            letterSpacing: '0.06em', color: 'var(--text-light)',
+          }}>
+            Phase {idx + 1}
+            {phaseItems.length > 1 ? (
+              <span style={{ fontWeight: 400, marginLeft: '6px', opacity: 0.7, textTransform: 'none', letterSpacing: 'normal' }}>parallel</span>
+            ) : null}
+          </div>
+          {/* Phase items with tree lines */}
+          {phaseItems.map((item, itemIdx) => {
+            const isLast = itemIdx === phaseItems.length - 1;
+            const key = itemKey(item);
+            const isLaunched = launchedId === key;
+            return (
+              <div key={key} style={{ display: 'flex', alignItems: 'stretch' }}>
+                {/* Tree connector */}
+                <div style={{
+                  width: '24px', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  paddingLeft: '4px',
+                }}>
+                  <div style={{
+                    width: '1px', flex: isLast ? '0 0 50%' : '1', background: 'var(--border)',
+                  }} />
+                  <div style={{
+                    width: '8px', height: '1px', background: 'var(--border)',
+                    alignSelf: 'flex-end', marginRight: '-4px',
+                  }} />
+                  {!isLast ? (
+                    <div style={{
+                      width: '1px', flex: '1', background: 'var(--border)',
+                    }} />
+                  ) : null}
+                </div>
+                {/* Item content */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '4px 8px 4px 4px', flex: 1, minWidth: 0,
+                }}>
+                  <button
+                    onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
+                    title={projectPath ? 'Launch in terminal' : 'Set project path first'}
+                    style={{
+                      padding: '4px 8px', background: isLaunched ? 'var(--success)' : 'var(--accent)',
+                      color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
+                      fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                      flexShrink: 0, lineHeight: 1,
+                    }}
+                  >{isLaunched ? '\u2713' : '\u25B6'}</button>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.taskName}</span>
+                  </div>
+                  <button
+                    onClick={() => onRemove(key)}
+                    title="Remove from queue"
+                    style={{
+                      padding: '2px 6px', background: 'none', border: 'none',
+                      cursor: 'pointer', color: 'var(--text-light)', fontSize: '14px',
+                      lineHeight: 1,
+                    }}
+                  >x</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end' }}>
+        <button onClick={onClear} style={{
+          padding: '4px 10px', background: 'none', color: 'var(--text-light)',
+          border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+          fontFamily: 'var(--font)', cursor: 'pointer',
+        }}>Clear queue</button>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       {queue.length === 0 ? (
@@ -24,51 +218,7 @@ export function CommandQueue({ queue, onLaunch, onRemove, onClear, launchedId, p
         }}>
           Queue tasks from the detail panel, then launch each in its own terminal.
         </div>
-      ) : (
-        <div>
-          {queue.map((item) => {
-            const key = itemKey(item);
-            const isLaunched = launchedId === key;
-            return (
-              <div key={key} style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '6px 12px', borderBottom: '1px solid var(--border)',
-              }}>
-                <button
-                  onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
-                  title={projectPath ? 'Launch in terminal' : 'Set project path first'}
-                  style={{
-                    padding: '4px 8px', background: isLaunched ? 'var(--success)' : 'var(--accent)',
-                    color: 'white', border: 'none', borderRadius: 'var(--radius-sm)',
-                    fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s',
-                    flexShrink: 0, lineHeight: 1,
-                  }}
-                >{isLaunched ? '✓' : '▶'}</button>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{item.taskName}</span>
-                </div>
-                <button
-                  onClick={() => onRemove(key)}
-                  title="Remove from queue"
-                  style={{
-                    padding: '2px 6px', background: 'none', border: 'none',
-                    cursor: 'pointer', color: 'var(--text-light)', fontSize: '14px',
-                    lineHeight: 1,
-                  }}
-                >x</button>
-              </div>
-            );
-          })}
-
-          <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end' }}>
-            <button onClick={onClear} style={{
-              padding: '4px 10px', background: 'none', color: 'var(--text-light)',
-              border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
-              fontFamily: 'var(--font)', cursor: 'pointer',
-            }}>Clear queue</button>
-          </div>
-        </div>
-      )}
+      ) : phases ? renderPhases() : renderFlatList()}
 
       {editingPath ? (
         <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '6px' }}>

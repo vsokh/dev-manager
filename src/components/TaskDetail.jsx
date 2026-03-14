@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export function TaskDetail({ task, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes }) {
+export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [localNote, setLocalNote] = useState('');
@@ -112,6 +112,48 @@ export function TaskDetail({ task, onQueue, onUpdateTask, onDeleteTask, notes, o
           onFocus={e => e.target.style.borderColor = 'var(--accent)'}
         />
       </div>
+
+      {(() => {
+        const otherTasks = (tasks || []).filter(t => t.id !== task.id && (t.status === 'pending' || t.status === 'in-progress'));
+        if (otherTasks.length === 0) return null;
+        const deps = task.dependsOn || [];
+        const toggleDep = (depId) => {
+          const next = deps.includes(depId) ? deps.filter(d => d !== depId) : [...deps, depId];
+          onUpdateTask(task.id, { dependsOn: next });
+        };
+        return (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Runs after
+            </div>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+              {otherTasks.map(t => {
+                const isSelected = deps.includes(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => toggleDep(t.id)}
+                    style={{
+                      padding: '3px 10px',
+                      fontSize: '11px',
+                      fontFamily: 'var(--font)',
+                      fontWeight: 500,
+                      borderRadius: '99px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                      background: isSelected ? 'var(--accent)' : 'transparent',
+                      color: isSelected ? 'white' : 'var(--text-muted)',
+                    }}
+                  >
+                    {t.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {task.status === 'pending' ? (
         <button
