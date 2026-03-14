@@ -955,7 +955,7 @@ function TaskBoard({ tasks, features, drafts, selectedTask, onSelectTask, onAddD
   `;
 }
 
-function TaskDetail({ task, draft, onQueue, onQueueDraft, onUpdateTask, notes, onUpdateNotes, draftNotes, onUpdateDraftNotes }) {
+function TaskDetail({ task, draft, onQueue, onQueueDraft, onUpdateTask, onDeleteTask, notes, onUpdateNotes, draftNotes, onUpdateDraftNotes }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [localNote, setLocalNote] = useState('');
@@ -1139,6 +1139,19 @@ function TaskDetail({ task, draft, onQueue, onQueueDraft, onUpdateTask, notes, o
           Queue \u25B6
         </button>
       ` : null}
+
+      <button
+        onClick=${() => { if (confirm('Delete "' + (task.fullName || task.name) + '"?')) onDeleteTask(task.id); }}
+        style=${{
+          width: '100%', padding: '6px 16px', marginTop: '8px',
+          background: 'none', color: 'var(--text-light)',
+          border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+          fontSize: '12px', fontFamily: 'var(--font)',
+          cursor: 'pointer', transition: 'all 0.15s',
+        }}
+        onMouseOver=${e => { e.target.style.color = 'var(--danger)'; e.target.style.borderColor = 'var(--danger)'; }}
+        onMouseOut=${e => { e.target.style.color = 'var(--text-light)'; e.target.style.borderColor = 'var(--border)'; }}
+      >Delete task</button>
     </div>
   `;
 }
@@ -1386,6 +1399,16 @@ function App() {
     updateData({ drafts: newDrafts, activity: newActivity });
   };
 
+  const handleDeleteTask = (id) => {
+    const task = tasks.find(t => t.id === id);
+    const newTasks = tasks.filter(t => t.id !== id);
+    const newQueue = queue.filter(q => q.task !== id);
+    const { [id]: _, ...newTaskNotes } = taskNotes;
+    const newActivity = addActivity((task?.name || 'Task') + ' deleted');
+    updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, activity: newActivity });
+    setSelectedTask(null);
+  };
+
   const handleDeleteDraft = (id) => {
     const newDrafts = drafts.filter(c => c.id !== id);
     updateData({ drafts: newDrafts });
@@ -1496,6 +1519,7 @@ function App() {
               onQueue=${handleQueue}
               onQueueDraft=${handleQueueDraft}
               onUpdateTask=${handleUpdateTask}
+              onDeleteTask=${handleDeleteTask}
               notes=${taskNotes[selectedTask] || ''}
               onUpdateNotes=${handleUpdateNotes}
               draftNotes=${selectedDraftData ? (draftNotes[selectedDraftData.id] || '') : ''}
