@@ -40,4 +40,4 @@ if not defined title set "title=Claude Code"
 
 :: Launch as new tab in existing Windows Terminal (or new window if none open)
 :: --suppressApplicationTitle prevents claude from overriding the tab name
-start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" cmd /k claude "!cmd!"
+start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" cmd /k claude --dangerously-skip-permissions "!cmd!"
