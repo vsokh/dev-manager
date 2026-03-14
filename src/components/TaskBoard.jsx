@@ -403,7 +403,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             />
           </div>
         ) : null}
-        {pendingTasks.length >= 2 ? (
+        {pendingTasks.length >= 1 ? (
           <div style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
               onClick={onArrange}
