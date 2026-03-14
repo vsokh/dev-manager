@@ -109,8 +109,16 @@ export function App() {
   };
 
   const handleUpdateTask = (id, updates) => {
-    const newTasks = tasks.map(t => t.id === id ? { ...t, ...updates } : t);
-    const newActivity = addActivity((tasks.find(t => t.id === id)?.name || 'Task') + (updates.status ? ' marked ' + updates.status : ' updated'));
+    const existing = tasks.find(t => t.id === id);
+    const enriched = { ...updates };
+    if (updates.status === 'in-progress' && !existing?.startedAt) {
+      enriched.startedAt = new Date().toISOString();
+    }
+    if (updates.status === 'done' && !existing?.completedAt) {
+      enriched.completedAt = new Date().toISOString().slice(0, 10);
+    }
+    const newTasks = tasks.map(t => t.id === id ? { ...t, ...enriched } : t);
+    const newActivity = addActivity((existing?.name || 'Task') + (updates.status ? ' marked ' + updates.status : ' updated'));
     updateData({ tasks: newTasks, activity: newActivity });
   };
 
@@ -120,7 +128,7 @@ export function App() {
 
   const handleAddTask = (taskData) => {
     const maxId = tasks.reduce((max, t) => Math.max(max, typeof t.id === 'number' ? t.id : 0), 0);
-    const newTask = { ...taskData, id: maxId + 1 };
+    const newTask = { ...taskData, id: maxId + 1, createdAt: new Date().toISOString() };
     const newTasks = [...tasks, newTask];
     const newActivity = addActivity('"' + newTask.name + '" added');
     updateData({ tasks: newTasks, activity: newActivity });

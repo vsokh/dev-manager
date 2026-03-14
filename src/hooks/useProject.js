@@ -213,11 +213,15 @@ export function useProject() {
             needsWrite = true;
           } else {
             // In-progress: overlay in memory only (transient)
-            tasks[idx] = {
-              ...tasks[idx],
+            const enriched = {
               status: prog.status || tasks[idx].status,
               progress: prog.progress || tasks[idx].progress,
             };
+            if (prog.status === 'in-progress' && !tasks[idx].startedAt) {
+              enriched.startedAt = new Date().toISOString();
+              needsWrite = true;
+            }
+            tasks[idx] = { ...tasks[idx], ...enriched };
             stateChanged = true;
           }
         }
