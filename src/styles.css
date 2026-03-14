@@ -93,6 +93,9 @@ input, textarea { color: var(--text); }
   animation: shimmer-text 2s ease-in-out infinite;
 }
 
+/* Activity row — show remove button on hover */
+.activity-row:hover .activity-remove { opacity: 1 !important; }
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }

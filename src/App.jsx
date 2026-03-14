@@ -112,6 +112,11 @@ export function App() {
     updateData({ queue: [] });
   };
 
+  const handleRemoveActivity = (id) => {
+    const newActivity = activity.filter(a => a.id !== id);
+    updateData({ activity: newActivity });
+  };
+
   const setProjectPath = (path) => {
     setProjectPathState(path);
     try {
@@ -194,7 +199,7 @@ export function App() {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <SectionHeader title="Activity" />
-            <ActivityFeed activity={activity} />
+            <ActivityFeed activity={activity} onRemove={handleRemoveActivity} />
           </div>
         </div>
       </div>

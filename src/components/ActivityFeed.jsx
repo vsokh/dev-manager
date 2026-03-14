@@ -4,7 +4,7 @@ function isCompleted(label) {
   return /completed|done/i.test(label);
 }
 
-export function ActivityFeed({ activity }) {
+export function ActivityFeed({ activity, onRemove }) {
   const entries = useMemo(() => {
     return [...activity]
       .sort((a, b) => b.time - a.time)
@@ -40,7 +40,7 @@ export function ActivityFeed({ activity }) {
   return (
     <div style={{ padding: '2px 0' }}>
       {entries.map(e => (
-        <div key={e.key} style={{
+        <div key={e.key} className="activity-row" style={{
           display: 'flex', alignItems: 'center', gap: '8px',
           padding: '5px 14px',
           opacity: e.isToday ? 1 : 0.6,
@@ -77,6 +77,18 @@ export function ActivityFeed({ activity }) {
             fontSize: '10px', color: 'var(--text-light)',
             flexShrink: 0, minWidth: '36px', textAlign: 'right',
           }}>{e.date}</span>
+
+          {/* Remove */}
+          <button
+            onClick={() => onRemove(e.key)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--text-light)', fontSize: '11px', padding: '0 2px',
+              lineHeight: 1, opacity: 0, transition: 'opacity 0.15s',
+            }}
+            className="activity-remove"
+            title="Remove"
+          >×</button>
         </div>
       ))}
     </div>
