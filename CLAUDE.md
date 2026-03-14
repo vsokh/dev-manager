@@ -144,9 +144,14 @@ Warm neutral palette with dark mode support (`[data-theme="dark"]`):
 Layout: 2x2 grid — `[TaskBoard | Detail]` over `[Queue | Activity]`
 Font: Onest (Google Fonts)
 
+## Protected files
+
+**Do NOT modify `src/orchestrator.js`** — this is the orchestrator skill template deployed to every project using Dev Manager. Changes to it affect all projects. Only modify when the user explicitly asks to change the orchestrator workflow.
+
 ## What NOT to do
 
 - Don't add a server — client-side only via File System Access API
 - Don't embed project-specific data — all state comes from `.devmanager/state.json`
 - Don't show implementation details to the manager (commit hashes, skill names, spec file paths, task IDs)
 - Don't let the orchestrator auto-execute without user approval
+- Don't modify `src/orchestrator.js` unless explicitly asked (see Protected files above)
