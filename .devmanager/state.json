@@ -1,0 +1,217 @@
+{
+  "savedAt": "2026-03-14T18:03:14.549Z",
+  "project": "dev-manager",
+  "tasks": [
+    {
+      "id": 1,
+      "name": "Analyze our project, what other features would be useful for us",
+      "fullName": "Analyze our project, what other features would be useful for us",
+      "description": "",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "done",
+      "completedAt": "2026-03-14"
+    },
+    {
+      "id": 2,
+      "name": "Editable task description",
+      "fullName": "Editable task description in detail panel",
+      "description": "Task description is set at creation and can never be changed. Make it editable in the detail panel, similar to how the task name is already editable inline.",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": []
+    },
+    {
+      "id": 3,
+      "name": "Task search and filter",
+      "fullName": "Task search and status filter on the task board",
+      "description": "Add a text search field to filter tasks by name, plus status filter tabs (All / Pending / In Progress / Blocked) so the board stays manageable as it grows.",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": []
+    },
+    {
+      "id": 4,
+      "name": "Spec editor in UI",
+      "fullName": "Markdown spec editor in the task detail panel",
+      "description": "The orchestrator reads specs from .devmanager/specs/, but the manager has no way to write them from the UI. Add a markdown editor in the detail panel so the manager can write detailed specs for complex tasks.",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": []
+    },
+    {
+      "id": 5,
+      "name": "Task timeline and history",
+      "fullName": "Task timeline with timestamps for creation, start, and completion",
+      "description": "Add createdAt, startedAt, completedAt timestamps to tasks. Show a mini-timeline in the detail panel so the manager can see velocity and how long tasks take.",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": []
+    },
+    {
+      "id": 6,
+      "name": "Blocked reason field",
+      "fullName": "Add a blocked reason text field for blocked tasks",
+      "description": "Tasks can be marked blocked but there's no way to say why. Add a 'blocked reason' text field that appears when status is blocked, visible in the card and detail panel.",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": []
+    },
+    {
+      "id": 7,
+      "name": "Feature-task linking",
+      "fullName": "Link tasks to features as epics",
+      "description": "Features exist but aren't connected to tasks. Let the manager group tasks under a feature (epic) to get a higher-level view of progress per feature.",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": []
+    },
+    {
+      "id": 8,
+      "name": "Activity feed filtering",
+      "fullName": "Filter activity feed by task or event type",
+      "description": "Activity feed shows last 15 entries with no filtering. Add a filter dropdown to filter by task name or event type (added, completed, queued, etc.).",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": []
+    },
+    {
+      "id": 9,
+      "name": "State backup and undo",
+      "fullName": "Auto-snapshot state.json before destructive operations",
+      "description": "No way to recover from accidental task deletes or bad edits. Auto-save a snapshot of state.json before destructive operations (delete, bulk changes) and provide a simple undo/restore mechanism.",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": []
+    },
+    {
+      "id": 10,
+      "name": "Attachment captions",
+      "fullName": "Add captions and notes to screenshot attachments",
+      "description": "Screenshots can be attached but can't be annotated. Add a caption text field per attachment so the manager can explain what to look at in each screenshot.",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": []
+    },
+    {
+      "id": 11,
+      "name": "Responsive layout",
+      "fullName": "Responsive layout for narrow screens and mobile",
+      "description": "The 2x2 grid layout doesn't work on narrow screens. Add a collapsible sidebar or tab-based layout for smaller viewports so Dev Manager is usable on tablets and smaller displays.",
+      "skills": [
+        "senior-frontend"
+      ],
+      "status": "pending",
+      "dependsOn": [3]
+    }
+  ],
+  "features": [],
+  "queue": [],
+  "taskNotes": {},
+  "activity": [
+    {
+      "id": "act_1773612000000",
+      "time": 1773612000000,
+      "label": "Tasks arranged into dependency graph"
+    },
+    {
+      "id": "act_1773511391665",
+      "time": 1773511391665,
+      "label": "10 tasks queued"
+    },
+    {
+      "id": "act_1773511260000",
+      "time": 1773511260000,
+      "label": "Tasks arranged into dependency graph"
+    },
+    {
+      "id": "act_1773511185636_1",
+      "time": 1773511185636,
+      "label": "Analyze our project, what other features would be useful for us completed"
+    },
+    {
+      "id": "act_1773510900010",
+      "time": 1773510900010,
+      "label": "\"Responsive layout\" added"
+    },
+    {
+      "id": "act_1773510900009",
+      "time": 1773510900009,
+      "label": "\"Attachment captions\" added"
+    },
+    {
+      "id": "act_1773510900008",
+      "time": 1773510900008,
+      "label": "\"State backup and undo\" added"
+    },
+    {
+      "id": "act_1773510900007",
+      "time": 1773510900007,
+      "label": "\"Activity feed filtering\" added"
+    },
+    {
+      "id": "act_1773510900006",
+      "time": 1773510900006,
+      "label": "\"Feature-task linking\" added"
+    },
+    {
+      "id": "act_1773510900005",
+      "time": 1773510900005,
+      "label": "\"Blocked reason field\" added"
+    },
+    {
+      "id": "act_1773510900004",
+      "time": 1773510900004,
+      "label": "\"Task timeline and history\" added"
+    },
+    {
+      "id": "act_1773510900003",
+      "time": 1773510900003,
+      "label": "\"Spec editor in UI\" added"
+    },
+    {
+      "id": "act_1773510900002",
+      "time": 1773510900002,
+      "label": "\"Task search and filter\" added"
+    },
+    {
+      "id": "act_1773510900001",
+      "time": 1773510900001,
+      "label": "\"Editable task description\" added"
+    },
+    {
+      "id": "act_1773510804860",
+      "time": 1773510804860,
+      "label": "Analyze our project, what other features would be useful for us queued"
+    },
+    {
+      "id": "act_1773510802416",
+      "time": 1773510802416,
+      "label": "\"Analyze our project, what other features would be useful for us\" added"
+    },
+    {
+      "id": "act_init",
+      "time": 1773510777321,
+      "label": "Project initialized"
+    }
+  ]
+}

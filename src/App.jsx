@@ -86,7 +86,7 @@ export function App() {
 
   // Convenience accessors
   const tasks = data.tasks || [];
-  // features array is legacy — done tasks now shown directly from tasks
+  const epics = data.epics || [];
   const queue = data.queue || [];
   const taskNotes = data.taskNotes || {};
   const activity = data.activity || [];
@@ -124,6 +124,16 @@ export function App() {
     const newTasks = [...tasks, newTask];
     const newActivity = addActivity('"' + newTask.name + '" added');
     updateData({ tasks: newTasks, activity: newActivity });
+  };
+
+  const handleRenameGroup = (oldName, newName) => {
+    const newTasks = tasks.map(t => t.group === oldName ? { ...t, group: newName } : t);
+    const newEpics = epics.map(e => e.name === oldName ? { ...e, name: newName } : e);
+    updateData({ tasks: newTasks, epics: newEpics });
+  };
+
+  const handleUpdateEpics = (newEpics) => {
+    updateData({ epics: newEpics });
   };
 
   const handleDeleteTask = (id) => {
@@ -319,6 +329,9 @@ export function App() {
                 onArrange={handleArrange}
                 onPauseTask={pauseTask}
                 onCancelTask={cancelTask}
+                onRenameGroup={handleRenameGroup}
+                epics={epics}
+                onUpdateEpics={handleUpdateEpics}
                 queue={queue}
               />
             </div>
@@ -332,6 +345,7 @@ export function App() {
             <TaskDetail
               task={selectedTaskData}
               tasks={tasks}
+              epics={epics}
               onQueue={handleQueue}
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}

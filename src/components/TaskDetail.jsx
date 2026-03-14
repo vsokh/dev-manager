@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { readAttachmentUrl } from '../fs.js';
 
-export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }) {
+export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [localNote, setLocalNote] = useState('');
@@ -227,8 +227,8 @@ export function TaskDetail({ task, tasks, onQueue, onUpdateTask, onDeleteTask, n
           onBlur={e => e.target.style.borderColor = 'var(--border)'}
         />
         <datalist id="epic-list">
-          {(tasks || []).map(t => t.group).filter(Boolean).filter((g, i, a) => a.indexOf(g) === i).map(g => (
-            <option key={g} value={g} />
+          {(epics || []).map(e => (
+            <option key={e.name} value={e.name} />
           ))}
         </datalist>
       </div>

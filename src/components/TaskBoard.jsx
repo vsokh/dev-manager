@@ -1,10 +1,57 @@
 import React, { useState, useMemo } from 'react';
 import { CardForm } from './CardForm.jsx';
 
-export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask }) {
+const EPIC_PALETTE = [
+  { bg: 'rgba(106,141,190,0.12)', text: '#6a8dbe', border: 'rgba(106,141,190,0.3)' },  // steel blue
+  { bg: 'rgba(196,132,90,0.12)', text: '#c4845a', border: 'rgba(196,132,90,0.3)' },   // warm amber
+  { bg: 'rgba(155,139,180,0.12)', text: '#9b8bb4', border: 'rgba(155,139,180,0.3)' },  // muted purple
+  { bg: 'rgba(90,158,114,0.12)', text: '#5a9e72', border: 'rgba(90,158,114,0.3)' },    // sage green
+  { bg: 'rgba(180,120,120,0.12)', text: '#b47878', border: 'rgba(180,120,120,0.3)' },  // dusty rose
+  { bg: 'rgba(120,165,165,0.12)', text: '#78a5a5', border: 'rgba(120,165,165,0.3)' },  // teal
+  { bg: 'rgba(170,150,100,0.12)', text: '#aa9664', border: 'rgba(170,150,100,0.3)' },  // olive gold
+  { bg: 'rgba(140,130,170,0.12)', text: '#8c82aa', border: 'rgba(140,130,170,0.3)' },  // lavender
+];
+
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics }) {
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [editGroupName, setEditGroupName] = useState('');
   const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'done'), [tasks]);
   const doneTasks = useMemo(() => tasks.filter(t => t.status === 'done'), [tasks]);
   const allGroups = useMemo(() => [...new Set(tasks.map(t => t.group).filter(Boolean))], [tasks]);
+  // Derive colors from epics registry (stable), fallback to hash for unregistered
+  const epicColors = useMemo(() => {
+    const map = {};
+    const usedIndices = new Set();
+    // First pass: registered epics with stored color
+    (epics || []).forEach(e => {
+      const idx = (e.color != null ? e.color : hashString(e.name)) % EPIC_PALETTE.length;
+      usedIndices.add(idx);
+      map[e.name] = EPIC_PALETTE[idx];
+    });
+    // Second pass: unregistered groups get hash-based color (avoid collisions)
+    allGroups.forEach(g => {
+      if (map[g]) return;
+      let idx = hashString(g) % EPIC_PALETTE.length;
+      let attempts = 0;
+      while (usedIndices.has(idx) && attempts < EPIC_PALETTE.length) { idx = (idx + 1) % EPIC_PALETTE.length; attempts++; }
+      usedIndices.add(idx);
+      map[g] = EPIC_PALETTE[idx];
+      // Auto-register this epic
+      if (onUpdateEpics && epics) {
+        const newEpics = [...epics, { name: g, color: idx }];
+        setTimeout(() => onUpdateEpics(newEpics), 0);
+      }
+    });
+    return map;
+  }, [allGroups, epics, onUpdateEpics]);
+  // All epic names for autocomplete (from registry, which includes auto-registered ones)
+  const epicNames = useMemo(() => (epics || []).map(e => e.name), [epics]);
   const pendingGroups = useMemo(() => {
     const grouped = new Map();
     grouped.set(null, []); // ungrouped
@@ -158,9 +205,41 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         {[...pendingGroups.entries()].map(([groupName, groupTasks]) => (
           <div key={groupName || '__ungrouped'} style={{ marginBottom: groupName ? '12px' : '0' }}>
             {groupName ? (
-              <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-light)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                {groupName}
-              </div>
+              editingGroup === groupName ? (
+                <input
+                  value={editGroupName}
+                  onInput={e => setEditGroupName(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = editGroupName.trim();
+                    if (trimmed && trimmed !== groupName && onRenameGroup) onRenameGroup(groupName, trimmed);
+                    setEditingGroup(null);
+                  }}
+                  onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingGroup(null); }}
+                  autoFocus
+                  style={{
+                    fontSize: '10px', fontWeight: 600, color: 'var(--text-light)', marginBottom: '6px',
+                    textTransform: 'uppercase', letterSpacing: '0.04em',
+                    background: 'var(--bg)', border: '1px solid var(--accent)', borderRadius: '3px',
+                    padding: '2px 6px', outline: 'none', fontFamily: 'var(--font)',
+                  }}
+                />
+              ) : (
+                <div
+                  onClick={() => { setEditingGroup(groupName); setEditGroupName(groupName); }}
+                  title="Click to rename epic"
+                  style={{
+                    fontSize: '10px', fontWeight: 600, color: (epicColors[groupName] || {}).text || 'var(--text-light)',
+                    marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em',
+                    cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', transition: 'all 0.15s',
+                    background: (epicColors[groupName] || {}).bg || 'transparent',
+                    display: 'inline-block',
+                  }}
+                  onMouseOver={e => e.target.style.opacity = '0.7'}
+                  onMouseOut={e => e.target.style.opacity = '1'}
+                >
+                  {groupName}
+                </div>
+              )
             ) : null}
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               {groupTasks.map(renderTaskCard)}
@@ -194,7 +273,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
           <div style={{ marginTop: '12px', maxWidth: '380px' }}>
             <CardForm
               card={null}
-              groups={allGroups}
+              groups={epicNames}
               onSave={(task) => { onAddTask(task); setShowNewForm(false); }}
               onCancel={() => setShowNewForm(false)}
             />
@@ -253,10 +332,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               Done
             </span>
             <span style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: '20px', height: '20px', borderRadius: '50%',
-              background: 'var(--success-light)', color: 'var(--success)',
-              fontSize: '11px', fontWeight: 700,
+              fontSize: '11px', fontWeight: 600, color: 'var(--text-light)',
             }}>{doneTasks.length}</span>
             <span style={{ fontSize: '11px', color: 'var(--text-light)', transform: showCompleted ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
           </div>
@@ -264,22 +340,27 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             <div style={{ paddingTop: '4px' }}>
               {[...doneGroups.entries()].map(([groupName, groupTasks]) => (
                 <div key={groupName} style={{ marginBottom: '8px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--success)', opacity: 0.6, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <div style={{
+                    fontSize: '10px', fontWeight: 600, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em',
+                    color: (epicColors[groupName] || {}).text || 'var(--text-light)', opacity: 0.6,
+                    display: 'inline-block', padding: '1px 5px', borderRadius: '3px',
+                    background: (epicColors[groupName] || {}).bg || 'transparent',
+                  }}>
                     {groupName}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {groupTasks.map(t => (
                       <div key={t.id} onClick={() => onSelectTask(t.id)} style={{
-                        background: 'var(--success-light)', border: selectedTask === t.id ? '2px solid var(--success)' : '1px solid var(--success)',
-                        borderRadius: 'var(--radius-sm)', padding: '8px 12px',
-                        cursor: 'pointer', transition: 'all 0.15s',
+                        border: selectedTask === t.id ? '1px solid var(--text-light)' : '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm)', padding: '5px 10px',
+                        cursor: 'pointer', transition: 'all 0.15s', opacity: 0.75,
                       }}>
-                        <span style={{ fontWeight: 500, fontSize: '12px', color: 'var(--success)' }}>{t.name}</span>
+                        <span style={{ fontWeight: 400, fontSize: '11px', color: 'var(--text-light)' }}>{t.name}</span>
                         {t.commitRef ? (
                           <span style={{
                             fontFamily: 'monospace', fontSize: '9px', fontWeight: 600,
-                            background: 'rgba(90,158,114,0.15)', color: 'var(--success)',
-                            padding: '0 4px', borderRadius: '3px', marginLeft: '6px',
+                            background: 'var(--accent-light)', color: 'var(--accent)',
+                            padding: '0 4px', borderRadius: '3px', marginLeft: '5px',
                           }}>{t.commitRef}</span>
                         ) : null}
                       </div>
