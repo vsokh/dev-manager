@@ -21,6 +21,9 @@ function hashString(s) {
 export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics }) {
   const [editingGroup, setEditingGroup] = useState(null);
   const [editGroupName, setEditGroupName] = useState('');
+  const [searchText, setSearchText] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [searchFocused, setSearchFocused] = useState(false);
   const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'done'), [tasks]);
   const doneTasks = useMemo(() => tasks.filter(t => t.status === 'done'), [tasks]);
   const allGroups = useMemo(() => [...new Set(tasks.map(t => t.group).filter(Boolean))], [tasks]);
@@ -52,10 +55,21 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   }, [allGroups, epics, onUpdateEpics]);
   // All epic names for autocomplete (from registry, which includes auto-registered ones)
   const epicNames = useMemo(() => (epics || []).map(e => e.name), [epics]);
+  const filteredPendingTasks = useMemo(() => {
+    let filtered = pendingTasks;
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(t => t.status === activeFilter);
+    }
+    if (searchText.trim()) {
+      const q = searchText.trim().toLowerCase();
+      filtered = filtered.filter(t => t.name.toLowerCase().includes(q));
+    }
+    return filtered;
+  }, [pendingTasks, activeFilter, searchText]);
   const pendingGroups = useMemo(() => {
     const grouped = new Map();
     grouped.set(null, []); // ungrouped
-    for (const t of pendingTasks) {
+    for (const t of filteredPendingTasks) {
       const g = t.group || null;
       if (!grouped.has(g)) grouped.set(g, []);
       grouped.get(g).push(t);
@@ -63,7 +77,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
     // Remove empty null group
     if (grouped.get(null).length === 0) grouped.delete(null);
     return grouped;
-  }, [pendingTasks]);
+  }, [filteredPendingTasks]);
   const doneGroups = useMemo(() => {
     const grouped = new Map();
     for (const t of doneTasks) {
@@ -154,6 +168,11 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   }).join(', ')}
                 </div>
               ) : null}
+              {task.status === 'blocked' && task.blockedReason ? (
+                <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '4px', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  Blocked: {task.blockedReason.length > 50 ? task.blockedReason.slice(0, 50) + '...' : task.blockedReason}
+                </div>
+              ) : null}
               {task.status === 'in-progress' && task.progress ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
                   <div className="progress-text-shimmer" style={{ fontSize: '11px', color: isWaiting(task) ? 'var(--amber)' : 'var(--accent)', lineHeight: 1.3, flex: 1 }}>
@@ -202,6 +221,58 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
           Up next
         </div>
+        {pendingTasks.length >= 2 ? (() => {
+          const statusFilters = [
+            { label: 'All', value: 'all' },
+            { label: 'Pending', value: 'pending' },
+            { label: 'In Progress', value: 'in-progress' },
+            { label: 'Blocked', value: 'blocked' },
+            { label: 'Paused', value: 'paused' },
+          ];
+          const statusCounts = {};
+          for (const t of pendingTasks) {
+            statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
+          }
+          return (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                {statusFilters.filter(f => f.value === 'all' || statusCounts[f.value]).map(f => {
+                  const isActive = activeFilter === f.value;
+                  const count = f.value === 'all' ? pendingTasks.length : (statusCounts[f.value] || 0);
+                  return (
+                    <button
+                      key={f.value}
+                      onClick={() => setActiveFilter(f.value)}
+                      style={{
+                        fontSize: '11px', padding: '3px 10px', borderRadius: '12px',
+                        cursor: 'pointer', fontFamily: 'var(--font)', fontWeight: 500,
+                        transition: 'all 0.15s', border: isActive ? '1px solid var(--accent)' : '1px solid var(--border)',
+                        background: isActive ? 'var(--accent)' : 'transparent',
+                        color: isActive ? 'white' : 'var(--text-light)',
+                      }}
+                    >
+                      {f.label} {count}
+                    </button>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                placeholder="Search tasks..."
+                value={searchText}
+                onInput={e => setSearchText(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                style={{
+                  fontSize: '12px', padding: '4px 10px',
+                  border: searchFocused ? '1px solid var(--accent)' : '1px solid var(--border)',
+                  borderRadius: '12px', background: 'var(--bg)', color: 'var(--text)',
+                  outline: 'none', fontFamily: 'var(--font)', width: '160px',
+                }}
+              />
+            </div>
+          );
+        })() : null}
         {[...pendingGroups.entries()].map(([groupName, groupTasks]) => (
           <div key={groupName || '__ungrouped'} style={{ marginBottom: groupName ? '12px' : '0' }}>
             {groupName ? (
@@ -252,6 +323,14 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             width: '100%',
           }}>
             No tasks yet
+          </div>
+        ) : null}
+        {pendingTasks.length > 0 && filteredPendingTasks.length === 0 && !showNewForm ? (
+          <div style={{
+            padding: '20px', textAlign: 'center', color: 'var(--text-light)', fontSize: '13px',
+            width: '100%',
+          }}>
+            No matching tasks
           </div>
         ) : null}
         {!showNewForm ? (
