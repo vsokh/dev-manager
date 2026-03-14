@@ -6,6 +6,11 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
 
+  const isWaiting = (task) => {
+    const p = (task.progress || '').toLowerCase();
+    return /waiting|approval|planning/.test(p);
+  };
+
   const getCardStyle = (task) => {
     const isSelected = selectedTask === task.id;
     const base = {
@@ -15,10 +20,12 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
       minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
     };
     if (task.status === 'in-progress') {
+      const waiting = isWaiting(task);
+      const color = waiting ? 'var(--amber)' : 'var(--accent)';
       return {
         ...base,
-        border: isSelected ? '2px solid var(--accent)' : '2px solid var(--accent)',
-        boxShadow: isSelected ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)',
+        border: '2px solid ' + color,
+        boxShadow: isSelected ? '0 2px 8px ' + (waiting ? 'rgba(196,132,90,0.25)' : 'rgba(106,141,190,0.25)') : 'var(--shadow-sm)',
       };
     }
     if (task.status === 'done') {
@@ -71,7 +78,7 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
                 </div>
               ) : null}
               {task.status === 'in-progress' && task.progress ? (
-                <div className="progress-text-shimmer" style={{ fontSize: '11px', color: 'var(--accent)', marginTop: '4px', lineHeight: 1.3 }}>
+                <div className="progress-text-shimmer" style={{ fontSize: '11px', color: isWaiting(task) ? 'var(--amber)' : 'var(--accent)', marginTop: '4px', lineHeight: 1.3 }}>
                   {task.progress}
                 </div>
               ) : null}
