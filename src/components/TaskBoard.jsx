@@ -1,22 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { CardForm } from './CardForm.jsx';
-
-const EPIC_PALETTE = [
-  { bg: 'rgba(106,141,190,0.12)', text: '#6a8dbe', border: 'rgba(106,141,190,0.3)' },  // steel blue
-  { bg: 'rgba(196,132,90,0.12)', text: '#c4845a', border: 'rgba(196,132,90,0.3)' },   // warm amber
-  { bg: 'rgba(155,139,180,0.12)', text: '#9b8bb4', border: 'rgba(155,139,180,0.3)' },  // muted purple
-  { bg: 'rgba(90,158,114,0.12)', text: '#5a9e72', border: 'rgba(90,158,114,0.3)' },    // sage green
-  { bg: 'rgba(180,120,120,0.12)', text: '#b47878', border: 'rgba(180,120,120,0.3)' },  // dusty rose
-  { bg: 'rgba(120,165,165,0.12)', text: '#78a5a5', border: 'rgba(120,165,165,0.3)' },  // teal
-  { bg: 'rgba(170,150,100,0.12)', text: '#aa9664', border: 'rgba(170,150,100,0.3)' },  // olive gold
-  { bg: 'rgba(140,130,170,0.12)', text: '#8c82aa', border: 'rgba(140,130,170,0.3)' },  // lavender
-];
-
-function hashString(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
+import { EPIC_PALETTE, PAUSED_COLOR } from '../constants/colors.js';
+import { hashString } from '../utils/hash.js';
+import { STATUS } from '../constants/statuses.js';
 
 export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics }) {
   const [editingGroup, setEditingGroup] = useState(null);
@@ -24,8 +10,8 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   const [searchText, setSearchText] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchFocused, setSearchFocused] = useState(false);
-  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== 'done'), [tasks]);
-  const doneTasks = useMemo(() => tasks.filter(t => t.status === 'done'), [tasks]);
+  const pendingTasks = useMemo(() => tasks.filter(t => t.status !== STATUS.DONE), [tasks]);
+  const doneTasks = useMemo(() => tasks.filter(t => t.status === STATUS.DONE), [tasks]);
   const allGroups = useMemo(() => [...new Set(tasks.map(t => t.group).filter(Boolean))], [tasks]);
   // Derive colors from epics registry (stable), fallback to hash for unregistered
   const epicColors = useMemo(() => {
@@ -103,7 +89,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
       cursor: 'pointer', transition: 'all 0.15s',
       minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
     };
-    if (task.status === 'in-progress') {
+    if (task.status === STATUS.IN_PROGRESS) {
       const waiting = isWaiting(task);
       const color = waiting ? 'var(--amber)' : 'var(--accent)';
       return {
@@ -112,7 +98,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         boxShadow: isSelected ? '0 2px 8px ' + (waiting ? 'rgba(196,132,90,0.25)' : 'rgba(106,141,190,0.25)') : 'var(--shadow-sm)',
       };
     }
-    if (task.status === 'done') {
+    if (task.status === STATUS.DONE) {
       return {
         ...base,
         border: isSelected ? '2px solid var(--success)' : '1px solid var(--success)',
@@ -120,15 +106,15 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         opacity: 0.75,
       };
     }
-    if (task.status === 'paused') {
+    if (task.status === STATUS.PAUSED) {
       return {
         ...base,
-        border: isSelected ? '2px solid #9b8bb4' : '1px dashed #9b8bb4',
+        border: isSelected ? '2px solid ' + PAUSED_COLOR : '1px dashed ' + PAUSED_COLOR,
         boxShadow: isSelected ? '0 2px 8px rgba(155,139,180,0.2)' : 'var(--shadow-sm)',
         opacity: 0.85,
       };
     }
-    if (task.status === 'blocked') {
+    if (task.status === STATUS.BLOCKED) {
       return {
         ...base,
         border: isSelected ? '2px solid var(--text-light)' : '1px solid var(--border)',
@@ -149,7 +135,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
     const stats = [];
     for (const g of allGroups) {
       const total = tasks.filter(t => t.group === g).length;
-      const done = tasks.filter(t => t.group === g && t.status === "done").length;
+      const done = tasks.filter(t => t.group === g && t.status === STATUS.DONE).length;
       if (total > 0) stats.push({ name: g, total, done });
     }
     return stats;
@@ -159,7 +145,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             <div
               key={task.id}
               onClick={() => onSelectTask(task.id)}
-              className={task.status === 'in-progress' ? 'task-card-in-progress' : undefined}
+              className={task.status === STATUS.IN_PROGRESS ? 'task-card-in-progress' : undefined}
               style={getCardStyle(task)}
               onMouseOver={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
               onMouseOut={e => e.currentTarget.style.boxShadow = selectedTask === task.id ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)'}
@@ -179,12 +165,12 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   }).join(', ')}
                 </div>
               ) : null}
-              {task.status === 'blocked' && task.blockedReason ? (
+              {task.status === STATUS.BLOCKED && task.blockedReason ? (
                 <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '4px', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   Blocked: {task.blockedReason.length > 50 ? task.blockedReason.slice(0, 50) + '...' : task.blockedReason}
                 </div>
               ) : null}
-              {task.status === 'in-progress' && task.progress ? (
+              {task.status === STATUS.IN_PROGRESS && task.progress ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
                   <div className="progress-text-shimmer" style={{ fontSize: '11px', color: isWaiting(task) ? 'var(--amber)' : 'var(--accent)', lineHeight: 1.3, flex: 1 }}>
                     {task.progress}
@@ -198,7 +184,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                       fontSize: '10px', fontFamily: 'var(--font)', lineHeight: 1.4,
                       flexShrink: 0, transition: 'all 0.15s',
                     }}
-                    onMouseOver={e => { e.target.style.borderColor = '#9b8bb4'; e.target.style.color = '#9b8bb4'; }}
+                    onMouseOver={e => { e.target.style.borderColor = PAUSED_COLOR; e.target.style.color = PAUSED_COLOR; }}
                     onMouseOut={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = 'var(--text-light)'; }}
                   >&#9646;&#9646;</button>
                   <button
@@ -212,11 +198,11 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                     }}
                     onMouseOver={e => { e.target.style.borderColor = 'var(--danger)'; e.target.style.color = 'var(--danger)'; }}
                     onMouseOut={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = 'var(--text-light)'; }}
-                  >✕</button>
+                  >&#10005;</button>
                 </div>
               ) : null}
-              {task.status === 'paused' ? (
-                <div style={{ fontSize: '11px', color: '#9b8bb4', marginTop: '4px', lineHeight: 1.3 }}>
+              {task.status === STATUS.PAUSED ? (
+                <div style={{ fontSize: '11px', color: PAUSED_COLOR, marginTop: '4px', lineHeight: 1.3 }}>
                   {task.lastProgress || 'Paused'}
                   {task.branch ? (
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', opacity: 0.7, marginTop: '2px' }}>{task.branch}</div>
@@ -260,10 +246,10 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         {pendingTasks.length >= 2 ? (() => {
           const statusFilters = [
             { label: 'All', value: 'all' },
-            { label: 'Pending', value: 'pending' },
-            { label: 'In Progress', value: 'in-progress' },
-            { label: 'Blocked', value: 'blocked' },
-            { label: 'Paused', value: 'paused' },
+            { label: 'Pending', value: STATUS.PENDING },
+            { label: 'In Progress', value: STATUS.IN_PROGRESS },
+            { label: 'Blocked', value: STATUS.BLOCKED },
+            { label: 'Paused', value: STATUS.PAUSED },
           ];
           const statusCounts = {};
           for (const t of pendingTasks) {
@@ -347,7 +333,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
                   {groupName}
                   {(() => {
                     const total = tasks.filter(t => t.group === groupName).length;
-                    const done = tasks.filter(t => t.group === groupName && t.status === "done").length;
+                    const done = tasks.filter(t => t.group === groupName && t.status === STATUS.DONE).length;
                     return (
                       <span style={{ fontSize: "9px", fontWeight: 500, color: "var(--text-light)", marginLeft: "6px", letterSpacing: "normal", textTransform: "none" }}>
                         {done}/{total}
@@ -420,7 +406,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               Arrange tasks
             </button>
             {(() => {
-              const pendingNotQueued = tasks.filter(t => (t.status === 'pending' || t.status === 'paused') && !(queue || []).some(q => q.task === t.id));
+              const pendingNotQueued = tasks.filter(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !(queue || []).some(q => q.task === t.id));
               if (pendingNotQueued.length === 0) return null;
               return (
                 <button
@@ -458,7 +444,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             <span style={{
               fontSize: '11px', fontWeight: 600, color: 'var(--text-light)',
             }}>{doneTasks.length}</span>
-            <span style={{ fontSize: '11px', color: 'var(--text-light)', transform: showCompleted ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-light)', transform: showCompleted ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>&#9660;</span>
           </div>
           {showCompleted ? (
             <div style={{ paddingTop: '4px' }}>

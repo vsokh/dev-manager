@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import { PAUSED_COLOR } from '../constants/colors.js';
+import { STATUS } from '../constants/statuses.js';
 
 function computePhases(queue, tasks) {
   const taskMap = new Map((tasks || []).map(t => [t.id, t]));
@@ -76,8 +78,8 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
   const getItemStatus = (item) => {
     const task = taskMap.get(item.task);
     if (!task) return 'queued';
-    if (task.status === 'paused') return 'paused';
-    if (task.status !== 'in-progress') return 'queued';
+    if (task.status === STATUS.PAUSED) return 'paused';
+    if (task.status !== STATUS.IN_PROGRESS) return 'queued';
     return isWaiting(task) ? 'waiting' : 'working';
   };
 
@@ -85,7 +87,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
     const status = getItemStatus(item);
     const isLaunched = launchedId === itemKey(item);
     if (isLaunched) return { bg: 'var(--success)', icon: '\u2713' };
-    if (status === 'paused') return { bg: '#9b8bb4', icon: '\u25B6' }; // purple play = resume
+    if (status === 'paused') return { bg: PAUSED_COLOR, icon: '\u25B6' }; // purple play = resume
     if (status === 'waiting') return { bg: 'var(--amber)', icon: '\u25CF' };
     if (status === 'working') return { bg: 'var(--accent)', icon: '\u25CF' };
     return { bg: 'var(--accent)', icon: '\u25B6' };
@@ -140,8 +142,8 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           {isPaused ? (
             <span style={{
               fontSize: '10px', display: 'block', marginTop: '1px',
-              color: '#9b8bb4',
-            }}>{task?.lastProgress || 'Paused — click ▶ to resume'}</span>
+              color: PAUSED_COLOR,
+            }}>{task?.lastProgress || 'Paused — click \u25B6 to resume'}</span>
           ) : null}
         </div>
         {isActive && onPauseTask ? (
@@ -150,7 +152,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
             title="Pause — save progress, resume later"
             style={{
               padding: '2px 6px', background: 'none', border: 'none',
-              cursor: 'pointer', color: '#9b8bb4', fontSize: '12px',
+              cursor: 'pointer', color: PAUSED_COLOR, fontSize: '12px',
               lineHeight: 1, flexShrink: 0,
             }}
           >&#9646;&#9646;</button>
@@ -172,7 +174,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
     <div>
       {queue.map(renderItem)}
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-        {onQueueAll && (tasks || []).some(t => (t.status === 'pending' || t.status === 'paused') && !queue.some(q => q.task === t.id)) ? (
+        {onQueueAll && (tasks || []).some(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id)) ? (
           <button onClick={onQueueAll} style={{
             padding: '4px 10px', background: 'none', color: 'var(--accent)',
             border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
@@ -230,7 +232,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                   }}
                   onMouseOver={e => { e.target.style.background = 'var(--accent)'; e.target.style.color = 'white'; }}
                   onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--accent)'; }}
-                >▶ Launch phase</button>
+                >&#9654; Launch phase</button>
               </>
             ) : null}
           </div>
@@ -303,8 +305,8 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                     {isPaused ? (
                       <span style={{
                         fontSize: '10px', display: 'block', marginTop: '1px',
-                        color: '#9b8bb4',
-                      }}>{task?.lastProgress || 'Paused — click ▶ to resume'}</span>
+                        color: PAUSED_COLOR,
+                      }}>{task?.lastProgress || 'Paused — click \u25B6 to resume'}</span>
                     ) : null}
                   </div>
                   {isActive && onPauseTask ? (
@@ -313,7 +315,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
                       title="Pause — save progress, resume later"
                       style={{
                         padding: '2px 6px', background: 'none', border: 'none',
-                        cursor: 'pointer', color: '#9b8bb4', fontSize: '12px',
+                        cursor: 'pointer', color: PAUSED_COLOR, fontSize: '12px',
                         lineHeight: 1, flexShrink: 0,
                       }}
                     >&#9646;&#9646;</button>
@@ -334,7 +336,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
         </div>
       ))}
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-        {onQueueAll && (tasks || []).some(t => (t.status === 'pending' || t.status === 'paused') && !queue.some(q => q.task === t.id)) ? (
+        {onQueueAll && (tasks || []).some(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id)) ? (
           <button onClick={onQueueAll} style={{
             padding: '4px 10px', background: 'none', color: 'var(--accent)',
             border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', fontSize: '11px',

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ensureDevManagerDir } from '../fs.js';
+import { STATUS } from '../constants/statuses.js';
 
 // Topological sort: dependencies come before dependents
 function sortByDependencies(queueItems, allTasks) {
@@ -82,7 +83,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
   };
 
   const handleQueueAll = () => {
-    const pending = tasks.filter(t => (t.status === 'pending' || t.status === 'paused') && !queue.some(q => q.task === t.id));
+    const pending = tasks.filter(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !queue.some(q => q.task === t.id));
     if (pending.length === 0) return;
     const unsorted = [...queue, ...pending.map(t => ({
       task: t.id,

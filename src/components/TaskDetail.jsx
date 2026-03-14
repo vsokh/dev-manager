@@ -1,22 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { readAttachmentUrl } from '../fs.js';
+import { EPIC_PALETTE, PAUSED_COLOR } from '../constants/colors.js';
+import { hashString } from '../utils/hash.js';
+import { STATUS } from '../constants/statuses.js';
 
-const EPIC_PALETTE = [
-  { bg: "rgba(106,141,190,0.12)", text: "#6a8dbe", border: "rgba(106,141,190,0.3)" },
-  { bg: "rgba(196,132,90,0.12)", text: "#c4845a", border: "rgba(196,132,90,0.3)" },
-  { bg: "rgba(155,139,180,0.12)", text: "#9b8bb4", border: "rgba(155,139,180,0.3)" },
-  { bg: "rgba(90,158,114,0.12)", text: "#5a9e72", border: "rgba(90,158,114,0.3)" },
-  { bg: "rgba(180,120,120,0.12)", text: "#b47878", border: "rgba(180,120,120,0.3)" },
-  { bg: "rgba(120,165,165,0.12)", text: "#78a5a5", border: "rgba(120,165,165,0.3)" },
-  { bg: "rgba(170,150,100,0.12)", text: "#aa9664", border: "rgba(170,150,100,0.3)" },
-  { bg: "rgba(140,130,170,0.12)", text: "#8c82aa", border: "rgba(140,130,170,0.3)" },
-];
-
-function hashString(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
 export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
@@ -165,13 +152,13 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     </div>
   );
 
-  const statusOptions = ['pending', 'in-progress', 'paused', 'done', 'blocked'];
+  const statusOptions = [STATUS.PENDING, STATUS.IN_PROGRESS, STATUS.PAUSED, STATUS.DONE, STATUS.BLOCKED];
   const currentIdx = statusOptions.indexOf(task.status);
 
-  const badgeClass = task.status === 'done' ? 'badge-done'
-    : task.status === 'blocked' ? 'badge-blocked'
-    : task.status === 'in-progress' ? 'badge-in-progress'
-    : task.status === 'paused' ? 'badge-paused'
+  const badgeClass = task.status === STATUS.DONE ? 'badge-done'
+    : task.status === STATUS.BLOCKED ? 'badge-blocked'
+    : task.status === STATUS.IN_PROGRESS ? 'badge-in-progress'
+    : task.status === STATUS.PAUSED ? 'badge-paused'
     : 'badge-pending';
 
   const attachments = task.attachments || [];
@@ -197,7 +184,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           onChange={e => {
             const next = e.target.value;
             const updates = { status: next };
-            if (task.status === 'blocked' && next !== 'blocked') {
+            if (task.status === STATUS.BLOCKED && next !== STATUS.BLOCKED) {
               updates.blockedReason = '';
               setLocalBlockedReason('');
             }
@@ -214,11 +201,11 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         >
           {statusOptions.map(s => {
             const colors = {
-              'pending': '#888',
-              'in-progress': 'var(--accent)',
-              'paused': '#9b8bb4',
-              'done': 'var(--success)',
-              'blocked': 'var(--danger, #c45)',
+              [STATUS.PENDING]: '#888',
+              [STATUS.IN_PROGRESS]: 'var(--accent)',
+              [STATUS.PAUSED]: PAUSED_COLOR,
+              [STATUS.DONE]: 'var(--success)',
+              [STATUS.BLOCKED]: 'var(--danger, #c45)',
             };
             return <option key={s} value={s} style={{ background: 'var(--surface)', color: colors[s] || 'var(--text)' }}>{s}</option>;
           })}
@@ -230,7 +217,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         )}
       </div>
 
-      {task.status === 'in-progress' && task.progress ? (
+      {task.status === STATUS.IN_PROGRESS && task.progress ? (
         <div className="progress-text-shimmer" style={{
           fontSize: '12px', color: 'var(--accent)', marginBottom: '12px',
           padding: '8px 12px', background: 'var(--accent-light)', borderRadius: 'var(--radius-sm)',
@@ -240,7 +227,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         </div>
       ) : null}
 
-      {task.status === 'blocked' ? (
+      {task.status === STATUS.BLOCKED ? (
         <div style={{ marginBottom: '12px' }}>
           <input
             value={localBlockedReason}
@@ -303,28 +290,28 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         // Build history: from task.history array, or fallback to legacy timestamp fields
         let history = task.history || [];
         if (history.length === 0) {
-          if (task.createdAt) history.push({ status: 'created', at: task.createdAt });
-          if (task.startedAt) history.push({ status: 'in-progress', at: task.startedAt });
-          if (task.pausedAt) history.push({ status: 'paused', at: task.pausedAt });
-          if (task.completedAt) history.push({ status: 'done', at: task.completedAt });
+          if (task.createdAt) history.push({ status: STATUS.CREATED, at: task.createdAt });
+          if (task.startedAt) history.push({ status: STATUS.IN_PROGRESS, at: task.startedAt });
+          if (task.pausedAt) history.push({ status: STATUS.PAUSED, at: task.pausedAt });
+          if (task.completedAt) history.push({ status: STATUS.DONE, at: task.completedAt });
         }
         if (history.length === 0) return null;
 
         const dotColor = {
-          'created': 'var(--text-light)',
-          'pending': 'var(--text-light)',
-          'in-progress': 'var(--accent)',
-          'paused': '#9b8bb4',
-          'blocked': 'var(--danger, #c45)',
-          'done': 'var(--success)',
+          [STATUS.CREATED]: 'var(--text-light)',
+          [STATUS.PENDING]: 'var(--text-light)',
+          [STATUS.IN_PROGRESS]: 'var(--accent)',
+          [STATUS.PAUSED]: PAUSED_COLOR,
+          [STATUS.BLOCKED]: 'var(--danger, #c45)',
+          [STATUS.DONE]: 'var(--success)',
         };
         const label = {
-          'created': 'Created',
-          'pending': 'Pending',
-          'in-progress': 'Started',
-          'paused': 'Paused',
-          'blocked': 'Blocked',
-          'done': 'Completed',
+          [STATUS.CREATED]: 'Created',
+          [STATUS.PENDING]: 'Pending',
+          [STATUS.IN_PROGRESS]: 'Started',
+          [STATUS.PAUSED]: 'Paused',
+          [STATUS.BLOCKED]: 'Blocked',
+          [STATUS.DONE]: 'Completed',
         };
 
         return (
@@ -488,7 +475,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       </div>
 
       {(() => {
-        const otherTasks = (tasks || []).filter(t => t.id !== task.id && (t.status === 'pending' || t.status === 'in-progress'));
+        const otherTasks = (tasks || []).filter(t => t.id !== task.id && (t.status === STATUS.PENDING || t.status === STATUS.IN_PROGRESS));
         if (otherTasks.length === 0) return null;
         const deps = task.dependsOn || [];
         const selected = otherTasks.filter(t => deps.includes(t.id));
@@ -556,9 +543,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         );
       })()}
 
-      {(task.status === 'pending' || task.status === 'paused') && task.manual ? (
+      {(task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && task.manual ? (
         <button
-          onClick={() => onUpdateTask(task.id, { status: 'done' })}
+          onClick={() => onUpdateTask(task.id, { status: STATUS.DONE })}
           style={{
             width: '100%', padding: '8px 16px',
             background: 'var(--success)', color: 'white',
@@ -572,7 +559,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         >
           Mark done &#10003;
         </button>
-      ) : (task.status === 'pending' || task.status === 'paused') && !task.manual ? (
+      ) : (task.status === STATUS.PENDING || task.status === STATUS.PAUSED) && !task.manual ? (
         <button
           onClick={() => onQueue(task)}
           style={{

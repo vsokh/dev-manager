@@ -1,4 +1,5 @@
 import { saveAttachment, deleteAttachment } from '../fs.js';
+import { STATUS } from '../constants/statuses.js';
 
 export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction }) {
   const tasks = data?.tasks || [];
@@ -23,7 +24,7 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction }) 
       const history = [...(existing?.history || [])];
       // Auto-add initial "created" entry if history is empty
       if (history.length === 0 && existing?.createdAt) {
-        history.push({ status: 'created', at: existing.createdAt });
+        history.push({ status: STATUS.CREATED, at: existing.createdAt });
       }
       history.push({ status: updates.status, at: new Date().toISOString() });
       enriched.history = history;
