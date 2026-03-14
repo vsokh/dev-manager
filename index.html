@@ -178,15 +178,10 @@ async function ensureDevManagerDir(projectHandle) {
 
 async function ensureOrchestratorSkill(projectHandle) {
   try {
-    // Check if .claude/skills/orchestrator/SKILL.md already exists
     const claude = await projectHandle.getDirectoryHandle('.claude', { create: true });
     const skills = await claude.getDirectoryHandle('skills', { create: true });
     const orch = await skills.getDirectoryHandle('orchestrator', { create: true });
-    try {
-      await orch.getFileHandle('SKILL.md');
-      return; // already exists, don't overwrite
-    } catch {}
-    // Create it
+    // Always write latest template — single source of truth is index.html
     const fileHandle = await orch.getFileHandle('SKILL.md', { create: true });
     const writable = await fileHandle.createWritable();
     await writable.write(ORCHESTRATOR_SKILL_TEMPLATE);
