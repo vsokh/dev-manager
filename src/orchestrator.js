@@ -139,11 +139,13 @@ Analyze all pending tasks and determine their dependency graph. Do NOT execute a
 6. Add an activity entry: \`{ "id": "act_{timestamp}", "time": {ms}, "label": "Tasks arranged into dependency graph" }\`
 
 ### Rules:
-- Only set dependencies between pending tasks (not done/blocked)
-- A task with no prerequisites gets \`dependsOn: []\` (or omit the field)
-- Don't create circular dependencies
-- Be conservative — only add a dependency if task B truly cannot start until task A is done
-- Consider: database/schema changes before features, design before implementation, features before testing
+- **MOST tasks should have NO dependencies.** Only add a dependency when task B literally cannot work without task A's output.
+- If two tasks touch different files or different features, they are independent — no dependency.
+- A task with no prerequisites gets \`dependsOn: []\` or omit the field entirely.
+- Maximum 1-2 dependencies per task. If you're setting 3+, you're being too aggressive.
+- Don't create circular dependencies.
+- Only set dependencies between pending tasks (not done/blocked).
+- The goal is maximum parallelism. When in doubt, don't add the dependency.
 
 ### Output to user:
 After writing state.json, present the dependency graph:
