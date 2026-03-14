@@ -71,7 +71,27 @@ input, textarea { color: var(--text); }
 .badge-pending { background: var(--amber-light); color: var(--amber); }
 .badge-blocked { background: var(--border); color: var(--text-light); }
 .badge-accent { background: var(--accent-light); color: var(--accent); }
+.badge-in-progress { background: var(--accent-light); color: var(--accent); }
 .badge-amber { background: var(--amber-light); color: var(--amber); }
+
+/* In-progress task card pulse */
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(106, 141, 190, 0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(106, 141, 190, 0.1); }
+}
+.task-card-in-progress {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+/* Progress text shimmer */
+@keyframes shimmer-text {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+.progress-text-shimmer {
+  animation: shimmer-text 2s ease-in-out infinite;
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }

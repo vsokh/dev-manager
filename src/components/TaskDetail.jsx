@@ -21,8 +21,13 @@ export function TaskDetail({ task, onQueue, onUpdateTask, onDeleteTask, notes, o
     </div>
   );
 
-  const statusOptions = ['done', 'pending', 'blocked'];
+  const statusOptions = ['pending', 'in-progress', 'done', 'blocked'];
   const currentIdx = statusOptions.indexOf(task.status);
+
+  const badgeClass = task.status === 'done' ? 'badge-done'
+    : task.status === 'blocked' ? 'badge-blocked'
+    : task.status === 'in-progress' ? 'badge-in-progress'
+    : 'badge-pending';
 
   return (
     <div style={{ padding: '20px', overflow: 'auto', height: '100%' }}>
@@ -32,13 +37,23 @@ export function TaskDetail({ task, onQueue, onUpdateTask, onDeleteTask, notes, o
             const next = statusOptions[(currentIdx + 1) % statusOptions.length];
             onUpdateTask(task.id, { status: next });
           }}
-          className={`badge ${task.status === 'done' ? 'badge-done' : task.status === 'blocked' ? 'badge-blocked' : 'badge-pending'}`}
+          className={`badge ${badgeClass}`}
           style={{ cursor: 'pointer', border: 'none', fontFamily: 'var(--font)', transition: 'all 0.15s' }}
           title="Click to cycle status"
         >
           {task.status} ↻
         </button>
       </div>
+
+      {task.status === 'in-progress' && task.progress ? (
+        <div className="progress-text-shimmer" style={{
+          fontSize: '12px', color: 'var(--accent)', marginBottom: '12px',
+          padding: '8px 12px', background: 'var(--accent-light)', borderRadius: 'var(--radius-sm)',
+          fontWeight: 500, lineHeight: 1.4,
+        }}>
+          {task.progress}
+        </div>
+      ) : null}
 
       {editing ? (
         <input

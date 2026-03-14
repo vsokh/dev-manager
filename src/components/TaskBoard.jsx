@@ -6,6 +6,45 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
   const [showNewForm, setShowNewForm] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
 
+  const getCardStyle = (task) => {
+    const isSelected = selectedTask === task.id;
+    const base = {
+      background: 'var(--surface)',
+      borderRadius: 'var(--radius-sm)', padding: '12px 16px',
+      cursor: 'pointer', transition: 'all 0.15s',
+      minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
+    };
+    if (task.status === 'in-progress') {
+      return {
+        ...base,
+        border: isSelected ? '2px solid var(--accent)' : '2px solid var(--accent)',
+        boxShadow: isSelected ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)',
+      };
+    }
+    if (task.status === 'done') {
+      return {
+        ...base,
+        border: isSelected ? '2px solid var(--success)' : '1px solid var(--success)',
+        boxShadow: isSelected ? '0 2px 8px rgba(90,158,114,0.2)' : 'var(--shadow-sm)',
+        opacity: 0.75,
+      };
+    }
+    if (task.status === 'blocked') {
+      return {
+        ...base,
+        border: isSelected ? '2px solid var(--text-light)' : '1px solid var(--border)',
+        boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.1)' : 'var(--shadow-sm)',
+        opacity: 0.6,
+      };
+    }
+    // pending (default)
+    return {
+      ...base,
+      border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border)',
+      boxShadow: isSelected ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)',
+    };
+  };
+
   return (
     <div>
       <div style={{ marginBottom: '16px' }}>
@@ -17,18 +56,17 @@ export function TaskBoard({ tasks, features, selectedTask, onSelectTask, onAddTa
             <div
               key={task.id}
               onClick={() => onSelectTask(task.id)}
-              style={{
-                background: 'var(--surface)',
-                border: selectedTask === task.id ? '2px solid var(--accent)' : '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)', padding: '12px 16px',
-                cursor: 'pointer', transition: 'all 0.15s',
-                boxShadow: selectedTask === task.id ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)',
-                minWidth: '160px', flex: '1 1 160px', maxWidth: '260px',
-              }}
+              className={task.status === 'in-progress' ? 'task-card-in-progress' : undefined}
+              style={getCardStyle(task)}
               onMouseOver={e => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
               onMouseOut={e => e.currentTarget.style.boxShadow = selectedTask === task.id ? '0 2px 8px rgba(106,141,190,0.2)' : 'var(--shadow-sm)'}
             >
               <div style={{ fontWeight: 600, fontSize: '13px' }}>{task.name}</div>
+              {task.status === 'in-progress' && task.progress ? (
+                <div className="progress-text-shimmer" style={{ fontSize: '11px', color: 'var(--accent)', marginTop: '4px', lineHeight: 1.3 }}>
+                  {task.progress}
+                </div>
+              ) : null}
             </div>
           ))}
           {pendingTasks.length === 0 && !showNewForm ? (

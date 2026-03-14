@@ -23,6 +23,8 @@ Read \`.devmanager/state.json\`. Pick first item from \`queue\`.
 
 If empty: "Nothing queued. Add tasks in Dev Manager."
 
+Set the task status to \`in-progress\` and \`progress: "Reading queue..."\` in state.json.
+
 ### 2. Understand the task
 
 Queue item format: \`{ "task": N, "taskName": "...", "notes": "..." }\`
@@ -31,11 +33,15 @@ Queue item format: \`{ "task": N, "taskName": "...", "notes": "..." }\`
 
 ### 3. Plan the approach
 
+Update progress: \`progress: "Exploring codebase..."\`
+
 Use an Explore agent to understand the codebase context:
 
 \`\`\`
 Agent(subagent_type="Explore", prompt="Find all files related to [feature]. I need to understand [what].")
 \`\`\`
+
+Update progress: \`progress: "Planning approach..."\`
 
 Based on the exploration, decide:
 - What files need to change
@@ -60,6 +66,8 @@ Manager says: "Frontend code exists. Needs Google provider config + reliability 
 
 ### 4. Delegate to sub-agent (only after approval)
 
+Update progress: \`progress: "Delegating to sub-agent..."\`
+
 Launch an implementation agent:
 
 \`\`\`
@@ -78,6 +86,8 @@ The prompt to the sub-agent should include:
 
 ### 5. Review the result
 
+Update progress: \`progress: "Reviewing results..."\`
+
 When the sub-agent returns:
 - Check if it completed all requirements
 - If it ran the build successfully
@@ -87,8 +97,9 @@ When the sub-agent returns:
 
 Update \`.devmanager/state.json\`:
 - Remove executed item from \`queue\`
-- Update task in \`tasks\` array: \`status: "done"\`, \`completedAt: "YYYY-MM-DD"\`
-- Add to \`activity\`: \`{ "id": "act_{timestamp}", "time": {ms}, "label": "{taskName} completed" }\`
+- Update task in \`tasks\` array: \`status: "done"\`, \`completedAt: "YYYY-MM-DD"\`, clear \`progress\`
+- Get commit info: \`git log -1 --format=%h\` for commitRef, count files from \`git diff --stat HEAD~1\` for filesChanged
+- Add to \`activity\`: \`{ "id": "act_{timestamp}", "time": {ms}, "label": "{taskName} completed", "commitRef": "{hash}", "filesChanged": {count} }\`
 
 Then check if there are more items in the queue. If yes, ask: "Next up: {taskName}. Continue?"
 
@@ -151,6 +162,27 @@ Agent(description="Handle OAuth errors", prompt="...")
 ## Files to modify
 - [identified files]
 \`\`\`
+
+---
+
+## Writing progress updates
+
+At each step, update the task in \`.devmanager/state.json\`:
+1. Read the current state
+2. Find the task in the \`tasks\` array
+3. Update \`status\` and \`progress\` fields
+4. Write the file back
+
+This lets Dev Manager show live progress (it polls every 3s).
+
+Example progress values:
+- "Reading queue..."
+- "Exploring codebase..."
+- "Planning approach..."
+- "Waiting for approval"
+- "Delegating to sub-agent..."
+- "Reviewing results..."
+- "Writing results..."
 
 ---
 
