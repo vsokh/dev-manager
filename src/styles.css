@@ -134,7 +134,12 @@ input, textarea { color: var(--text); }
   padding: 14px 32px;
 }
 
-/* Detail panel overlay (hidden on desktop) */
+/* Detail panel */
+.dm-detail-panel {
+  display: flex;
+  flex-direction: column;
+}
+
 .dm-detail-backdrop {
   display: none;
 }

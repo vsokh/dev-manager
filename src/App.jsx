@@ -340,7 +340,7 @@ export function App() {
           )}
           <div className={'dm-detail-panel' + (selectedTask ? ' open' : '')} style={{
             background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column',
+            boxShadow: 'var(--shadow-sm)',
           }}>
             <SectionHeader title="Detail" />
             <TaskDetail
