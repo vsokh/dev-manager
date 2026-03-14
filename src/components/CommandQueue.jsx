@@ -51,7 +51,7 @@ function computePhases(queue, tasks) {
   return phases;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onRemove, onClear, launchedId, projectPath, onSetPath }) {
+export function CommandQueue({ queue, tasks, onLaunch, onRemove, onClear, onQueueAll, launchedId, projectPath, onSetPath }) {
   const itemKey = (item) => item.task;
   const [editingPath, setEditingPath] = useState(false);
   const [pathInput, setPathInput] = useState(projectPath || '');
@@ -105,12 +105,19 @@ export function CommandQueue({ queue, tasks, onLaunch, onRemove, onClear, launch
   const renderFlatList = () => (
     <div>
       {queue.map(renderItem)}
-      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+        {onQueueAll && (tasks || []).some(t => t.status === 'pending' && !queue.some(q => q.task === t.id)) ? (
+          <button onClick={onQueueAll} style={{
+            padding: '4px 10px', background: 'none', color: 'var(--accent)',
+            border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+            fontFamily: 'var(--font)', cursor: 'pointer',
+          }}>Queue all</button>
+        ) : null}
         <button onClick={onClear} style={{
           padding: '4px 10px', background: 'none', color: 'var(--text-light)',
           border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
           fontFamily: 'var(--font)', cursor: 'pointer',
-        }}>Clear queue</button>
+        }}>Unqueue all</button>
       </div>
     </div>
   );
@@ -219,12 +226,19 @@ export function CommandQueue({ queue, tasks, onLaunch, onRemove, onClear, launch
           })}
         </div>
       ))}
-      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+        {onQueueAll && (tasks || []).some(t => t.status === 'pending' && !queue.some(q => q.task === t.id)) ? (
+          <button onClick={onQueueAll} style={{
+            padding: '4px 10px', background: 'none', color: 'var(--accent)',
+            border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
+            fontFamily: 'var(--font)', cursor: 'pointer',
+          }}>Queue all</button>
+        ) : null}
         <button onClick={onClear} style={{
           padding: '4px 10px', background: 'none', color: 'var(--text-light)',
           border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '11px',
           fontFamily: 'var(--font)', cursor: 'pointer',
-        }}>Clear queue</button>
+        }}>Unqueue all</button>
       </div>
     </div>
   );

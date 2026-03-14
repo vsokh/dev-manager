@@ -302,7 +302,7 @@ export function App() {
             boxShadow: 'var(--shadow-sm)',
           }}>
             <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-            <CommandQueue queue={queue} tasks={tasks} onLaunch={handleLaunchTask} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} launchedId={launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
+            <CommandQueue queue={queue} tasks={tasks} onLaunch={handleLaunchTask} onRemove={handleRemoveFromQueue} onClear={handleClearQueue} onQueueAll={handleQueueAll} launchedId={launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
           </div>
 
           <div style={{
