@@ -65,8 +65,9 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
     save({ ...data, ...partial });
   };
 
-  const addActivity = (label) => {
+  const addActivity = (label, taskId) => {
     const entry = { id: 'act_' + Date.now(), time: Date.now(), label };
+    if (taskId != null) entry.taskId = taskId;
     return [entry, ...(data?.activity || [])].slice(0, 20);
   };
 
@@ -78,7 +79,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
       notes: taskNotes[task.id] || '',
     }];
     const newQueue = sortByDependencies(unsorted, tasks);
-    const newActivity = addActivity(task.name + ' queued');
+    const newActivity = addActivity(task.name + ' queued', task.id);
     updateData({ queue: newQueue, activity: newActivity });
   };
 

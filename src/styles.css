@@ -55,6 +55,18 @@ input, textarea { color: var(--dm-text); }
 /* Activity row — show remove button on hover */
 .activity-row:hover .activity-remove { opacity: 1 !important; }
 
+/* Clickable activity items */
+.activity-clickable { cursor: pointer; }
+.activity-clickable:hover .activity-label { text-decoration: underline; }
+
+/* Task card glow when navigated from activity */
+@keyframes task-card-glow {
+  0% { box-shadow: 0 0 0 0 var(--dm-accent); }
+  30% { box-shadow: 0 0 12px 4px var(--dm-accent); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.task-card-glow { animation: task-card-glow 1.2s ease-out; }
+
 /* Attachment thumbnails — show delete button on hover */
 .attachment-thumb:hover .attachment-delete-btn { opacity: 1 !important; }
 

@@ -4,7 +4,7 @@ import { EPIC_PALETTE, PAUSED_COLOR } from '../constants/colors.js';
 import { hashString } from '../utils/hash.js';
 import { STATUS } from '../constants/statuses.js';
 
-export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics }) {
+export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onArrange, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics, glowTaskId }) {
   const [editingGroup, setEditingGroup] = useState(null);
   const [editGroupName, setEditGroupName] = useState('');
   const [searchText, setSearchText] = useState('');
@@ -144,8 +144,9 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   const renderTaskCard = (task) => (
             <div
               key={task.id}
+              data-task-id={task.id}
               onClick={() => onSelectTask(task.id)}
-              className={task.status === STATUS.IN_PROGRESS ? 'task-card-in-progress' : undefined}
+              className={(task.status === STATUS.IN_PROGRESS ? 'task-card-in-progress' : '') + (glowTaskId === task.id ? ' task-card-glow' : '') || undefined}
               style={getCardStyle(task)}
               onMouseOver={e => e.currentTarget.style.boxShadow = 'var(--dm-shadow-md)'}
               onMouseOut={e => e.currentTarget.style.boxShadow = selectedTask === task.id ? '0 2px 8px var(--dm-accent-shadow)' : 'var(--dm-shadow-sm)'}

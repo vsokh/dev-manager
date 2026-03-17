@@ -10,8 +10,10 @@ import {
   createDefaultState,
   ensureOrchestratorSkill,
   ensureCodehealthSkill,
+  ensureAutofixSkill,
   readProgressFiles,
   deleteProgressFile,
+  syncSkills,
 } from '../fs.js';
 
 export function useProject() {
@@ -73,6 +75,7 @@ export function useProject() {
     // Ensure skills exist in the project
     await ensureOrchestratorSkill(handle);
     await ensureCodehealthSkill(handle);
+    await ensureAutofixSkill(handle);
 
     await saveDirHandle(handle, resolvedName);
     setDirHandle(handle);
@@ -216,6 +219,7 @@ export function useProject() {
               id: 'act_' + Date.now() + '_' + id,
               time: Date.now(),
               label: (tasks[idx].name || 'Task ' + id) + ' completed',
+              taskId: id,
             };
             if (prog.commitRef) actEntry.commitRef = prog.commitRef;
             if (prog.filesChanged) actEntry.filesChanged = prog.filesChanged;
@@ -261,6 +265,9 @@ export function useProject() {
         setStatus('synced');
         setTimeout(() => setStatus('connected'), 2000);
       }
+
+      // Redeploy skills if template hash changed (e.g. after HMR or page reload)
+      await syncSkills(dirHandle);
     }, 3000);
     return () => clearInterval(pollTimer.current);
   }, [connected, dirHandle]);

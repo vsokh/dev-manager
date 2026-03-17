@@ -4,7 +4,8 @@ function isCompleted(label) {
   return /completed|done/i.test(label);
 }
 
-export function ActivityFeed({ activity, onRemove }) {
+export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }) {
+  const taskIds = useMemo(() => new Set((tasks || []).map(t => t.id)), [tasks]);
   const entries = useMemo(() => {
     return [...activity]
       .sort((a, b) => b.time - a.time)
@@ -13,19 +14,21 @@ export function ActivityFeed({ activity, onRemove }) {
         const d = new Date(a.time);
         const now = new Date();
         const isToday = d.toDateString() === now.toDateString();
+        const clickableTaskId = a.taskId != null && taskIds.has(a.taskId) ? a.taskId : null;
         return {
           key: a.id,
           label: a.label,
           completed: isCompleted(a.label),
           commitRef: a.commitRef || null,
           filesChanged: a.filesChanged || null,
+          clickableTaskId,
           isToday,
           date: isToday
             ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
             : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
         };
       });
-  }, [activity]);
+  }, [activity, taskIds]);
 
   if (entries.length === 0) {
     return (
@@ -40,11 +43,16 @@ export function ActivityFeed({ activity, onRemove }) {
   return (
     <div style={{ padding: '2px 0' }}>
       {entries.map(e => (
-        <div key={e.key} className="activity-row" style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          padding: '5px 14px',
-          opacity: e.isToday ? 1 : 0.6,
-        }}>
+        <div
+          key={e.key}
+          className={'activity-row' + (e.clickableTaskId != null ? ' activity-clickable' : '')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '5px 14px',
+            opacity: e.isToday ? 1 : 0.6,
+          }}
+          onClick={e.clickableTaskId != null ? () => onNavigateToTask(e.clickableTaskId) : undefined}
+        >
           {/* Colored dot */}
           <span style={{
             width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
@@ -52,8 +60,8 @@ export function ActivityFeed({ activity, onRemove }) {
           }} />
 
           {/* Label */}
-          <span style={{
-            flex: 1, fontSize: '12px', color: 'var(--dm-text)',
+          <span className="activity-label" style={{
+            flex: 1, fontSize: '12px', color: e.clickableTaskId != null ? 'var(--dm-accent)' : 'var(--dm-text)',
             fontWeight: e.isToday ? 500 : 400,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{e.label}</span>
@@ -75,7 +83,7 @@ export function ActivityFeed({ activity, onRemove }) {
 
           {/* Remove */}
           <button
-            onClick={() => onRemove(e.key)}
+            onClick={(ev) => { ev.stopPropagation(); onRemove(e.key); }}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               color: 'var(--dm-text-light)', fontSize: '11px', padding: '0 2px',

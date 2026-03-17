@@ -29,6 +29,10 @@ export function App() {
   // Product panel tab: 'board' or 'quality'
   const [productTab, setProductTab] = useState('board');
 
+  // Glow state for activity-to-task navigation
+  const [glowTaskId, setGlowTaskId] = useState(null);
+  const glowTimer = useRef(null);
+
   // Quality data (reads .devmanager/quality/)
   const quality = useQuality(dirHandle);
 
@@ -102,6 +106,19 @@ export function App() {
     snapshotBeforeAction('Activity removed');
     const newActivity = activity.filter(a => a.id !== id);
     save({ ...data, activity: newActivity });
+  };
+
+  const handleNavigateToTask = (taskId) => {
+    setSelectedTask(taskId);
+    setProductTab('board');
+    clearTimeout(glowTimer.current);
+    setGlowTaskId(taskId);
+    glowTimer.current = setTimeout(() => setGlowTaskId(null), 1500);
+    // Scroll the card into view after React renders the selection
+    setTimeout(() => {
+      const el = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
   };
 
   const setProjectPath = (path) => {
@@ -180,6 +197,7 @@ export function App() {
                     epics={epics}
                     onUpdateEpics={taskActions.handleUpdateEpics}
                     queue={queue}
+                    glowTaskId={glowTaskId}
                   />
                 </div>
               </div>
@@ -223,7 +241,7 @@ export function App() {
                 boxShadow: 'var(--dm-shadow-sm)',
               }}>
                 <SectionHeader title="Activity" />
-                <ActivityFeed activity={activity} onRemove={handleRemoveActivity} />
+                <ActivityFeed activity={activity} onRemove={handleRemoveActivity} tasks={tasks} onNavigateToTask={handleNavigateToTask} />
               </div>
             </div>
           </>

@@ -11,8 +11,9 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction }) 
     save({ ...data, ...partial });
   };
 
-  const addActivity = (label) => {
+  const addActivity = (label, taskId) => {
     const entry = { id: 'act_' + Date.now(), time: Date.now(), label };
+    if (taskId != null) entry.taskId = taskId;
     return [entry, ...(data?.activity || [])].slice(0, 20);
   };
 
@@ -30,7 +31,7 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction }) 
       enriched.history = history;
     }
     const newTasks = tasks.map(t => t.id === id ? { ...t, ...enriched } : t);
-    const newActivity = addActivity((existing?.name || 'Task') + (updates.status ? ' marked ' + updates.status : ' updated'));
+    const newActivity = addActivity((existing?.name || 'Task') + (updates.status ? ' marked ' + updates.status : ' updated'), id);
     updateData({ tasks: newTasks, activity: newActivity });
   };
 
@@ -42,7 +43,7 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction }) 
     const maxId = tasks.reduce((max, t) => Math.max(max, typeof t.id === 'number' ? t.id : 0), 0);
     const newTask = { ...taskData, id: maxId + 1, createdAt: new Date().toISOString() };
     const newTasks = [...tasks, newTask];
-    const newActivity = addActivity('"' + newTask.name + '" added');
+    const newActivity = addActivity('"' + newTask.name + '" added', newTask.id);
     updateData({ tasks: newTasks, activity: newActivity });
   };
 
@@ -65,7 +66,7 @@ export function useTaskActions({ data, save, dirHandle, snapshotBeforeAction }) 
     );
     const newQueue = queue.filter(q => q.task !== id);
     const { [id]: _, ...newTaskNotes } = taskNotes;
-    const newActivity = addActivity((task?.name || 'Task') + ' deleted');
+    const newActivity = addActivity((task?.name || 'Task') + ' deleted', id);
     updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, activity: newActivity });
   };
 
