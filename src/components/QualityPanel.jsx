@@ -411,7 +411,7 @@ function launchClaude(projectPath, command, title) {
   window.open(url, '_blank');
 }
 
-function HealthcheckButton({ projectPath, hasFindings }) {
+function HealthcheckButton({ projectPath }) {
   const [launched, setLaunched] = useState(false);
 
   const handleScan = () => {
@@ -420,42 +420,22 @@ function HealthcheckButton({ projectPath, hasFindings }) {
     setTimeout(() => setLaunched(false), 3000);
   };
 
-  const handleFix = () => {
-    launchClaude(projectPath, '/pipeline fix', 'Fix quality');
-  };
-
   if (!projectPath) return null;
 
   return (
-    <div style={{ display: 'flex', gap: 6 }}>
-      <button
-        onClick={handleScan}
-        style={{
-          background: launched ? 'var(--dm-success-light)' : 'var(--dm-accent)',
-          color: launched ? 'var(--dm-success)' : '#fff',
-          border: 'none', borderRadius: 'var(--dm-radius-sm)',
-          padding: '6px 14px', fontSize: 12, fontWeight: 600,
-          cursor: 'pointer', fontFamily: 'inherit',
-          transition: 'all 0.2s',
-        }}
-      >
-        {launched ? '✓ Launched' : '⟳ Scan'}
-      </button>
-      {hasFindings && (
-        <button
-          onClick={handleFix}
-          style={{
-            background: 'var(--dm-amber-bg)',
-            color: 'var(--dm-amber)',
-            border: 'none', borderRadius: 'var(--dm-radius-sm)',
-            padding: '6px 14px', fontSize: 12, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}
-        >
-          Fix issues
-        </button>
-      )}
-    </div>
+    <button
+      onClick={handleScan}
+      style={{
+        background: launched ? 'var(--dm-success-light)' : 'var(--dm-accent)',
+        color: launched ? 'var(--dm-success)' : '#fff',
+        border: 'none', borderRadius: 'var(--dm-radius-sm)',
+        padding: '6px 14px', fontSize: 12, fontWeight: 600,
+        cursor: 'pointer', fontFamily: 'inherit',
+        transition: 'all 0.2s',
+      }}
+    >
+      {launched ? '✓ Launched' : '⟳ Scan'}
+    </button>
   );
 }
 
@@ -474,7 +454,7 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
         <div style={{ color: 'var(--dm-text-muted)', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
           No quality data yet.
         </div>
-        <HealthcheckButton projectPath={projectPath} hasFindings={false} />
+        <HealthcheckButton projectPath={projectPath} />
       </div>
     );
   }
@@ -515,7 +495,7 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
           </div>
         </div>
         <div style={{ marginLeft: 'auto' }}>
-          <HealthcheckButton projectPath={projectPath} hasFindings={latest.topFindings?.length > 0} />
+          <HealthcheckButton projectPath={projectPath} />
         </div>
       </div>
 
