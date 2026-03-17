@@ -1,27 +1,18 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { readAttachmentUrl } from '../fs.js';
-import { EPIC_PALETTE, PAUSED_COLOR } from '../constants/colors.js';
-import { hashString } from '../utils/hash.js';
+import React, { useState, useEffect } from 'react';
+import { PAUSED_COLOR } from '../constants/colors.js';
 import { STATUS } from '../constants/statuses.js';
+import { Timeline } from './detail/Timeline.jsx';
+import { useAttachments, AttachmentsList } from './detail/Attachments.jsx';
+import { Dependencies } from './detail/Dependencies.jsx';
+import { EpicField } from './detail/EpicField.jsx';
 
 export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, dirHandle, onAddAttachment, onDeleteAttachment }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [localNote, setLocalNote] = useState('');
-  const [pastedFeedback, setPastedFeedback] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const [thumbUrls, setThumbUrls] = useState({});
   const [localBlockedReason, setLocalBlockedReason] = useState('');
-  const dragCounter = useRef(0);
 
-  const epicColorMap = useMemo(() => {
-    const map = {};
-    (epics || []).forEach(e => {
-      const idx = (e.color != null ? e.color : hashString(e.name)) % EPIC_PALETTE.length;
-      map[e.name] = EPIC_PALETTE[idx];
-    });
-    return map;
-  }, [epics]);
+  const { thumbUrls, pastedFeedback, dragging, handlers } = useAttachments(task, dirHandle, onAddAttachment);
 
   useEffect(() => {
     setLocalNote(notes || '');
@@ -29,118 +20,6 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     setEditing(false);
   }, [task?.id, notes]);
 
-  // Load thumbnail URLs when task/attachments change
-  useEffect(() => {
-    if (!task || !dirHandle || !task.attachments?.length) {
-      setThumbUrls({});
-      return;
-    }
-
-    let cancelled = false;
-    const urls = {};
-
-    (async () => {
-      for (const att of task.attachments) {
-        if (cancelled) break;
-        const url = await readAttachmentUrl(dirHandle, task.id, att.filename);
-        if (url) urls[att.id] = url;
-      }
-      if (!cancelled) setThumbUrls(urls);
-    })();
-
-    return () => {
-      cancelled = true;
-      // Revoke old URLs to prevent memory leaks
-      Object.values(urls).forEach(u => { try { URL.revokeObjectURL(u); } catch {} });
-    };
-  }, [task?.id, task?.attachments, dirHandle]);
-
-  // Clean up thumb URLs on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(thumbUrls).forEach(u => { try { URL.revokeObjectURL(u); } catch {} });
-    };
-  }, []);
-
-  const handleImageFile = useCallback((file) => {
-    if (!file || !file.type.startsWith('image/')) return;
-    const ext = file.type === 'image/png' ? 'png' : file.type === 'image/jpeg' ? 'jpg' : 'png';
-    const filename = `screenshot-${Date.now()}.${ext}`;
-    const renamedFile = new File([file], filename, { type: file.type });
-    onAddAttachment(task.id, renamedFile);
-    setPastedFeedback(true);
-    setTimeout(() => setPastedFeedback(false), 1500);
-  }, [task?.id, onAddAttachment]);
-
-  const handlePaste = useCallback((e) => {
-    if (!task || !onAddAttachment) return;
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        e.preventDefault();
-        const blob = item.getAsFile();
-        handleImageFile(blob);
-        return;
-      }
-    }
-  }, [task, onAddAttachment, handleImageFile]);
-
-  const handleDragEnter = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounter.current++;
-    setDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounter.current--;
-    if (dragCounter.current === 0) setDragging(false);
-  }, []);
-
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragging(false);
-    dragCounter.current = 0;
-    if (!task || !onAddAttachment) return;
-    const files = e.dataTransfer?.files;
-    if (files) {
-      for (const file of files) {
-        if (file.type.startsWith('image/')) {
-          handleImageFile(file);
-        }
-      }
-    }
-  }, [task, onAddAttachment, handleImageFile]);
-
-
-  const formatDate = (iso) => {
-    if (!iso) return null;
-    const d = new Date(iso);
-    if (isNaN(d)) return null;
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
-      d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  };
-
-  const formatDuration = (from, to) => {
-    if (!from || !to) return null;
-    const ms = new Date(to) - new Date(from);
-    if (ms < 0 || isNaN(ms)) return null;
-    const mins = Math.floor(ms / 60000);
-    const hrs = Math.floor(mins / 60);
-    const days = Math.floor(hrs / 24);
-    if (days > 0) return days + 'd ' + (hrs % 24) + 'h';
-    if (hrs > 0) return hrs + 'h ' + (mins % 60) + 'm';
-    return mins + 'm';
-  };
   if (!task) return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -153,7 +32,6 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
   );
 
   const statusOptions = [STATUS.PENDING, STATUS.IN_PROGRESS, STATUS.PAUSED, STATUS.DONE, STATUS.BLOCKED, STATUS.BACKLOG];
-  const currentIdx = statusOptions.indexOf(task.status);
 
   const badgeClass = task.status === STATUS.DONE ? 'badge-done'
     : task.status === STATUS.BLOCKED ? 'badge-blocked'
@@ -161,8 +39,6 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
     : task.status === STATUS.PAUSED ? 'badge-paused'
     : task.status === STATUS.BACKLOG ? 'badge-backlog'
     : 'badge-pending';
-
-  const attachments = task.attachments || [];
 
   return (
     <div
@@ -173,11 +49,7 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         transition: 'border-color 0.2s',
         background: dragging ? 'var(--dm-accent-light)' : undefined,
       }}
-      onPaste={handlePaste}
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+      {...handlers}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
         <select
@@ -288,100 +160,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
       ) : null}
 
 
-      {(() => {
-        // Build history: from task.history array, or fallback to legacy timestamp fields
-        let history = task.history || [];
-        if (history.length === 0) {
-          if (task.createdAt) history.push({ status: STATUS.CREATED, at: task.createdAt });
-          if (task.startedAt) history.push({ status: STATUS.IN_PROGRESS, at: task.startedAt });
-          if (task.pausedAt) history.push({ status: STATUS.PAUSED, at: task.pausedAt });
-          if (task.completedAt) history.push({ status: STATUS.DONE, at: task.completedAt });
-        }
-        if (history.length === 0) return null;
+      <Timeline task={task} />
 
-        const dotColor = {
-          [STATUS.CREATED]: 'var(--dm-text-light)',
-          [STATUS.PENDING]: 'var(--dm-text-light)',
-          [STATUS.IN_PROGRESS]: 'var(--dm-accent)',
-          [STATUS.PAUSED]: PAUSED_COLOR,
-          [STATUS.BLOCKED]: 'var(--dm-danger)',
-          [STATUS.DONE]: 'var(--dm-success)',
-          [STATUS.BACKLOG]: 'var(--dm-text-light)',
-        };
-        const label = {
-          [STATUS.CREATED]: 'Created',
-          [STATUS.PENDING]: 'Pending',
-          [STATUS.IN_PROGRESS]: 'Started',
-          [STATUS.PAUSED]: 'Paused',
-          [STATUS.BLOCKED]: 'Blocked',
-          [STATUS.DONE]: 'Completed',
-          [STATUS.BACKLOG]: 'Backlog',
-        };
-
-        return (
-          <div style={{ marginBottom: '12px', paddingLeft: '4px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Timeline
-            </div>
-            {history.map((entry, i) => {
-              const next = history[i + 1];
-              const duration = next ? formatDuration(entry.at, next.at) : null;
-              const isLast = i === history.length - 1;
-              return (
-                <div key={i}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor[entry.status] || 'var(--dm-text-light)', flexShrink: 0 }} />
-                      {!isLast && <div style={{ width: '1px', flex: 1, minHeight: '12px', background: 'var(--dm-border)' }} />}
-                    </div>
-                    <div style={{ paddingBottom: '4px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)' }}>{label[entry.status] || entry.status}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--dm-text)' }}>{formatDate(entry.at)}</div>
-                    </div>
-                  </div>
-                  {duration && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                        <div style={{ width: '1px', height: '16px', background: 'var(--dm-border)' }} />
-                      </div>
-                      <div style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>{duration}</div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      })()}
-
-      <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Epic</span>
-        {task.group && epicColorMap[task.group] ? (
-          <span style={{
-            width: "8px", height: "8px", borderRadius: "50%",
-            background: epicColorMap[task.group].text,
-            display: "inline-block",
-          }} />
-        ) : null}
-        <input
-          value={task.group || ''}
-          onInput={e => onUpdateTask(task.id, { group: e.target.value || undefined })}
-          placeholder="None"
-          list="epic-list"
-          style={{
-            flex: 1, padding: '3px 8px', fontSize: '12px', fontFamily: 'var(--dm-font)',
-            border: '1px solid var(--dm-border)', borderRadius: '4px',
-            background: 'var(--dm-bg)', outline: 'none',
-          }}
-          onFocus={e => e.target.style.borderColor = 'var(--dm-accent)'}
-          onBlur={e => e.target.style.borderColor = 'var(--dm-border)'}
-        />
-        <datalist id="epic-list">
-          {(epics || []).map(e => (
-            <option key={e.name} value={e.name} />
-          ))}
-        </datalist>
-      </div>
+      <EpicField task={task} epics={epics} onUpdateTask={onUpdateTask} />
 
       <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px', color: task.supervision ? 'var(--dm-amber)' : 'var(--dm-text-light)' }}>
@@ -418,134 +199,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         />
       </div>
 
-      {/* Attachments section */}
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Screenshots
-        </div>
-        {attachments.length === 0 ? (
-          <div style={{
-            fontSize: '11px', color: 'var(--dm-text-light)', fontStyle: 'italic',
-            padding: '12px', textAlign: 'center',
-            border: '1px dashed var(--dm-border)', borderRadius: '6px',
-          }}>
-            Paste or drop screenshots here
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {attachments.map(att => (
-              <div
-                key={att.id}
-                style={{ position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--dm-border)' }}
-                className="attachment-thumb"
-              >
-                {thumbUrls[att.id] ? (
-                  <img
-                    src={thumbUrls[att.id]}
-                    alt={att.filename}
-                    style={{ display: 'block', maxWidth: '100%', maxHeight: '120px', objectFit: 'contain', background: 'var(--dm-bg)' }}
-                  />
-                ) : (
-                  <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--dm-bg)', fontSize: '11px', color: 'var(--dm-text-light)' }}>
-                    Loading...
-                  </div>
-                )}
-                <div style={{
-                  fontSize: '10px', color: 'var(--dm-text-muted)', padding: '3px 6px',
-                  background: 'var(--dm-bg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
-                  {att.filename}
-                </div>
-                <button
-                  onClick={() => onDeleteAttachment(task.id, att.id)}
-                  className="attachment-delete-btn"
-                  style={{
-                    position: 'absolute', top: '4px', right: '4px',
-                    width: '20px', height: '20px', borderRadius: '50%',
-                    background: 'var(--dm-overlay-dark)', color: 'white',
-                    border: 'none', cursor: 'pointer', fontSize: '12px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    opacity: 0, transition: 'opacity 0.15s',
-                    lineHeight: 1, padding: 0, fontFamily: 'var(--dm-font)',
-                  }}
-                  title="Delete attachment"
-                >
-                  &#215;
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <AttachmentsList task={task} thumbUrls={thumbUrls} onDeleteAttachment={onDeleteAttachment} />
 
-      {(() => {
-        const otherTasks = (tasks || []).filter(t => t.id !== task.id && (t.status === STATUS.PENDING || t.status === STATUS.IN_PROGRESS));
-        if (otherTasks.length === 0) return null;
-        const deps = task.dependsOn || [];
-        const selected = otherTasks.filter(t => deps.includes(t.id));
-        const available = otherTasks.filter(t => !deps.includes(t.id));
-        const toggleDep = (depId) => {
-          const next = deps.includes(depId) ? deps.filter(d => d !== depId) : [...deps, depId];
-          onUpdateTask(task.id, { dependsOn: next });
-        };
-        return (
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Depends on {selected.length > 0 ? <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>({selected.length})</span> : null}
-            </div>
-            {selected.length > 0 ? (
-              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                {selected.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => toggleDep(t.id)}
-                    title="Click to remove dependency"
-                    style={{
-                      padding: '3px 10px',
-                      fontSize: '11px',
-                      fontFamily: 'var(--dm-font)',
-                      fontWeight: 600,
-                      borderRadius: '99px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      border: '1px solid var(--dm-accent)',
-                      background: 'var(--dm-accent)',
-                      color: 'white',
-                    }}
-                  >
-                    {t.name} ×
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {available.length > 0 ? (
-              <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                {available.map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => toggleDep(t.id)}
-                    title="Click to add dependency"
-                    style={{
-                      padding: '3px 10px',
-                      fontSize: '11px',
-                      fontFamily: 'var(--dm-font)',
-                      fontWeight: 400,
-                      borderRadius: '99px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      border: '1px dashed var(--dm-border)',
-                      background: 'transparent',
-                      color: 'var(--dm-text-light)',
-                    }}
-                  >
-                    + {t.name}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        );
-      })()}
+      <Dependencies task={task} tasks={tasks} onUpdateTask={onUpdateTask} />
 
       {task.status === STATUS.BACKLOG ? (
         <button
