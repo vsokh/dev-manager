@@ -414,17 +414,17 @@ function launchClaude(projectPath, command, title) {
 function HealthcheckButton({ projectPath }) {
   const [launched, setLaunched] = useState(false);
 
-  const handleScan = () => {
-    launchClaude(projectPath, '/codehealth scan', 'Healthcheck');
+  const handleRun = () => {
+    launchClaude(projectPath, '/autofix', 'Healthcheck');
     setLaunched(true);
-    setTimeout(() => setLaunched(false), 3000);
+    setTimeout(() => setLaunched(false), 5000);
   };
 
   if (!projectPath) return null;
 
   return (
     <button
-      onClick={handleScan}
+      onClick={handleRun}
       style={{
         background: launched ? 'var(--dm-success-light)' : 'var(--dm-accent)',
         color: launched ? 'var(--dm-success)' : '#fff',
@@ -434,7 +434,7 @@ function HealthcheckButton({ projectPath }) {
         transition: 'all 0.2s',
       }}
     >
-      {launched ? '✓ Launched' : '⟳ Scan'}
+      {launched ? '✓ Running...' : 'Healthcheck'}
     </button>
   );
 }
