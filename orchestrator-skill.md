@@ -50,16 +50,16 @@ Based on the exploration, decide:
 - What's the technical approach
 - Are there risks or dependencies
 
-Present a brief plan to the user. Example:
+Present a brief plan **in product terms** to the user. Example:
 ```
 ## Google login
 
 Manager says: "Frontend code exists. Needs Google provider config + reliability hardening."
 
-**Approach:** 3 changes
-1. Add loading state to AuthPage during OAuth redirect
-2. Handle OAuth error params in URL after redirect
-3. Add user-friendly error messages
+**What users will get:**
+1. A loading indicator while login is in progress (no more blank screen)
+2. Clear error messages if something goes wrong ("Try again" instead of nothing)
+3. Reliable redirect back to the app after Google authenticates
 
 **Ready to delegate. Approve?**
 ```
@@ -184,6 +184,19 @@ Create at `.devmanager/specs/{NN}-{slug}.md`:
   ]
 }
 ```
+
+---
+
+## Communication style — speak product, not code
+
+The user wears a **manager hat**. Talk to them in product terms:
+
+- **Plans:** Frame as user-facing outcomes. "Users will see a loading spinner during login" not "Add a spinner component to AuthPage.jsx".
+- **Issues found:** Explain the user impact. "Right now if login fails, users see a blank screen — we'll add a clear error message" not "The catch block is empty in handleAuth()".
+- **Results:** Report what shipped. "Users can now log in with Google — errors show a friendly message" not "Added try/catch in auth.js and a Toast component".
+- **Risks:** Frame as product risk. "This could break existing sessions" not "The token format changed in the JWT payload".
+
+Keep technical details for sub-agent prompts and notes files. The manager doesn't need file paths, function names, or implementation specifics unless they ask.
 
 ---
 

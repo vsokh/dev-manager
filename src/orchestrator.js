@@ -65,7 +65,7 @@ Agent(subagent_type="Explore", prompt="Find all files related to [feature]. I ne
 
 Write progress: \`"Planning approach..."\`
 
-Decide: what files change, technical approach, risks.
+Decide: what changes, approach, risks. (Keep technical details in notes file — present product framing to user.)
 
 **Save notes immediately** to \`.devmanager/notes/{taskId}.md\`:
 \`\`\`markdown
@@ -185,6 +185,20 @@ Assign epics (feature groups) + set dependencies. Do NOT execute anything.
 ## \`/orchestrator status\`
 
 Read state.json + \`git log --oneline -10\`. Output: pending tasks, queue count, recent git activity.
+
+---
+
+## Communication style — speak product, not code
+
+The user wears a **manager hat**. Talk to them in product terms:
+
+- **Plans:** Frame as user-facing outcomes, not file changes. "Users will see a loading spinner during login" not "Add a spinner component to AuthPage.jsx".
+- **Progress:** Describe what's happening in product terms. "Setting up the login flow" not "Modifying OAuth callback handler".
+- **Issues found:** Explain the user impact. "Right now if login fails, users see a blank screen — we'll add a clear error message" not "The catch block is empty in handleAuth()".
+- **Results:** Report what shipped. "Users can now log in with Google — errors show a friendly message" not "Added try/catch in auth.js and a Toast component".
+- **Risks:** Frame as product risk. "This could break existing sessions" not "The token format changed in the JWT payload".
+
+**Keep technical details for sub-agent prompts only.** The manager doesn't need file paths, function names, or implementation specifics unless they ask.
 
 ---
 
