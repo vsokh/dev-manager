@@ -47,15 +47,14 @@ if "!cmd!"=="__launch_file" (
   exit /b
 )
 
-:: Write temp script to avoid cmd.exe nested-quote hell
+:: Write temp script to avoid nested-quote issues
 :: Quoting "/orchestrator arrange" as a single arg only works in a standalone script
-set "tmpfile=%TEMP%\claude-launch-%RANDOM%.cmd"
+set "tmpfile=%TEMP%\claude-launch-%RANDOM%.ps1"
 (
-  echo @echo off
-  echo title !title!
-  echo claude --dangerously-skip-permissions "!cmd!"
+  echo $Host.UI.RawUI.WindowTitle = '!title!'
+  echo claude --dangerously-skip-permissions '!cmd!'
 ) > "!tmpfile!"
 
 :: Launch as new tab in existing Windows Terminal (or new window if none open)
 :: --suppressApplicationTitle prevents claude from overriding the tab name
-start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" cmd /k "!tmpfile!"
+start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" pwsh -NoLogo -NoExit -File "!tmpfile!"

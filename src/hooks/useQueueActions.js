@@ -131,10 +131,10 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
     try {
       const dmDir = await ensureDevManagerDir(dirHandle);
 
-      // Write a per-task .cmd script for each item (avoids nested-quote issues)
+      // Write a per-task .ps1 script for each item (avoids nested-quote issues)
       for (const item of items) {
-        const taskScript = `@echo off\r\ntitle ${shortTitle(item.taskName)}\r\nclaude --dangerously-skip-permissions "${item.cmd}"\r\n`;
-        const fh = await dmDir.getFileHandle(`launch-${item.key}.cmd`, { create: true });
+        const taskScript = `$Host.UI.RawUI.WindowTitle = '${shortTitle(item.taskName)}'\r\nclaude --dangerously-skip-permissions '${item.cmd}'\r\n`;
+        const fh = await dmDir.getFileHandle(`launch-${item.key}.ps1`, { create: true });
         const w = await fh.createWritable();
         await w.write(taskScript);
         await w.close();
@@ -142,7 +142,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
 
       // Build wt.exe command referencing the per-task scripts
       const tabArgs = items.map(item =>
-        `new-tab --title "${shortTitle(item.taskName)}" --suppressApplicationTitle -d "${dir}" cmd /k "${dir}\\.devmanager\\launch-${item.key}.cmd"`
+        `new-tab --title "${shortTitle(item.taskName)}" --suppressApplicationTitle -d "${dir}" pwsh -NoLogo -NoExit -File "${dir}\\.devmanager\\launch-${item.key}.ps1"`
       ).join(' ; ');
       const script = `@echo off\r\nstart "" wt.exe -w 0 ${tabArgs}\r\n`;
 
