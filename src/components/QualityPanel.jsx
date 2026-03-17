@@ -128,8 +128,8 @@ function RadarChart({ latest, prev, width = 380, height = 380 }) {
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
 
-    const cx = width / 2, cy = height / 2;
-    const R = Math.min(cx, cy) - 56;
+    const cx = width / 2 + 10, cy = height / 2;
+    const R = Math.min(width / 2, height / 2) - 62;
     const n = DIM_KEYS.length;
     const step = (2 * Math.PI) / n;
     const start = -Math.PI / 2;
