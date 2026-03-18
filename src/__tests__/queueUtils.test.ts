@@ -21,6 +21,47 @@ describe('escapePS', () => {
   it('does not affect double quotes', () => {
     expect(escapePS('say "hello"')).toBe('say "hello"');
   });
+
+  // Injection attack payloads — these document the CURRENT behavior of escapePS.
+  // escapePS only escapes single quotes (doubling them). All other dangerous
+  // characters/operators pass through unescaped. Task 38 will address these gaps.
+  describe('injection payloads (current behavior)', () => {
+    it('backtick command execution passes through unescaped', () => {
+      // In PowerShell, backticks are the escape character and `whoami` would execute
+      const input = '`whoami`';
+      expect(escapePS(input)).toBe('`whoami`');
+    });
+
+    it('PowerShell variable expansion passes through unescaped', () => {
+      // $env:USERNAME would expand to the current user in PS
+      const input = '$env:USERNAME';
+      expect(escapePS(input)).toBe('$env:USERNAME');
+    });
+
+    it('subexpression operator passes through unescaped', () => {
+      // $(Get-Process) would execute Get-Process in PS
+      const input = '$(Get-Process)';
+      expect(escapePS(input)).toBe('$(Get-Process)');
+    });
+
+    it('semicolon command chaining passes through unescaped', () => {
+      // ; would allow chaining a second command
+      const input = '; rm -rf /';
+      expect(escapePS(input)).toBe('; rm -rf /');
+    });
+
+    it('pipeline passes through unescaped', () => {
+      // | would pipe output to another command
+      const input = '| Out-File hack.txt';
+      expect(escapePS(input)).toBe('| Out-File hack.txt');
+    });
+
+    it('call operator passes through unescaped', () => {
+      // & is the call operator in PS
+      const input = '& calc.exe';
+      expect(escapePS(input)).toBe('& calc.exe');
+    });
+  });
 });
 
 describe('escapeCmd', () => {
@@ -38,6 +79,47 @@ describe('escapeCmd', () => {
 
   it('does not affect single quotes', () => {
     expect(escapeCmd("it's fine")).toBe("it's fine");
+  });
+
+  // Injection attack payloads — these document the CURRENT behavior of escapeCmd.
+  // escapeCmd only escapes double quotes (doubling them). All other dangerous
+  // characters/operators pass through unescaped. Task 38 will address these gaps.
+  describe('injection payloads (current behavior)', () => {
+    it('ampersand command chaining passes through unescaped', () => {
+      // & chains commands in cmd.exe: foo & del *
+      const input = 'foo & del *';
+      expect(escapeCmd(input)).toBe('foo & del *');
+    });
+
+    it('pipe redirection passes through unescaped', () => {
+      // | pipes output to another command
+      const input = 'foo | net user';
+      expect(escapeCmd(input)).toBe('foo | net user');
+    });
+
+    it('output redirect passes through unescaped', () => {
+      // > redirects output to a file
+      const input = 'foo > hack.txt';
+      expect(escapeCmd(input)).toBe('foo > hack.txt');
+    });
+
+    it('caret escape passes through unescaped', () => {
+      // ^ is the escape char in cmd; ^| would resolve to a literal pipe
+      const input = 'foo ^| net user';
+      expect(escapeCmd(input)).toBe('foo ^| net user');
+    });
+
+    it('percent variable passes through unescaped', () => {
+      // %USERPROFILE% would expand to an env variable in cmd
+      const input = '%USERPROFILE%';
+      expect(escapeCmd(input)).toBe('%USERPROFILE%');
+    });
+
+    it('backtick in cmd context passes through unescaped', () => {
+      // backticks have no special meaning in cmd, but test for completeness
+      const input = 'foo `bar';
+      expect(escapeCmd(input)).toBe('foo `bar');
+    });
   });
 });
 
