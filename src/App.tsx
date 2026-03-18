@@ -17,7 +17,15 @@ import { useQuality } from './hooks/useQuality.ts';
 import type { StateData, UndoEntry } from './types';
 
 export function App() {
-  const project = useProject();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showError = useCallback((msg: string) => {
+    setErrorMessage(msg);
+    if (errorTimer.current) clearTimeout(errorTimer.current);
+    errorTimer.current = setTimeout(() => setErrorMessage(null), 5000);
+  }, []);
+
+  const project = useProject({ onError: showError });
   const { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle, pauseTask, cancelTask } = project;
 
   useEffect(() => {
@@ -41,17 +49,9 @@ export function App() {
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const errorTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const showError = useCallback((msg: string) => {
-    setErrorMessage(msg);
-    if (errorTimer.current) clearTimeout(errorTimer.current);
-    errorTimer.current = setTimeout(() => setErrorMessage(null), 5000);
-  }, []);
-
   const snapshotBeforeAction = useCallback((label: string) => {
     if (dirHandle && data) {
-      snapshotState(dirHandle);
+      snapshotState(dirHandle, showError);
     }
     if (undoTimer.current) clearTimeout(undoTimer.current);
     setUndoEntry({ data: structuredClone(data) as StateData, label, timestamp: Date.now() });

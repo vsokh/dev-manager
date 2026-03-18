@@ -18,7 +18,8 @@ import {
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'synced' | 'error';
 
-export function useProject() {
+export function useProject(opts?: { onError?: (msg: string) => void }) {
+  const onError = opts?.onError;
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null);
   const [connected, setConnected] = useState(false);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
@@ -51,14 +52,14 @@ export function useProject() {
     setLastProjectName(name);
     try { localStorage.setItem('dm_last_project', name); } catch (err) { console.error('Failed to write dm_last_project to localStorage:', err); }
 
-    const existing = await readState(handle);
+    const existing = await readState(handle, onError);
     let stateData: StateData;
     if (existing) {
       stateData = existing.data;
       lastWriteTime.current = existing.lastModified;
     } else {
       stateData = createDefaultState(name);
-      await writeState(handle, stateData);
+      await writeState(handle, stateData, onError);
       lastWriteTime.current = Date.now();
     }
 
@@ -67,16 +68,16 @@ export function useProject() {
 
     try { sessionStorage.setItem('dm_tab_project', resolvedName); } catch (err) { console.error('Failed to write dm_tab_project to sessionStorage:', err); }
 
-    await ensureOrchestratorSkill(handle);
-    await ensureCodehealthSkill(handle);
-    await ensureAutofixSkill(handle);
+    await ensureOrchestratorSkill(handle, onError);
+    await ensureCodehealthSkill(handle, onError);
+    await ensureAutofixSkill(handle, onError);
 
     await saveDirHandle(handle, resolvedName);
     setDirHandle(handle);
     setData(stateData);
     setConnected(true);
     setStatus('connected');
-  }, [flushSave]);
+  }, [flushSave, onError]);
 
   useEffect(() => {
     (async () => {
@@ -108,20 +109,20 @@ export function useProject() {
     const targetName = lastProjectName || null;
     const handle = await loadDirHandle(targetName);
     if (handle) {
-      if (await requestAccess(handle)) {
+      if (await requestAccess(handle, onError)) {
         await connectWithHandle(handle);
         return;
       }
     }
     await connect();
-  }, [connect, connectWithHandle, lastProjectName]);
+  }, [connect, connectWithHandle, lastProjectName, onError]);
 
   const disconnect = useCallback(async () => {
     if (saveTimer.current) {
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
       if (dirHandle && dataRef.current) {
-        await writeState(dirHandle, dataRef.current);
+        await writeState(dirHandle, dataRef.current, onError);
       }
     }
     if (pollTimer.current) clearInterval(pollTimer.current);
@@ -130,7 +131,7 @@ export function useProject() {
     setData(null);
     setProjectName('');
     setStatus('disconnected');
-  }, [dirHandle]);
+  }, [dirHandle, onError]);
 
   const save = useCallback((newData: StateData) => {
     const updated = { ...newData, savedAt: new Date().toISOString() };
@@ -139,11 +140,11 @@ export function useProject() {
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
-      const ok = await writeState(dirHandle, updated);
+      const ok = await writeState(dirHandle, updated, onError);
       if (ok) lastWriteTime.current = Date.now();
       setStatus(ok ? 'connected' : 'error');
     }, 500);
-  }, [dirHandle]);
+  }, [dirHandle, onError]);
 
   useEffect(() => {
     if (!connected || !dirHandle) return;
@@ -269,12 +270,12 @@ export function useProject() {
         };
       });
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
-      writeState(dirHandle, updated).then(ok => {
+      writeState(dirHandle, updated, onError).then(ok => {
         if (ok) lastWriteTime.current = Date.now();
       });
       return updated;
     });
-  }, [dirHandle]);
+  }, [dirHandle, onError]);
 
   const cancelTask = useCallback(async (taskId: number) => {
     if (!dirHandle) return;
@@ -285,12 +286,12 @@ export function useProject() {
         t.id === taskId ? { ...t, status: 'pending' as const, progress: undefined, lastProgress: undefined, branch: undefined } : t
       );
       const updated = { ...prev, tasks, savedAt: new Date().toISOString() };
-      writeState(dirHandle, updated).then(ok => {
+      writeState(dirHandle, updated, onError).then(ok => {
         if (ok) lastWriteTime.current = Date.now();
       });
       return updated;
     });
-  }, [dirHandle]);
+  }, [dirHandle, onError]);
 
   return { connected, status, projectName, data, save, connect, reconnect, disconnect, lastProjectName, dirHandle, pauseTask, cancelTask };
 }

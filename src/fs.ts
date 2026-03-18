@@ -56,20 +56,20 @@ export async function clearDirHandle(projectName: string | null): Promise<void> 
   store.delete('lastProject');
 }
 
-export async function verifyHandle(handle: FileSystemDirectoryHandle | null): Promise<boolean> {
+export async function verifyHandle(handle: FileSystemDirectoryHandle | null, onError?: (msg: string) => void): Promise<boolean> {
   if (!handle) return false;
   try {
     const perm = await (handle as FileSystemDirectoryHandleExt).queryPermission({ mode: 'readwrite' });
     return perm === 'granted';
-  } catch (err) { console.error('verifyHandle failed:', err); return false; }
+  } catch (err) { console.error('verifyHandle failed:', err); onError?.('Permission check failed'); return false; }
 }
 
-export async function requestAccess(handle: FileSystemDirectoryHandle | null): Promise<boolean> {
+export async function requestAccess(handle: FileSystemDirectoryHandle | null, onError?: (msg: string) => void): Promise<boolean> {
   if (!handle) return false;
   try {
     const perm = await (handle as FileSystemDirectoryHandleExt).requestPermission({ mode: 'readwrite' });
     return perm === 'granted';
-  } catch (err) { console.error('requestAccess failed:', err); return false; }
+  } catch (err) { console.error('requestAccess failed:', err); onError?.('Could not get folder access'); return false; }
 }
 
 export async function ensureDevManagerDir(projectHandle: FileSystemDirectoryHandle): Promise<FileSystemDirectoryHandle> {
@@ -85,7 +85,7 @@ function simpleHash(str: string): string {
   return hash.toString(36);
 }
 
-async function deploySkill(projectHandle: FileSystemDirectoryHandle, skillName: string, filename: string, template: string): Promise<boolean> {
+async function deploySkill(projectHandle: FileSystemDirectoryHandle, skillName: string, filename: string, template: string, onError?: (msg: string) => void): Promise<boolean> {
   try {
     const claude = await projectHandle.getDirectoryHandle('.claude', { create: true });
     const skills = await claude.getDirectoryHandle('skills', { create: true });
@@ -110,28 +110,28 @@ async function deploySkill(projectHandle: FileSystemDirectoryHandle, skillName: 
     await hw.close();
 
     return true;
-  } catch (err) { console.error('deploySkill failed:', err); return false; }
+  } catch (err) { console.error('deploySkill failed:', err); onError?.('Failed to deploy skill files'); return false; }
 }
 
-export async function ensureOrchestratorSkill(projectHandle: FileSystemDirectoryHandle): Promise<boolean> {
-  return deploySkill(projectHandle, 'orchestrator', 'SKILL.md', ORCHESTRATOR_SKILL_TEMPLATE);
+export async function ensureOrchestratorSkill(projectHandle: FileSystemDirectoryHandle, onError?: (msg: string) => void): Promise<boolean> {
+  return deploySkill(projectHandle, 'orchestrator', 'SKILL.md', ORCHESTRATOR_SKILL_TEMPLATE, onError);
 }
 
-export async function ensureCodehealthSkill(projectHandle: FileSystemDirectoryHandle): Promise<boolean> {
-  return deploySkill(projectHandle, 'codehealth', 'skill.md', CODEHEALTH_SKILL_TEMPLATE);
+export async function ensureCodehealthSkill(projectHandle: FileSystemDirectoryHandle, onError?: (msg: string) => void): Promise<boolean> {
+  return deploySkill(projectHandle, 'codehealth', 'skill.md', CODEHEALTH_SKILL_TEMPLATE, onError);
 }
 
-export async function ensureAutofixSkill(projectHandle: FileSystemDirectoryHandle): Promise<boolean> {
-  return deploySkill(projectHandle, 'autofix', 'SKILL.md', AUTOFIX_SKILL_TEMPLATE);
+export async function ensureAutofixSkill(projectHandle: FileSystemDirectoryHandle, onError?: (msg: string) => void): Promise<boolean> {
+  return deploySkill(projectHandle, 'autofix', 'SKILL.md', AUTOFIX_SKILL_TEMPLATE, onError);
 }
 
-export async function syncSkills(projectHandle: FileSystemDirectoryHandle): Promise<void> {
-  await ensureOrchestratorSkill(projectHandle);
-  await ensureCodehealthSkill(projectHandle);
-  await ensureAutofixSkill(projectHandle);
+export async function syncSkills(projectHandle: FileSystemDirectoryHandle, onError?: (msg: string) => void): Promise<void> {
+  await ensureOrchestratorSkill(projectHandle, onError);
+  await ensureCodehealthSkill(projectHandle, onError);
+  await ensureAutofixSkill(projectHandle, onError);
 }
 
-export async function writeState(projectHandle: FileSystemDirectoryHandle, data: StateData): Promise<boolean> {
+export async function writeState(projectHandle: FileSystemDirectoryHandle, data: StateData, onError?: (msg: string) => void): Promise<boolean> {
   try {
     const dir = await ensureDevManagerDir(projectHandle);
     const fileHandle = await dir.getFileHandle(STATE_FILENAME, { create: true });
@@ -139,10 +139,10 @@ export async function writeState(projectHandle: FileSystemDirectoryHandle, data:
     await writable.write(JSON.stringify(data, null, 2));
     await writable.close();
     return true;
-  } catch (err) { console.error('writeState failed:', err); return false; }
+  } catch (err) { console.error('writeState failed:', err); onError?.('Failed to save — your changes may not be persisted'); return false; }
 }
 
-export async function readState(projectHandle: FileSystemDirectoryHandle): Promise<{ data: StateData; lastModified: number } | null> {
+export async function readState(projectHandle: FileSystemDirectoryHandle, onError?: (msg: string) => void): Promise<{ data: StateData; lastModified: number } | null> {
   try {
     const dir = await projectHandle.getDirectoryHandle(STATE_DIR);
     const fileHandle = await dir.getFileHandle(STATE_FILENAME);
@@ -154,6 +154,7 @@ export async function readState(projectHandle: FileSystemDirectoryHandle): Promi
     return { data, lastModified: file.lastModified };
   } catch (err) {
     console.error('readState failed:', err);
+    onError?.('Failed to read project data');
     return null;
   }
 }
@@ -240,7 +241,7 @@ export function createDefaultState(projectName: string): StateData {
   };
 }
 
-export async function snapshotState(projectHandle: FileSystemDirectoryHandle): Promise<string | null> {
+export async function snapshotState(projectHandle: FileSystemDirectoryHandle, onError?: (msg: string) => void): Promise<string | null> {
   try {
     const dir = await projectHandle.getDirectoryHandle('.devmanager');
     const fileHandle = await dir.getFileHandle('state.json');
@@ -256,7 +257,7 @@ export async function snapshotState(projectHandle: FileSystemDirectoryHandle): P
 
     await pruneBackups(projectHandle, 10);
     return filename;
-  } catch (err) { console.error('snapshotState failed:', err); return null; }
+  } catch (err) { console.error('snapshotState failed:', err); onError?.('Failed to create backup'); return null; }
 }
 
 interface BackupFile {
