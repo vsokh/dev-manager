@@ -207,7 +207,7 @@ Every \\\`scan\\\` reads \\\`backlog.json\\\` and creates/updates tasks in \\\`.
 | \\\`dimension\\\` | \\\`group\\\` = \\\`"Quality"\\\` (all quality tasks use one group) |
 | \\\`dimension\\\` label | prefix in task name (e.g., "Type Safety: 5 untyped returns") |
 | \\\`fix\\\` | \\\`description\\\` |
-| \\\`severity\\\` high/medium | task created |
+| \\\`severity\\\` high/medium | task created with \\\`"status": "pending"\\\` |
 | \\\`severity\\\` low | skipped (keep in backlog only) |
 | \\\`effort\\\` small | added to notes: "Quick fix" |
 | \\\`effort\\\` large | added to notes: "Requires planning" |
@@ -221,6 +221,16 @@ Every \\\`scan\\\` reads \\\`backlog.json\\\` and creates/updates tasks in \\\`.
 5. **De-duplicate:** check if a task with similar name already exists. Skip if found. If an existing task is already \\\`done\\\`, and the finding reappeared, create a new task (regression).
 6. Write updated \\\`state.json\\\`
 7. Report: "Created N Quality tasks in dev-manager. Launch orchestrator to fix them."
+
+### CRITICAL rules for writing state.json
+
+- **Get real timestamp:** Before writing, run \\\`node -e "console.log(Date.now())"\\\` and use that value for any \\\`time\\\` field. NEVER construct timestamps manually or use round numbers.
+- **No special characters in text fields:** Use \\\` - \\\` (space-hyphen-space) instead of em dashes. Use plain ASCII quotes, not curly quotes. State.json is read by the browser File System Access API and encoding issues corrupt the display.
+- **Preserve ALL existing data:** When writing state.json, you MUST keep every existing task, queue item, activity entry, and epic exactly as-is. Only ADD new tasks and a single new activity entry. Never remove or modify existing entries.
+- **Activity entry format:** Add exactly ONE activity entry for the scan with the real timestamp from step above:
+  \\\`\\\`\\\`json
+  { "id": "act_{timestamp}_scan", "time": {timestamp}, "label": "Code health scan: {score}/10 ({grade}) - {summary}" }
+  \\\`\\\`\\\`
 
 ---
 
