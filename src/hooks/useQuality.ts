@@ -6,9 +6,11 @@ export function useQuality(dirHandle: FileSystemDirectoryHandle | null) {
   const [latest, setLatest] = useState<QualityReport | null>(null);
   const [history, setHistory] = useState<QualityHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const readQuality = useCallback(async () => {
     if (!dirHandle) return;
+    setError(false);
     try {
       const dmDir = await dirHandle.getDirectoryHandle('.devmanager');
       const qualDir = await dmDir.getDirectoryHandle('quality');
@@ -33,6 +35,7 @@ export function useQuality(dirHandle: FileSystemDirectoryHandle | null) {
       console.error('Failed to read quality directory:', err);
       setLatest(null);
       setHistory([]);
+      setError(true);
     }
     setLoading(false);
   }, [dirHandle]);
@@ -47,5 +50,5 @@ export function useQuality(dirHandle: FileSystemDirectoryHandle | null) {
     return () => clearInterval(timer);
   }, [dirHandle, readQuality]);
 
-  return { latest, history, loading };
+  return { latest, history, loading, error, retry: readQuality };
 }

@@ -565,14 +565,36 @@ interface QualityPanelProps {
   latest: QualityReport | null;
   history: QualityHistoryEntry[];
   loading: boolean;
+  error?: boolean;
+  onRetry?: () => void;
   projectPath: string;
 }
 
-export function QualityPanel({ latest, history, loading, projectPath }: QualityPanelProps) {
+export function QualityPanel({ latest, history, loading, error, onRetry, projectPath }: QualityPanelProps) {
   const prev = useMemo(() => history.length > 1 ? history[history.length - 2] : null, [history]);
 
   if (loading) {
     return <div className="text-muted" style={{ padding: 24, fontSize: 13 }}>Loading quality data...</div>;
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center' }}>
+        <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.3 }}>&#9888;</div>
+        <div className="text-muted" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+          Quality data unavailable
+        </div>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="btn btn-secondary"
+            style={{ fontSize: 12 }}
+          >
+            Retry
+          </button>
+        )}
+      </div>
+    );
   }
 
   if (!latest) {

@@ -207,8 +207,8 @@ export function useProject() {
             try {
               const dmDir = await dirHandle.getDirectoryHandle('.devmanager');
               const notesDir = await dmDir.getDirectoryHandle('notes').catch(() => null);
-              if (notesDir) await notesDir.removeEntry(id + '.md').catch(() => {});
-              await dmDir.removeEntry('launch-' + id + '.cmd').catch(() => {});
+              if (notesDir) await notesDir.removeEntry(id + '.md').catch(e => console.warn('Failed to remove notes file for task ' + id + ':', e));
+              await dmDir.removeEntry('launch-' + id + '.cmd').catch(e => console.warn('Failed to remove launch file for task ' + id + ':', e));
             } catch (err) { console.error('Failed to clean up after task completion:', err); }
             needsWrite = true;
           } else {
