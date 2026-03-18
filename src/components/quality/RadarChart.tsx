@@ -44,6 +44,8 @@ export function RadarChart({ latest, prev, width = 380, height = 380 }: { latest
     const textColor = cs.getPropertyValue('--dm-text').trim() || '#3d3a37';
     const mutedColor = cs.getPropertyValue('--dm-text-muted').trim() || '#635e5a';
     const accentColor = cs.getPropertyValue('--dm-accent').trim() || '#6a8dbe';
+    const accentGlowSoft = cs.getPropertyValue('--dm-accent-glow-soft').trim() || 'rgba(106,141,190,0.1)';
+    const accentGlow = cs.getPropertyValue('--dm-accent-glow').trim() || 'rgba(106,141,190,0.3)';
 
     ctx.clearRect(0, 0, width, height);
 
@@ -92,12 +94,12 @@ export function RadarChart({ latest, prev, width = 380, height = 380 }: { latest
     if (prev?.dimensions) {
       drawPoly(ctx, cx, cy, R, n, start, step,
         DIM_KEYS.map(k => typeof prev.dimensions![k] === 'number' ? prev.dimensions![k] as number : 0),
-        'rgba(106,141,190,0.1)', borderColor, 1);
+        accentGlowSoft, borderColor, 1);
     }
 
     // Current
     const scores = DIM_KEYS.map(k => latest.dimensions[k]?.score ?? 0);
-    drawPoly(ctx, cx, cy, R, n, start, step, scores, 'rgba(106,141,190,0.2)', accentColor, 2);
+    drawPoly(ctx, cx, cy, R, n, start, step, scores, accentGlow, accentColor, 2);
 
     // Dots
     for (let i = 0; i < n; i++) {

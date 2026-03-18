@@ -26,6 +26,9 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
     const textColor = cs.getPropertyValue('--dm-text').trim() || '#3d3a37';
     const accentColor = cs.getPropertyValue('--dm-accent').trim() || '#6a8dbe';
     const surfaceColor = cs.getPropertyValue('--dm-surface').trim() || '#fefcf9';
+    const accentGlowSoft = cs.getPropertyValue('--dm-accent-glow-soft').trim() || 'rgba(106,141,190,0.1)';
+    const trendPositive = cs.getPropertyValue('--dm-trend-positive').trim() || '#6fcf97';
+    const trendNegative = cs.getPropertyValue('--dm-trend-negative').trim() || '#eb5757';
 
     const plotW = width - pad.l - pad.r;
     const plotH = height - pad.t - pad.b;
@@ -95,7 +98,7 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
     ctx.lineTo(pad.l + (n - 1) * stepX, pad.t + plotH);
     ctx.lineTo(pad.l, pad.t + plotH);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(106,141,190,0.1)';
+    ctx.fillStyle = accentGlowSoft;
     ctx.fill();
 
     // Points
@@ -191,7 +194,7 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
         }}>
           <div style={{ padding: '0 8px 5px', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: 4, display: 'flex', justifyContent: 'space-between', gap: 10 }}>
             <span style={{ opacity: 0.6 }}>{tooltipContent.commitRef}</span>
-            <span style={{ fontWeight: 600, color: +tooltipContent.overall > 0 ? '#6fcf97' : +tooltipContent.overall < 0 ? '#eb5757' : 'inherit' }}>
+            <span style={{ fontWeight: 600, color: +tooltipContent.overall > 0 ? 'var(--dm-trend-positive)' : +tooltipContent.overall < 0 ? 'var(--dm-trend-negative)' : 'inherit' }}>
               {+tooltipContent.overall > 0 ? '+' : ''}{tooltipContent.overall}
             </span>
           </div>
@@ -203,7 +206,7 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
               <span>{DIM_SHORT[key]}</span>
               <span style={{
                 fontWeight: 600, fontVariantNumeric: 'tabular-nums',
-                color: delta > 0 ? '#6fcf97' : '#eb5757',
+                color: delta > 0 ? 'var(--dm-trend-positive)' : 'var(--dm-trend-negative)',
               }}>
                 {delta > 0 ? '+' : ''}{delta}
               </span>

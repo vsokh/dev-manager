@@ -43,7 +43,7 @@ export function TrendArrow({ trend }: { trend: string }) {
 }
 
 export function Pill({ ok, warn, children }: { ok?: boolean; warn?: boolean; children: React.ReactNode }) {
-  const bg = ok ? 'var(--dm-success-light)' : warn ? 'var(--dm-amber-light)' : 'rgba(196,122,122,0.12)';
+  const bg = ok ? 'var(--dm-success-light)' : warn ? 'var(--dm-amber-light)' : 'var(--dm-danger-light)';
   const dot = ok ? 'var(--dm-success)' : warn ? 'var(--dm-amber)' : 'var(--dm-danger)';
   return (
     <span style={{

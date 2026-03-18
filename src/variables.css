@@ -32,7 +32,12 @@
 
   /* Danger / Warning */
   --dm-danger: #c47a7a;
+  --dm-danger-light: #f5e6e6;
   --dm-warning: #d4a44a;
+
+  /* Trend */
+  --dm-trend-positive: #6fcf97;
+  --dm-trend-negative: #eb5757;
 
   /* Paused */
   --dm-paused: #9b8bb4;
@@ -123,7 +128,12 @@
 
   /* Danger / Warning */
   --dm-danger: #d48a8a;
+  --dm-danger-light: #3d2828;
   --dm-warning: #d4a44a;
+
+  /* Trend */
+  --dm-trend-positive: #6fcf97;
+  --dm-trend-negative: #eb5757;
 
   /* Paused */
   --dm-paused: #b0a0c8;
