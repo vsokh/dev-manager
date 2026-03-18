@@ -143,3 +143,20 @@ export interface UndoEntry {
   label: string;
   timestamp: number;
 }
+
+// File System Access API extensions (not yet in TS stdlib)
+interface FileSystemPermissionDescriptor {
+  mode?: 'read' | 'readwrite';
+}
+
+export interface FileSystemDirectoryHandleExt extends FileSystemDirectoryHandle {
+  queryPermission(descriptor?: FileSystemPermissionDescriptor): Promise<PermissionState>;
+  requestPermission(descriptor?: FileSystemPermissionDescriptor): Promise<PermissionState>;
+  entries(): AsyncIterableIterator<[string, FileSystemHandle]>;
+}
+
+declare global {
+  interface Window {
+    showDirectoryPicker?(options?: { mode?: 'read' | 'readwrite'; startIn?: FileSystemHandle }): Promise<FileSystemDirectoryHandle>;
+  }
+}

@@ -23,7 +23,7 @@ function formatDuration(from: string | undefined, to: string | undefined) {
   return mins + 'm';
 }
 
-const dotColor = {
+const dotColor: Record<string, string> = {
   [STATUS.CREATED]: 'var(--dm-text-light)',
   [STATUS.PENDING]: 'var(--dm-text-light)',
   [STATUS.IN_PROGRESS]: 'var(--dm-accent)',
@@ -33,7 +33,7 @@ const dotColor = {
   [STATUS.BACKLOG]: 'var(--dm-text-light)',
 };
 
-const label = {
+const label: Record<string, string> = {
   [STATUS.CREATED]: 'Created',
   [STATUS.PENDING]: 'Pending',
   [STATUS.IN_PROGRESS]: 'Started',
@@ -71,11 +71,11 @@ export function Timeline({ task }: TimelineProps) {
           <div key={i}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
-                <div className="timeline-dot" style={{ background: (dotColor as any)[entry.status] || 'var(--dm-text-light)', flexShrink: 0 }} />
+                <div className="timeline-dot" style={{ background: dotColor[entry.status] || 'var(--dm-text-light)', flexShrink: 0 }} />
                 {!isLast && <div className="timeline-connector" style={{ flex: 1, minHeight: '12px' }} />}
               </div>
               <div style={{ paddingBottom: '4px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)' }}>{(label as any)[entry.status] || entry.status}</div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)' }}>{label[entry.status] || entry.status}</div>
                 <div style={{ fontSize: '12px', color: 'var(--dm-text)' }}>{formatDate(entry.at)}</div>
               </div>
             </div>

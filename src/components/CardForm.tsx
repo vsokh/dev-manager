@@ -1,4 +1,4 @@
-import type { Task } from '../types';
+import type { Task, TaskStatus } from '../types';
 import React, { useState, useMemo } from 'react';
 import { suggestSkills } from '../skills.ts';
 
@@ -27,14 +27,14 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
       ? manualSkills.split(',').map(s => s.trim()).filter(Boolean)
       : suggested;
     onSave({
-      id: card?.id as any,
+      id: card?.id,
       name: title.trim(),
       fullName: title.trim(),
       description: description.trim(),
-      group: group.trim() || undefined as any,
+      group: group.trim() || undefined,
       skills: manual ? [] : finalSkills,
       manual,
-      status: (card?.status || 'pending') as any,
+      status: (card?.status || 'pending') as TaskStatus,
     });
   };
 

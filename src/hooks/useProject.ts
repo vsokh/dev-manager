@@ -91,12 +91,12 @@ export function useProject() {
   const connect = useCallback(async () => {
     setStatus('connecting');
 
-    if (!(window as any).showDirectoryPicker) {
+    if (!window.showDirectoryPicker) {
       setStatus('error');
       return;
     }
     try {
-      const handle = await (window as any).showDirectoryPicker({ mode: 'readwrite' });
+      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
       await connectWithHandle(handle);
     } catch (e: any) {
       if (e.name !== 'AbortError') setStatus('error');

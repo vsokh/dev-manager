@@ -7,7 +7,7 @@ const DIM_KEYS = [
   'performance', 'devopsBuildHealth'
 ];
 
-const DIM_LABELS = {
+const DIM_LABELS: Record<string, string> = {
   typeSafety: 'Type Safety',
   componentArchitecture: 'Architecture',
   errorHandling: 'Error Handling',
@@ -20,7 +20,7 @@ const DIM_LABELS = {
   devopsBuildHealth: 'DevOps'
 };
 
-const DIM_SHORT = {
+const DIM_SHORT: Record<string, string> = {
   typeSafety: 'Types',
   componentArchitecture: 'Arch',
   errorHandling: 'Errors',
@@ -33,7 +33,7 @@ const DIM_SHORT = {
   devopsBuildHealth: 'DevOps'
 };
 
-const DIM_DESCRIPTIONS = {
+const DIM_DESCRIPTIONS: Record<string, string> = {
   typeSafety: 'Strict TypeScript usage — no `any` types, typed Supabase rows, proper error narrowing with `unknown`. Measures how much the compiler can catch before runtime.',
   componentArchitecture: 'Component size and separation of concerns — files under 400 LOC, single responsibility, extracted subcomponents with typed props. God components score low.',
   errorHandling: 'User-facing feedback for all mutations — no silent catch blocks, toast notifications on success/failure, disabled buttons during pending, ErrorBoundary coverage.',
@@ -177,7 +177,7 @@ function RadarChart({ latest, prev, width = 380, height = 380 }: { latest: any; 
       ctx.font = '11px sans-serif';
       ctx.textAlign = Math.abs(cosA) < 0.15 ? 'center' : cosA > 0 ? 'left' : 'right';
       ctx.textBaseline = Math.abs(Math.sin(a)) < 0.15 ? 'middle' : Math.sin(a) > 0 ? 'top' : 'bottom';
-      ctx.fillText((DIM_SHORT as any)[DIM_KEYS[i]], lx, ly);
+      ctx.fillText(DIM_SHORT[DIM_KEYS[i]], lx, ly);
     }
 
     // Previous overlay
@@ -419,7 +419,7 @@ function TimelineChart({ history, width = 360, height = 200 }: { history: any[];
               display: 'flex', justifyContent: 'space-between',
               padding: '2px 8px', gap: 10,
             }}>
-              <span>{(DIM_SHORT as any)[key]}</span>
+              <span>{DIM_SHORT[key]}</span>
               <span style={{
                 fontWeight: 600, fontVariantNumeric: 'tabular-nums',
                 color: delta > 0 ? '#6fcf97' : '#eb5757',
@@ -698,7 +698,7 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
             return (
               <tr key={key} className="scorecard-td">
                 <td style={{ padding: '7px 8px', fontWeight: 500 }}>
-                  <Tooltip text={(DIM_DESCRIPTIONS as any)[key]}>{(DIM_LABELS as any)[key]}</Tooltip>
+                  <Tooltip text={DIM_DESCRIPTIONS[key]}>{DIM_LABELS[key]}</Tooltip>
                 </td>
                 <td style={{ padding: '7px 8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -748,7 +748,7 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, marginTop: 4, flexShrink: 0 }} />
                 <div>
                   <div>{f.finding}</div>
-                  <div className="text-muted" style={{ fontSize: 10, marginTop: 1 }}>{DIM_LABELS[f.dimension as keyof typeof DIM_LABELS] || f.dimension}</div>
+                  <div className="text-muted" style={{ fontSize: 10, marginTop: 1 }}>{(f.dimension && DIM_LABELS[f.dimension]) || f.dimension}</div>
                 </div>
               </div>
             );

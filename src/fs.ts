@@ -2,7 +2,7 @@ import { ORCHESTRATOR_SKILL_TEMPLATE } from './orchestrator.ts';
 import { CODEHEALTH_SKILL_TEMPLATE } from './codehealth.ts';
 import { AUTOFIX_SKILL_TEMPLATE } from './autofix.ts';
 import { validateState, validateProgress } from './validate.ts';
-import type { StateData, ProgressEntry } from './types';
+import type { StateData, ProgressEntry, FileSystemDirectoryHandleExt } from './types';
 
 const FS_DB_NAME = 'devmanager_fs';
 const FS_STORE = 'handles';
@@ -59,7 +59,7 @@ export async function clearDirHandle(projectName: string | null): Promise<void> 
 export async function verifyHandle(handle: FileSystemDirectoryHandle | null): Promise<boolean> {
   if (!handle) return false;
   try {
-    const perm = await (handle as any).queryPermission({ mode: 'readwrite' } as any);
+    const perm = await (handle as FileSystemDirectoryHandleExt).queryPermission({ mode: 'readwrite' });
     return perm === 'granted';
   } catch (err) { console.error('verifyHandle failed:', err); return false; }
 }
@@ -67,7 +67,7 @@ export async function verifyHandle(handle: FileSystemDirectoryHandle | null): Pr
 export async function requestAccess(handle: FileSystemDirectoryHandle | null): Promise<boolean> {
   if (!handle) return false;
   try {
-    const perm = await (handle as any).requestPermission({ mode: 'readwrite' });
+    const perm = await (handle as FileSystemDirectoryHandleExt).requestPermission({ mode: 'readwrite' });
     return perm === 'granted';
   } catch (err) { console.error('requestAccess failed:', err); return false; }
 }
@@ -194,7 +194,7 @@ export async function readProgressFiles(projectHandle: FileSystemDirectoryHandle
     const dmDir = await projectHandle.getDirectoryHandle('.devmanager');
     const progDir = await dmDir.getDirectoryHandle('progress');
     const entries: Record<string, ProgressEntry> = {};
-    for await (const [name, handle] of (progDir as any).entries()) {
+    for await (const [name, handle] of (progDir as FileSystemDirectoryHandleExt).entries()) {
       if (name.endsWith('.json') && handle.kind === 'file') {
         try {
           const file = await handle.getFile();
@@ -269,7 +269,7 @@ export async function listBackups(projectHandle: FileSystemDirectoryHandle): Pro
     const dir = await projectHandle.getDirectoryHandle('.devmanager');
     const backupDir = await dir.getDirectoryHandle('backups');
     const files: BackupFile[] = [];
-    for await (const [name, handle] of (backupDir as any).entries()) {
+    for await (const [name, handle] of (backupDir as FileSystemDirectoryHandleExt).entries()) {
       if (name.startsWith('state-') && name.endsWith('.json') && handle.kind === 'file') {
         const file = await handle.getFile();
         files.push({ name, lastModified: file.lastModified });

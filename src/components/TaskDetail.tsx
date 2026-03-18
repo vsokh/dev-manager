@@ -4,7 +4,7 @@ import { Timeline } from './detail/Timeline.tsx';
 import { useAttachments, AttachmentsList } from './detail/Attachments.tsx';
 import { Dependencies } from './detail/Dependencies.tsx';
 import { EpicField } from './detail/EpicField.tsx';
-import type { Task, Epic } from '../types';
+import type { Task, TaskStatus, Epic } from '../types';
 
 const handleKeyActivate = (handler: (e: any) => void) => (e: React.KeyboardEvent) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
@@ -77,8 +77,8 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
           aria-label="Task status"
           value={task.status}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-            const next = e.target.value as any;
-            const updates: Partial<any> = { status: next };
+            const next = e.target.value as TaskStatus;
+            const updates: Partial<Task> = { status: next };
             if (task.status === STATUS.BLOCKED && next !== STATUS.BLOCKED) {
               updates.blockedReason = '';
               setLocalBlockedReason('');
