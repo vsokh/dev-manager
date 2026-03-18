@@ -89,16 +89,12 @@ function Tooltip({ text, children, style: wrapStyle }) {
         {children}
       </span>
       {show && (
-        <div style={{
+        <div className="tooltip-popup" style={{
           position: 'fixed', left: pos.x, top: pos.y,
           transform: 'translateX(-50%)',
           zIndex: 1000,
           maxWidth: 300, padding: '8px 12px',
-          background: 'var(--dm-text)', color: 'var(--dm-bg)',
-          borderRadius: 'var(--dm-radius-sm)',
           fontSize: 12, lineHeight: 1.5,
-          boxShadow: 'var(--dm-shadow-lg)',
-          pointerEvents: 'none',
         }}>
           {text}
         </div>
@@ -108,9 +104,9 @@ function Tooltip({ text, children, style: wrapStyle }) {
 }
 
 function TrendArrow({ trend }) {
-  if (trend === 'up') return <span style={{ color: 'var(--dm-success)', fontSize: 14 }}>&#9650;</span>;
-  if (trend === 'down') return <span style={{ color: 'var(--dm-danger)', fontSize: 14 }}>&#9660;</span>;
-  return <span style={{ color: 'var(--dm-text-light)', fontSize: 14 }}>&#8212;</span>;
+  if (trend === 'up') return <span className="text-success" style={{ fontSize: 14 }}>&#9650;</span>;
+  if (trend === 'down') return <span className="text-danger" style={{ fontSize: 14 }}>&#9660;</span>;
+  return <span className="text-light" style={{ fontSize: 14 }}>&#8212;</span>;
 }
 
 // ── Radar Chart ──
@@ -401,7 +397,7 @@ function TimelineChart({ history, width = 360, height = 200 }) {
     >
       <canvas ref={canvasRef} style={{ maxWidth: '100%', cursor: hover ? 'pointer' : 'default' }} />
       {hover && tooltipContent && (
-        <div style={{
+        <div className="tooltip-popup" style={{
           position: 'absolute',
           left: hover.x,
           top: hover.y - 8,
@@ -409,11 +405,7 @@ function TimelineChart({ history, width = 360, height = 200 }) {
           zIndex: 1000,
           minWidth: 160,
           padding: '6px 0',
-          background: 'var(--dm-text)', color: 'var(--dm-bg)',
-          borderRadius: 'var(--dm-radius-sm)',
           fontSize: 11, lineHeight: 1,
-          boxShadow: 'var(--dm-shadow-lg)',
-          pointerEvents: 'none',
         }}>
           <div style={{ padding: '0 8px 5px', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: 4, display: 'flex', justifyContent: 'space-between', gap: 10 }}>
             <span style={{ opacity: 0.6 }}>{tooltipContent.commitRef}</span>
@@ -537,15 +529,8 @@ function HealthcheckButton({ projectPath }) {
   return (
     <button
       onClick={handleRun}
-      style={{
-        background: launched ? 'var(--dm-success-light)' : 'transparent',
-        color: launched ? 'var(--dm-success)' : 'var(--dm-accent)',
-        border: launched ? 'none' : '1.5px solid var(--dm-accent)',
-        borderRadius: 'var(--dm-radius-sm)',
-        padding: '6px 14px', fontSize: 12, fontWeight: 600,
-        cursor: 'pointer', fontFamily: 'inherit',
-        transition: 'all 0.2s',
-      }}
+      className={`healthcheck-btn ${launched ? 'healthcheck-btn--launched' : 'healthcheck-btn--idle'}`}
+      style={{ padding: '6px 14px' }}
     >
       {launched ? '✓ Scanning...' : 'Healthcheck'}
     </button>
@@ -566,14 +551,8 @@ function AutofixButton({ projectPath }) {
   return (
     <button
       onClick={handleRun}
-      style={{
-        background: launched ? 'var(--dm-success-light)' : 'var(--dm-accent)',
-        color: launched ? 'var(--dm-success)' : 'var(--dm-text-on-accent)',
-        border: 'none', borderRadius: 'var(--dm-radius-sm)',
-        padding: '6px 14px', fontSize: 12, fontWeight: 600,
-        cursor: 'pointer', fontFamily: 'inherit',
-        transition: 'all 0.2s',
-      }}
+      className={`autofix-btn ${launched ? 'autofix-btn--launched' : 'autofix-btn--idle'}`}
+      style={{ padding: '6px 14px' }}
     >
       {launched ? '✓ Fixing...' : 'Autofix'}
     </button>
@@ -585,14 +564,14 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
   const prev = useMemo(() => history.length > 1 ? history[history.length - 2] : null, [history]);
 
   if (loading) {
-    return <div style={{ padding: 24, color: 'var(--dm-text-muted)', fontSize: 13 }}>Loading quality data...</div>;
+    return <div className="text-muted" style={{ padding: 24, fontSize: 13 }}>Loading quality data...</div>;
   }
 
   if (!latest) {
     return (
       <div style={{ padding: 40, textAlign: 'center' }}>
         <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.3 }}>&#9776;</div>
-        <div style={{ color: 'var(--dm-text-muted)', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+        <div className="text-muted" style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
           No quality data yet.
         </div>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
@@ -623,9 +602,9 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
         <div>
           <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1 }}>
             {latest.overallScore.toFixed(1)}
-            <span style={{ fontSize: 14, color: 'var(--dm-text-muted)', fontWeight: 400 }}>/10</span>
+            <span className="text-muted" style={{ fontSize: 14, fontWeight: 400 }}>/10</span>
           </div>
-          <div style={{ fontSize: 11, color: 'var(--dm-text-muted)' }}>
+          <div className="text-muted" style={{ fontSize: 11 }}>
             {scoreDelta !== null ? (
               <span style={{ color: +scoreDelta > 0 ? 'var(--dm-success)' : +scoreDelta < 0 ? 'var(--dm-danger)' : 'var(--dm-text-muted)' }}>
                 {+scoreDelta > 0 ? '+' : ''}{scoreDelta}
@@ -658,27 +637,24 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
           background: 'var(--dm-bg)', borderRadius: 'var(--dm-radius-sm)', padding: 12,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--dm-text-muted)', marginBottom: 8 }}>Radar</div>
+          <div className="label-sm" style={{ marginBottom: 8 }}>Radar</div>
           <RadarChart latest={latest} prev={prev} width={360} height={340} />
         </div>
         <div style={{
           background: 'var(--dm-bg)', borderRadius: 'var(--dm-radius-sm)', padding: 12,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
         }}>
-          <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--dm-text-muted)', marginBottom: 8 }}>Score History</div>
+          <div className="label-sm" style={{ marginBottom: 8 }}>Score History</div>
           <TimelineChart history={history} width={280} height={200} />
         </div>
       </div>
 
       {/* ── Scorecard table ── */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 16 }}>
+      <table className="scorecard-table" style={{ marginBottom: 16 }}>
         <thead>
           <tr>
             {['Dimension', 'Score', '', 'Weight', 'Issues', ''].map((h, i) => (
-              <th key={i} style={{
-                textAlign: 'left', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.04em',
-                color: 'var(--dm-text-light)', padding: '6px 8px', borderBottom: '2px solid var(--dm-border)',
-              }}>{h}</th>
+              <th key={i} className="scorecard-th" style={{ padding: '6px 8px' }}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -690,15 +666,15 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
             const prevVal = typeof prevScore === 'number' ? prevScore : prevScore?.score ?? null;
             const trend = trendFromScores(d.score, prevVal);
             return (
-              <tr key={key} style={{ borderBottom: '1px solid var(--dm-border)' }}>
+              <tr key={key} className="scorecard-td">
                 <td style={{ padding: '7px 8px', fontWeight: 500 }}>
                   <Tooltip text={DIM_DESCRIPTIONS[key]}>{DIM_LABELS[key]}</Tooltip>
                 </td>
                 <td style={{ padding: '7px 8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontWeight: 600, width: 18, textAlign: 'right' }}>{d.score}</span>
-                    <div style={{ width: 60, height: 5, background: 'var(--dm-border)', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ width: `${d.score * 10}%`, height: '100%', borderRadius: 3, background: scoreColor(d.score) }} />
+                    <div className="progress-bar-track" style={{ width: 60, height: 5 }}>
+                      <div className="progress-bar-fill" style={{ width: `${d.score * 10}%`, height: '100%', background: scoreColor(d.score) }} />
                     </div>
                   </div>
                 </td>
@@ -712,14 +688,11 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
                   )}
                 </td>
                 <td style={{ padding: '7px 8px' }}>
-                  <span style={{
-                    fontSize: 9, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600,
-                    padding: '1px 5px', borderRadius: 3,
-                    background: d.weight === 'high' ? 'rgba(196,122,122,0.12)' : d.weight === 'medium' ? 'var(--dm-amber-bg-subtle)' : 'var(--dm-accent-bg-subtle)',
-                    color: d.weight === 'high' ? 'var(--dm-danger)' : d.weight === 'medium' ? 'var(--dm-amber)' : 'var(--dm-accent)',
+                  <span className={`weight-badge weight-badge--${d.weight}`} style={{
+                    padding: '1px 5px',
                   }}>{d.weight}</span>
                 </td>
-                <td style={{ padding: '7px 8px', color: 'var(--dm-text-muted)', fontSize: 12 }}>
+                <td className="text-muted" style={{ padding: '7px 8px', fontSize: 12 }}>
                   {d.issues > 0 ? `${d.issues} issues` : 'Clean'}
                 </td>
                 <td style={{ padding: '7px 8px' }}>
@@ -734,19 +707,18 @@ export function QualityPanel({ latest, history, loading, projectPath }) {
       {/* ── Findings ── */}
       {latest.topFindings?.length > 0 && (
         <div>
-          <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--dm-text-muted)', marginBottom: 8 }}>Top Findings</div>
+          <div className="label-sm" style={{ marginBottom: 8 }}>Top Findings</div>
           {latest.topFindings.map((f, i) => {
-            const bg = f.severity === 'high' ? 'rgba(196,122,122,0.1)' : f.severity === 'medium' ? 'var(--dm-amber-bg-subtle)' : 'var(--dm-accent-bg-subtle)';
-            const dot = f.severity === 'high' ? 'var(--dm-danger)' : f.severity === 'medium' ? 'var(--dm-amber)' : 'var(--dm-accent)';
+            const dotColor = f.severity === 'high' ? 'var(--dm-danger)' : f.severity === 'medium' ? 'var(--dm-amber)' : 'var(--dm-accent)';
             return (
-              <div key={i} style={{
-                display: 'flex', gap: 8, padding: '8px 10px', borderRadius: 'var(--dm-radius-sm)',
-                background: bg, marginBottom: 4, alignItems: 'flex-start', fontSize: 12,
+              <div key={i} className={`finding-card finding-card--${f.severity}`} style={{
+                display: 'flex', gap: 8, padding: '8px 10px',
+                marginBottom: 4, alignItems: 'flex-start', fontSize: 12,
               }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, marginTop: 4, flexShrink: 0 }} />
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, marginTop: 4, flexShrink: 0 }} />
                 <div>
                   <div>{f.finding}</div>
-                  <div style={{ fontSize: 10, color: 'var(--dm-text-muted)', marginTop: 1 }}>{DIM_LABELS[f.dimension] || f.dimension}</div>
+                  <div className="text-muted" style={{ fontSize: 10, marginTop: 1 }}>{DIM_LABELS[f.dimension] || f.dimension}</div>
                 </div>
               </div>
             );

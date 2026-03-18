@@ -55,7 +55,7 @@ export function Timeline({ task }) {
 
   return (
     <div style={{ marginBottom: '12px', paddingLeft: '4px' }}>
-      <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <div className="label" style={{ marginBottom: '8px' }}>
         Timeline
       </div>
       {history.map((entry, i) => {
@@ -66,8 +66,8 @@ export function Timeline({ task }) {
           <div key={i}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '12px', flexShrink: 0 }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor[entry.status] || 'var(--dm-text-light)', flexShrink: 0 }} />
-                {!isLast && <div style={{ width: '1px', flex: 1, minHeight: '12px', background: 'var(--dm-border)' }} />}
+                <div className="timeline-dot" style={{ background: dotColor[entry.status] || 'var(--dm-text-light)', flexShrink: 0 }} />
+                {!isLast && <div className="timeline-connector" style={{ flex: 1, minHeight: '12px' }} />}
               </div>
               <div style={{ paddingBottom: '4px' }}>
                 <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)' }}>{label[entry.status] || entry.status}</div>
@@ -77,7 +77,7 @@ export function Timeline({ task }) {
             {duration && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: '12px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
-                  <div style={{ width: '1px', height: '16px', background: 'var(--dm-border)' }} />
+                  <div className="timeline-connector-v" style={{ width: '1px', height: '16px' }} />
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--dm-text-light)', fontStyle: 'italic' }}>{duration}</div>
               </div>

@@ -21,12 +21,8 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
             }}
             onKeyDown={e => { if (e.key === 'Enter') e.target.blur(); if (e.key === 'Escape') setEditingGroup(null); }}
             autoFocus
-            style={{
-              fontSize: '10px', fontWeight: 600, color: 'var(--dm-text-light)', marginBottom: '6px',
-              textTransform: 'uppercase', letterSpacing: '0.04em',
-              background: 'var(--dm-bg)', border: '1px solid var(--dm-accent)', borderRadius: '3px',
-              padding: '2px 6px', outline: 'none', fontFamily: 'var(--dm-font)',
-            }}
+            className="input-epic-rename"
+            style={{ marginBottom: '6px', padding: '2px 6px' }}
           />
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
@@ -36,15 +32,12 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
               onClick={() => { setEditingGroup(groupName); setEditGroupName(groupName); }}
               onKeyDown={handleKeyActivate(() => { setEditingGroup(groupName); setEditGroupName(groupName); })}
               title="Click to rename epic"
+              className="epic-label"
               style={{
-                fontSize: '10px', fontWeight: 600, color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)',
-                textTransform: 'uppercase', letterSpacing: '0.04em',
-                cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', transition: 'all 0.15s',
+                color: (epicColors[groupName] || {}).text || 'var(--dm-text-light)',
+                padding: '2px 6px',
                 background: (epicColors[groupName] || {}).bg || 'transparent',
-                display: 'inline-block',
               }}
-              onMouseOver={e => e.currentTarget.style.opacity = '0.7'}
-              onMouseOut={e => e.currentTarget.style.opacity = '1'}
             >
               {groupName}
               {(() => {
@@ -64,14 +57,8 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
                 <button
                   onClick={() => onQueueGroup(groupName)}
                   title={'Queue ' + unqueued.length + ' task(s) from ' + groupName}
-                  style={{
-                    fontSize: '9px', fontWeight: 600, padding: '1px 8px', borderRadius: '10px',
-                    cursor: 'pointer', fontFamily: 'var(--dm-font)',
-                    border: '1px solid var(--dm-accent)', background: 'none', color: 'var(--dm-accent)',
-                    transition: 'all 0.15s', textTransform: 'none', letterSpacing: 'normal',
-                  }}
-                  onMouseOver={e => { e.target.style.background = 'var(--dm-accent)'; e.target.style.color = 'white'; }}
-                  onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--dm-accent)'; }}
+                  className="btn-queue-group"
+                  style={{ padding: '1px 8px' }}
                 >Queue {unqueued.length}</button>
               );
             })()}

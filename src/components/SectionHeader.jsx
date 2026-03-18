@@ -2,16 +2,16 @@ import React from 'react';
 
 export function SectionHeader({ title, count, extra }) {
   return (
-    <div style={{
+    <div className="panel-header" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '10px 16px', borderBottom: '1px solid var(--dm-border)',
+      padding: '10px 16px',
     }}>
-      <span style={{ fontWeight: 600, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--dm-text-muted)' }}>
+      <span className="section-label">
         {title}
       </span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {count != null ? (
-          <span style={{ fontSize: '11px', color: 'var(--dm-text-light)' }}>{count}</span>
+          <span className="text-light" style={{ fontSize: '11px' }}>{count}</span>
         ) : null}
         {extra || null}
       </div>

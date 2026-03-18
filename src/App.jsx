@@ -157,9 +157,8 @@ export function App() {
       <div className="dm-container">
 
         {/* Tab bar */}
-        <div style={{
-          background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
-          boxShadow: 'var(--dm-shadow-sm)', marginBottom: productTab === 'quality' ? 0 : undefined,
+        <div className="panel" style={{
+          marginBottom: productTab === 'quality' ? 0 : undefined,
         }}>
           <SectionHeader title="" extra={
             <div style={{ display: 'flex', gap: 0, width: '100%' }}>
@@ -167,15 +166,8 @@ export function App() {
                 <button
                   key={tab}
                   onClick={() => { setProductTab(tab); if (tab === 'quality') setSelectedTask(null); }}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    padding: '0 12px',
-                    fontWeight: 600, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em',
-                    color: productTab === tab ? 'var(--dm-accent)' : 'var(--dm-text-muted)',
-                    borderBottom: productTab === tab ? '2px solid var(--dm-accent)' : '2px solid transparent',
-                    marginBottom: -1,
-                    fontFamily: 'inherit',
-                  }}
+                  className={`btn-tab ${productTab === tab ? 'btn-tab--active' : 'btn-tab--inactive'}`}
+                  style={{ padding: '0 12px', marginBottom: -1 }}
                 >
                   {tab === 'board' ? 'Board' : 'Quality'}
                 </button>
@@ -191,15 +183,12 @@ export function App() {
           )}
         </div>
 
-        {/* Board mode: original 2×2 grid */}
+        {/* Board mode: original 2x2 grid */}
         {productTab === 'board' && (
           <>
             {/* Top row: Tasks + Detail */}
             <div className="dm-grid-top">
-              <div style={{
-                background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
-                boxShadow: 'var(--dm-shadow-sm)',
-              }}>
+              <div className="panel">
                 <div style={{ padding: '16px' }}>
                   <TaskBoard
                     tasks={tasks}
@@ -246,18 +235,12 @@ export function App() {
 
             {/* Bottom row: Queue + Activity */}
             <div className="dm-grid-bottom">
-              <div style={{
-                background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
-                boxShadow: 'var(--dm-shadow-sm)',
-              }}>
+              <div className="panel">
                 <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
                 <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} launchedId={queueActions.launchedId} projectPath={projectPath} onSetPath={setProjectPath} />
               </div>
 
-              <div style={{
-                background: 'var(--dm-surface)', borderRadius: 'var(--dm-radius)', border: '1px solid var(--dm-border)',
-                boxShadow: 'var(--dm-shadow-sm)',
-              }}>
+              <div className="panel">
                 <SectionHeader title="Activity" />
                 <ActivityFeed activity={activity} onRemove={handleRemoveActivity} tasks={tasks} onNavigateToTask={handleNavigateToTask} />
               </div>

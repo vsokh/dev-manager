@@ -125,15 +125,11 @@ export function AttachmentsList({ task, thumbUrls, onDeleteAttachment }) {
 
   return (
     <div style={{ marginBottom: '16px' }}>
-      <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <div className="label" style={{ marginBottom: '6px' }}>
         Screenshots
       </div>
       {attachments.length === 0 ? (
-        <div style={{
-          fontSize: '11px', color: 'var(--dm-text-light)', fontStyle: 'italic',
-          padding: '12px', textAlign: 'center',
-          border: '1px dashed var(--dm-border)', borderRadius: '6px',
-        }}>
+        <div className="attachment-placeholder" style={{ padding: '12px' }}>
           Paste or drop screenshots here
         </div>
       ) : (
@@ -164,15 +160,12 @@ export function AttachmentsList({ task, thumbUrls, onDeleteAttachment }) {
               <button
                 onClick={() => onDeleteAttachment(task.id, att.id)}
                 aria-label="Remove attachment"
-                className="attachment-delete-btn"
+                className="attachment-delete-btn attachment-delete"
                 style={{
                   position: 'absolute', top: '4px', right: '4px',
-                  width: '20px', height: '20px', borderRadius: '50%',
-                  background: 'var(--dm-overlay-dark)', color: 'white',
-                  border: 'none', cursor: 'pointer', fontSize: '12px',
+                  width: '20px', height: '20px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  opacity: 0, transition: 'opacity 0.15s',
-                  lineHeight: 1, padding: 0, fontFamily: 'var(--dm-font)',
+                  opacity: 0, fontSize: '12px', lineHeight: 1, padding: 0,
                 }}
                 title="Delete attachment"
               >

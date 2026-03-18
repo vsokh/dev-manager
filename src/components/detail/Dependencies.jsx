@@ -16,7 +16,7 @@ export function Dependencies({ task, tasks, onUpdateTask }) {
 
   return (
     <div style={{ marginBottom: '16px' }}>
-      <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <div className="label" style={{ marginBottom: '6px' }}>
         Depends on {selected.length > 0 ? <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>({selected.length})</span> : null}
       </div>
       {selected.length > 0 ? (
@@ -26,18 +26,8 @@ export function Dependencies({ task, tasks, onUpdateTask }) {
               key={t.id}
               onClick={() => toggleDep(t.id)}
               title="Click to remove dependency"
-              style={{
-                padding: '3px 10px',
-                fontSize: '11px',
-                fontFamily: 'var(--dm-font)',
-                fontWeight: 600,
-                borderRadius: '99px',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                border: '1px solid var(--dm-accent)',
-                background: 'var(--dm-accent)',
-                color: 'white',
-              }}
+              className="dep-btn--selected"
+              style={{ padding: '3px 10px' }}
             >
               {t.name} ×
             </button>
@@ -51,18 +41,8 @@ export function Dependencies({ task, tasks, onUpdateTask }) {
               key={t.id}
               onClick={() => toggleDep(t.id)}
               title="Click to add dependency"
-              style={{
-                padding: '3px 10px',
-                fontSize: '11px',
-                fontFamily: 'var(--dm-font)',
-                fontWeight: 400,
-                borderRadius: '99px',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                border: '1px dashed var(--dm-border)',
-                background: 'transparent',
-                color: 'var(--dm-text-light)',
-              }}
+              className="dep-btn--available"
+              style={{ padding: '3px 10px' }}
             >
               + {t.name}
             </button>

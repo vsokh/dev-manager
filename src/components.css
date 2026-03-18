@@ -1,0 +1,976 @@
+/* Component-level CSS classes — extracted from inline styles.
+   Visual styles (colors, fonts, shadows, borders) live here.
+   Layout styles (display, flex, gap, padding, margin, position) stay inline. */
+
+/* ── Buttons ── */
+.btn {
+  cursor: pointer;
+  font-family: var(--dm-font);
+  border: none;
+  border-radius: var(--dm-radius-sm);
+  transition: all 0.15s;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: var(--dm-accent);
+  color: white;
+}
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+.btn-success {
+  background: var(--dm-success);
+  color: white;
+}
+.btn-success:hover {
+  opacity: 0.85;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--dm-border);
+  color: var(--dm-text-light);
+}
+.btn-secondary:hover {
+  border-color: var(--dm-text-light);
+}
+
+.btn-ghost {
+  background: none;
+  color: var(--dm-text-light);
+  border: none;
+}
+.btn-ghost:hover {
+  color: var(--dm-accent);
+  background: var(--dm-accent-light);
+}
+
+.btn-danger-outline {
+  background: none;
+  color: var(--dm-text-light);
+  border: 1px solid var(--dm-border);
+}
+.btn-danger-outline:hover {
+  color: var(--dm-danger);
+  border-color: var(--dm-danger);
+}
+
+.btn-accent-outline {
+  background: none;
+  color: var(--dm-accent);
+  border: 1px solid var(--dm-accent);
+}
+.btn-accent-outline:hover {
+  background: var(--dm-accent);
+  color: white;
+}
+
+.btn-amber-outline {
+  background: none;
+  color: var(--dm-amber);
+  border: 1px solid var(--dm-amber);
+}
+.btn-amber-outline:hover {
+  background: var(--dm-amber);
+  color: white;
+}
+
+.btn-sm {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-xs {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dm-text-light);
+  line-height: 1;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: var(--dm-font);
+}
+
+/* Inline action buttons on task cards (pause, cancel) */
+.btn-card-action {
+  background: none;
+  border: 1px solid var(--dm-border);
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--dm-text-light);
+  font-size: 10px;
+  font-family: var(--dm-font);
+  transition: all 0.15s;
+  line-height: 1.4;
+}
+.btn-card-action--pause:hover {
+  border-color: var(--dm-paused);
+  color: var(--dm-paused);
+}
+.btn-card-action--cancel:hover {
+  border-color: var(--dm-danger);
+  color: var(--dm-danger);
+}
+
+/* Queue group/epic "Queue N" button */
+.btn-queue-group {
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--dm-font);
+  border: 1px solid var(--dm-accent);
+  background: none;
+  color: var(--dm-accent);
+  transition: all 0.15s;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.btn-queue-group:hover {
+  background: var(--dm-accent);
+  color: white;
+}
+
+/* Launch phase button in phases view */
+.btn-launch-phase {
+  background: none;
+  color: var(--dm-accent);
+  border: 1px solid var(--dm-accent);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: normal;
+  transition: all 0.15s;
+}
+.btn-launch-phase:hover {
+  background: var(--dm-accent);
+  color: white;
+}
+
+/* Filter pill buttons */
+.btn-filter {
+  font-size: 11px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: var(--dm-font);
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.btn-filter--active {
+  border: 1px solid var(--dm-accent);
+  background: var(--dm-accent);
+  color: white;
+}
+.btn-filter--inactive {
+  border: 1px solid var(--dm-border);
+  background: transparent;
+  color: var(--dm-text-light);
+}
+
+/* Tab button in product panel */
+.btn-tab {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: inherit;
+}
+.btn-tab--active {
+  color: var(--dm-accent);
+  border-bottom: 2px solid var(--dm-accent);
+}
+.btn-tab--inactive {
+  color: var(--dm-text-muted);
+  border-bottom: 2px solid transparent;
+}
+
+/* ── Inputs ── */
+.input-field {
+  border: 1px solid var(--dm-border);
+  border-radius: 6px;
+  background: var(--dm-bg);
+  color: var(--dm-text);
+  font-family: var(--dm-font);
+  outline: none;
+  transition: border-color 0.15s;
+  line-height: 1.5;
+}
+.input-field:focus {
+  border-color: var(--dm-accent);
+}
+
+.textarea-field {
+  border: 1px solid var(--dm-border);
+  border-radius: 6px;
+  background: var(--dm-bg);
+  font-family: var(--dm-font);
+  outline: none;
+  transition: border-color 0.15s;
+  line-height: 1.5;
+  resize: vertical;
+}
+.textarea-field:focus {
+  border-color: var(--dm-accent);
+}
+
+.input-search {
+  font-size: 12px;
+  border-radius: 12px;
+  background: var(--dm-bg);
+  color: var(--dm-text);
+  outline: none;
+  font-family: var(--dm-font);
+  border: 1px solid var(--dm-border);
+}
+.input-search:focus {
+  border-color: var(--dm-accent);
+}
+
+/* Card form shared input style */
+.input-card {
+  border: 1px solid var(--dm-border);
+  border-radius: 6px;
+  background: var(--dm-surface);
+  font-family: var(--dm-font);
+  outline: none;
+}
+
+.select-field {
+  cursor: pointer;
+  border: none;
+  font-family: var(--dm-font);
+  transition: all 0.15s;
+  appearance: none;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='currentColor'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+}
+
+/* ── Task Cards ── */
+.task-card {
+  background: var(--dm-surface);
+  border-radius: var(--dm-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.task-card:hover {
+  box-shadow: var(--dm-shadow-md);
+}
+
+.task-card--pending {
+  border: 1px solid var(--dm-border);
+  box-shadow: var(--dm-shadow-sm);
+}
+.task-card--pending.task-card--selected {
+  border: 2px solid var(--dm-accent);
+  box-shadow: 0 2px 8px var(--dm-accent-shadow);
+}
+
+.task-card--in-progress {
+  border: 2px solid var(--dm-accent);
+  box-shadow: var(--dm-shadow-sm);
+}
+.task-card--in-progress.task-card--selected {
+  box-shadow: 0 2px 8px var(--dm-accent-shadow);
+}
+.task-card--in-progress-waiting {
+  border-color: var(--dm-amber);
+}
+.task-card--in-progress-waiting.task-card--selected {
+  box-shadow: 0 2px 8px var(--dm-amber-shadow);
+}
+
+.task-card--done {
+  border: 1px solid var(--dm-success);
+  box-shadow: var(--dm-shadow-sm);
+  opacity: 0.75;
+}
+.task-card--done.task-card--selected {
+  border: 2px solid var(--dm-success);
+  box-shadow: 0 2px 8px var(--dm-success-shadow);
+}
+
+.task-card--paused {
+  border: 1px dashed var(--dm-paused);
+  box-shadow: var(--dm-shadow-sm);
+  opacity: 0.85;
+}
+.task-card--paused.task-card--selected {
+  border: 2px solid var(--dm-paused);
+  box-shadow: 0 2px 8px var(--dm-paused-shadow);
+}
+
+.task-card--blocked {
+  border: 1px solid var(--dm-border);
+  box-shadow: var(--dm-shadow-sm);
+  opacity: 0.6;
+}
+.task-card--blocked.task-card--selected {
+  border: 2px solid var(--dm-text-light);
+  box-shadow: 0 2px 8px var(--dm-dark-shadow);
+}
+
+.task-card--backlog {
+  border: 1px dashed var(--dm-border);
+  box-shadow: var(--dm-shadow-sm);
+  opacity: 0.6;
+}
+.task-card--backlog.task-card--selected {
+  border: 2px solid var(--dm-text-light);
+  box-shadow: 0 2px 8px var(--dm-dark-shadow);
+}
+
+/* Done section compact cards */
+.task-card--done-compact {
+  border: 1px solid var(--dm-border);
+  border-radius: var(--dm-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  opacity: 0.75;
+}
+.task-card--done-compact.task-card--selected {
+  border-color: var(--dm-text-light);
+}
+
+/* ── "Add task" dashed card ── */
+.add-task-card {
+  border: 2px dashed var(--dm-border);
+  border-radius: var(--dm-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--dm-text-light);
+  font-size: 13px;
+  font-weight: 500;
+}
+.add-task-card:hover {
+  border-color: var(--dm-accent);
+  color: var(--dm-accent);
+}
+
+/* ── Epic Labels ── */
+.epic-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  border-radius: 4px;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.epic-label:hover {
+  opacity: 0.7;
+}
+
+.epic-label-static {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-block;
+  border-radius: 3px;
+}
+
+/* Epic progress badges at top of board */
+.epic-progress {
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ── Status/Progress Dots ── */
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.dot--accent { background: var(--dm-accent); }
+.dot--success { background: var(--dm-success); }
+.dot--amber { background: var(--dm-amber); }
+.dot--danger { background: var(--dm-danger); }
+.dot--muted { background: var(--dm-text-light); }
+.dot--border { background: var(--dm-border); }
+
+.dot-sm {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Sync status dot */
+.dot-sync {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.dot-sync--ok { background: var(--dm-success); }
+.dot-sync--error { background: var(--dm-danger); }
+
+/* ── Timeline ── */
+.timeline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.timeline-connector {
+  width: 1px;
+  background: var(--dm-border);
+}
+
+/* ── Typography ── */
+.label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dm-text-muted);
+}
+.label-sm {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--dm-text-light);
+}
+.text-muted { color: var(--dm-text-muted); }
+.text-light { color: var(--dm-text-light); }
+.text-accent { color: var(--dm-accent); }
+.text-amber { color: var(--dm-amber); }
+.text-success { color: var(--dm-success); }
+.text-danger { color: var(--dm-danger); }
+.text-paused { color: var(--dm-paused); }
+
+.mono {
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.commit-ref {
+  font-family: monospace;
+  font-size: 9px;
+  font-weight: 600;
+  background: var(--dm-accent-light);
+  color: var(--dm-accent);
+  border-radius: 3px;
+}
+
+.manual-badge {
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 3px;
+  background: var(--dm-border);
+  color: var(--dm-text-light);
+  letter-spacing: 0.03em;
+}
+
+/* ── Panels / Cards ── */
+.panel {
+  background: var(--dm-surface);
+  border-radius: var(--dm-radius);
+  border: 1px solid var(--dm-border);
+  box-shadow: var(--dm-shadow-sm);
+}
+
+.panel-header {
+  border-bottom: 1px solid var(--dm-border);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dm-text-muted);
+}
+
+/* Card form wrapper */
+.card-form {
+  background: var(--dm-surface);
+  border: 1px solid var(--dm-border);
+  border-radius: var(--dm-radius);
+  box-shadow: var(--dm-shadow-md);
+}
+
+/* ── Header ── */
+.header {
+  background: var(--dm-surface);
+  border-bottom: 1px solid var(--dm-border);
+  box-shadow: var(--dm-shadow-sm);
+}
+
+/* Theme toggle */
+.btn-theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dm-text-light);
+  transition: color 0.15s;
+}
+.btn-theme-toggle:hover {
+  color: var(--dm-text);
+}
+
+/* ── Queue Items ── */
+.queue-item {
+  border-bottom: 1px solid var(--dm-border);
+}
+
+.queue-item--active-working {
+  background: var(--dm-accent-bg-subtle);
+}
+.queue-item--active-waiting {
+  background: var(--dm-amber-bg-subtle);
+}
+.queue-item--paused {
+  background: var(--dm-paused-bg-subtle);
+}
+
+/* Queue launch button */
+.btn-launch {
+  background: var(--dm-accent);
+  color: white;
+  border: none;
+  border-radius: var(--dm-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+/* ── Progress bar in quality panel ── */
+.progress-bar-track {
+  background: var(--dm-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  border-radius: 3px;
+}
+
+/* ── Empty state text ── */
+.empty-state {
+  color: var(--dm-text-light);
+  font-size: 13px;
+  text-align: center;
+}
+.empty-state-sm {
+  color: var(--dm-text-light);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── Attachment styles ── */
+.attachment-placeholder {
+  font-size: 11px;
+  color: var(--dm-text-light);
+  font-style: italic;
+  border: 1px dashed var(--dm-border);
+  border-radius: 6px;
+  text-align: center;
+}
+
+/* ── Dependency buttons ── */
+.dep-btn--selected {
+  font-size: 11px;
+  font-family: var(--dm-font);
+  font-weight: 600;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--dm-accent);
+  background: var(--dm-accent);
+  color: white;
+}
+
+.dep-btn--available {
+  font-size: 11px;
+  font-family: var(--dm-font);
+  font-weight: 400;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px dashed var(--dm-border);
+  background: transparent;
+  color: var(--dm-text-light);
+}
+
+/* ── Undo toast ── */
+.undo-toast {
+  background: var(--dm-surface);
+  border: 1px solid var(--dm-border);
+  border-radius: var(--dm-radius-sm);
+  box-shadow: var(--dm-shadow-md);
+  color: var(--dm-text);
+}
+
+.btn-undo {
+  background: none;
+  border: none;
+  color: var(--dm-accent);
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: inherit;
+}
+.btn-undo:hover {
+  background: var(--dm-accent-light);
+}
+
+/* ── ProjectPicker ── */
+.btn-connect {
+  background: var(--dm-accent);
+  color: white;
+  border: none;
+  border-radius: var(--dm-radius);
+  font-weight: 600;
+  font-family: var(--dm-font);
+  box-shadow: var(--dm-shadow-md);
+  transition: all 0.2s;
+}
+.btn-connect:hover {
+  opacity: 0.9;
+}
+
+.btn-reconnect {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dm-text-muted);
+  font-family: var(--dm-font);
+  border-radius: var(--dm-radius-sm);
+  transition: all 0.15s;
+}
+.btn-reconnect:hover {
+  color: var(--dm-accent);
+  background: var(--dm-accent-light);
+}
+
+/* ── Quality panel specific ── */
+.weight-badge {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  border-radius: 3px;
+}
+.weight-badge--high {
+  background: rgba(196,122,122,0.12);
+  color: var(--dm-danger);
+}
+.weight-badge--medium {
+  background: var(--dm-amber-bg-subtle);
+  color: var(--dm-amber);
+}
+.weight-badge--low {
+  background: var(--dm-accent-bg-subtle);
+  color: var(--dm-accent);
+}
+
+.healthcheck-btn {
+  border-radius: var(--dm-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.healthcheck-btn--idle {
+  background: transparent;
+  color: var(--dm-accent);
+  border: 1.5px solid var(--dm-accent);
+}
+.healthcheck-btn--launched {
+  background: var(--dm-success-light);
+  color: var(--dm-success);
+  border: none;
+}
+
+.autofix-btn {
+  border: none;
+  border-radius: var(--dm-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.autofix-btn--idle {
+  background: var(--dm-accent);
+  color: #fff;
+}
+.autofix-btn--launched {
+  background: var(--dm-success-light);
+  color: var(--dm-success);
+}
+
+/* Tooltip */
+.tooltip-popup {
+  background: var(--dm-text);
+  color: var(--dm-bg);
+  border-radius: var(--dm-radius-sm);
+  box-shadow: var(--dm-shadow-lg);
+  pointer-events: none;
+}
+
+/* Findings cards */
+.finding-card {
+  border-radius: var(--dm-radius-sm);
+}
+.finding-card--high { background: rgba(196,122,122,0.1); }
+.finding-card--medium { background: var(--dm-amber-bg-subtle); }
+.finding-card--low { background: var(--dm-accent-bg-subtle); }
+
+/* Progress in detail panel */
+.progress-banner {
+  color: var(--dm-accent);
+  background: var(--dm-accent-light);
+  border-radius: var(--dm-radius-sm);
+  font-weight: 500;
+}
+
+/* Section header label */
+.section-label {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dm-text-muted);
+}
+
+/* Scorecard table */
+.scorecard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.scorecard-th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--dm-text-light);
+  border-bottom: 2px solid var(--dm-border);
+}
+.scorecard-td {
+  border-bottom: 1px solid var(--dm-border);
+}
+
+/* ── Error toast ── */
+.error-toast {
+  background: var(--dm-surface);
+  border: 1px solid var(--dm-danger);
+  border-radius: var(--dm-radius-sm);
+  box-shadow: var(--dm-shadow-md);
+  color: var(--dm-text);
+}
+
+/* ── Activity feed ── */
+.activity-dot {
+  border-radius: 50%;
+}
+.activity-dot--completed { background: var(--dm-success); }
+.activity-dot--default { background: var(--dm-border); }
+
+.activity-timestamp {
+  font-size: 10px;
+  color: var(--dm-text-light);
+}
+
+.activity-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dm-text-light);
+  transition: opacity 0.15s;
+}
+
+/* ── Done section compact cards (backlog variant) ── */
+.task-card--backlog-compact {
+  border-radius: var(--dm-radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  opacity: 0.6;
+}
+.task-card--backlog-compact:not(.task-card--selected) {
+  border: 1px dashed var(--dm-border);
+}
+.task-card--backlog-compact.task-card--selected {
+  border: 1px solid var(--dm-text-light);
+}
+
+/* ── Detail panel editable title ── */
+.detail-title {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.detail-title:hover {
+  background: var(--dm-bg);
+}
+
+/* ── Detail panel input focus helper ── */
+.input-field:focus,
+.input-epic:focus {
+  border-color: var(--dm-accent);
+}
+
+.input-epic {
+  border: 1px solid var(--dm-border);
+  border-radius: 4px;
+  background: var(--dm-bg);
+  font-family: var(--dm-font);
+  outline: none;
+}
+
+/* ── Phase label ── */
+.phase-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dm-text-light);
+}
+
+/* ── Timeline connector ── */
+.timeline-connector-v {
+  background: var(--dm-border);
+}
+
+/* ── Attachment delete button ── */
+.attachment-delete {
+  border-radius: 50%;
+  background: var(--dm-overlay-dark);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-family: var(--dm-font);
+  transition: opacity 0.15s;
+}
+
+/* ── Section toggle (done/backlog) ── */
+.section-toggle-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dm-text-light);
+}
+
+.section-toggle-arrow {
+  font-size: 11px;
+  color: var(--dm-text-light);
+  transition: transform 0.2s;
+}
+
+/* ── Queue path display ── */
+.queue-path {
+  font-family: monospace;
+  color: var(--dm-text-light);
+}
+
+/* ── Queue remove button ── */
+.btn-queue-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dm-text-light);
+}
+
+/* ── Queue pause button ── */
+.btn-queue-pause {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dm-paused);
+}
+
+/* ── Backlog text ── */
+.text-backlog-name {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--dm-text-light);
+}
+
+/* ── Detail blocked input ── */
+.input-blocked {
+  font-family: var(--dm-font);
+  border: 1px solid var(--dm-border);
+  border-radius: 6px;
+  background: var(--dm-bg);
+  outline: none;
+  transition: border-color 0.15s;
+  line-height: 1.5;
+}
+.input-blocked:focus {
+  border-color: var(--dm-accent);
+}
+
+/* ── Paused branch info ── */
+.paused-branch {
+  font-family: monospace;
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+/* ── Card dependencies info ── */
+.card-deps-info {
+  font-size: 10px;
+  color: var(--dm-text-light);
+  font-style: italic;
+}
+
+/* ── Card blocked reason ── */
+.card-blocked-reason {
+  font-size: 11px;
+  color: var(--dm-text-light);
+  font-style: italic;
+}
+
+/* ── Paused status text on card ── */
+.card-paused-text {
+  font-size: 11px;
+  color: var(--dm-paused);
+  line-height: 1.3;
+}
+
+/* ── Card progress text ── */
+.card-progress-text {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+/* ── Epic group rename input ── */
+.input-epic-rename {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dm-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--dm-bg);
+  border: 1px solid var(--dm-accent);
+  border-radius: 3px;
+  outline: none;
+  font-family: var(--dm-font);
+}
+
+/* ── Detail edit title input ── */
+.input-detail-title {
+  font-weight: 600;
+  border: 1px solid var(--dm-accent);
+  border-radius: 4px;
+  font-family: var(--dm-font);
+  background: var(--dm-surface);
+  outline: none;
+}

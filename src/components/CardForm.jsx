@@ -30,29 +30,21 @@ export function CardForm({ card, onSave, onCancel, groups }) {
     });
   };
 
-  const inputStyle = {
-    width: '100%', padding: '6px 8px', fontSize: '13px', fontFamily: 'var(--dm-font)',
-    border: '1px solid var(--dm-border)', borderRadius: '6px', background: 'var(--dm-surface)',
-    outline: 'none',
-  };
-
   return (
-    <form onSubmit={handleSubmit} style={{
-      background: 'var(--dm-surface)', border: '1px solid var(--dm-border)',
-      borderRadius: 'var(--dm-radius)', padding: '16px', marginBottom: '16px',
-      boxShadow: 'var(--dm-shadow-md)',
-    }}>
+    <form onSubmit={handleSubmit} className="card-form" style={{ padding: '16px', marginBottom: '16px' }}>
       <input
         value={title} onInput={e => setTitle(e.target.value)}
         placeholder="Task title..." autoFocus
-        style={{ ...inputStyle, fontWeight: 600, marginBottom: '8px' }}
+        className="input-card"
+        style={{ width: '100%', padding: '6px 8px', fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}
       />
       <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
         <input
           value={group} onInput={e => setGroup(e.target.value)}
           placeholder="Epic (e.g. Auth, DevToolbar)..."
           list="group-list"
-          style={{ ...inputStyle, flex: 1, fontSize: '12px' }}
+          className="input-card"
+          style={{ flex: 1, padding: '6px 8px', fontSize: '12px' }}
         />
         {groups && groups.length > 0 ? (
           <datalist id="group-list">
@@ -64,7 +56,8 @@ export function CardForm({ card, onSave, onCancel, groups }) {
         value={description} onInput={e => setDescription(e.target.value)}
         placeholder="Description (what needs to be done)..."
         rows="2"
-        style={{ ...inputStyle, marginBottom: '8px', resize: 'vertical' }}
+        className="input-card"
+        style={{ width: '100%', padding: '6px 8px', fontSize: '13px', marginBottom: '8px', resize: 'vertical' }}
       />
       <label style={{
         display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px',
@@ -75,9 +68,9 @@ export function CardForm({ card, onSave, onCancel, groups }) {
       </label>
       {!manual ? <div style={{ marginBottom: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-          <span style={{ fontSize: '11px', color: 'var(--dm-text-muted)', fontWeight: 500 }}>Skills</span>
+          <span className="text-muted" style={{ fontSize: '11px', fontWeight: 500 }}>Skills</span>
           {!userEditedSkills && suggested.length > 0 ? (
-            <span style={{ fontSize: '10px', color: 'var(--dm-accent)', fontStyle: 'italic' }}>auto-detected</span>
+            <span className="text-accent" style={{ fontSize: '10px', fontStyle: 'italic' }}>auto-detected</span>
           ) : null}
         </div>
         <input
@@ -85,16 +78,15 @@ export function CardForm({ card, onSave, onCancel, groups }) {
           onInput={e => { setManualSkills(e.target.value); setUserEditedSkills(true); }}
           onFocus={() => { if (!userEditedSkills) { setManualSkills(suggested.join(', ')); setUserEditedSkills(true); } }}
           placeholder="Auto-detected from title, or type manually..."
-          style={{ ...inputStyle, fontSize: '12px', color: userEditedSkills ? 'var(--dm-text)' : 'var(--dm-accent)' }}
+          className="input-card"
+          style={{ width: '100%', padding: '6px 8px', fontSize: '12px', color: userEditedSkills ? 'var(--dm-text)' : 'var(--dm-accent)' }}
         />
         {suggested.length > 0 && !userEditedSkills ? (
           <div style={{ marginTop: '6px' }}>
-            <div style={{ fontSize: '10px', color: 'var(--dm-text-light)', lineHeight: 1.5 }}>
+            <div className="text-light" style={{ fontSize: '10px', lineHeight: 1.5 }}>
               matched: {matches.map(m => (
-                <code key={m.word} style={{
-                  background: 'var(--dm-accent-light)', padding: '0 4px', borderRadius: '3px',
-                  fontSize: '10px', fontFamily: 'monospace', marginRight: '3px',
-                  color: 'var(--dm-accent)',
+                <code key={m.word} className="commit-ref" style={{
+                  padding: '0 4px', marginRight: '3px', fontSize: '10px',
                 }}>"{m.word}"</code>
               ))}
             </div>
@@ -103,16 +95,12 @@ export function CardForm({ card, onSave, onCancel, groups }) {
       </div> : null}
       <div style={{ display: 'flex', gap: '8px' }}>
         {onCancel ? (
-          <button type="button" onClick={onCancel} style={{
-            padding: '6px 12px', background: 'var(--dm-bg)', color: 'var(--dm-text-muted)',
-            border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)', fontSize: '12px',
-            fontWeight: 500, fontFamily: 'var(--dm-font)', cursor: 'pointer',
+          <button type="button" onClick={onCancel} className="btn btn-secondary btn-sm" style={{
+            padding: '6px 12px',
           }}>Cancel</button>
         ) : null}
-        <button type="submit" style={{
-          flex: 1, padding: '6px 12px', background: 'var(--dm-accent)', color: 'white',
-          border: 'none', borderRadius: 'var(--dm-radius-sm)', fontSize: '12px',
-          fontWeight: 600, fontFamily: 'var(--dm-font)', cursor: 'pointer',
+        <button type="submit" className="btn btn-primary btn-sm" style={{
+          flex: 1, padding: '6px 12px',
         }}>{card ? 'Save' : 'Add task'}</button>
       </div>
     </form>

@@ -36,9 +36,7 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }) {
 
   if (entries.length === 0) {
     return (
-      <div style={{
-        padding: '20px 16px', textAlign: 'center', color: 'var(--dm-text-light)', fontSize: '12px',
-      }}>
+      <div className="empty-state-sm" style={{ padding: '20px 16px' }}>
         No activity yet
       </div>
     );
@@ -61,30 +59,27 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }) {
           onKeyDown={e.clickableTaskId != null ? handleKeyActivate(() => onNavigateToTask(e.clickableTaskId)) : undefined}
         >
           {/* Colored dot */}
-          <span style={{
-            width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-            background: e.completed ? 'var(--dm-success)' : 'var(--dm-border)',
+          <span className={`activity-dot ${e.completed ? 'activity-dot--completed' : 'activity-dot--default'}`} style={{
+            width: 6, height: 6, flexShrink: 0,
           }} />
 
           {/* Label */}
           <span className="activity-label" style={{
-            flex: 1, fontSize: '12px', color: e.clickableTaskId != null ? 'var(--dm-accent)' : 'var(--dm-text)',
+            flex: 1, fontSize: '12px',
+            color: e.clickableTaskId != null ? 'var(--dm-accent)' : 'var(--dm-text)',
             fontWeight: e.isToday ? 500 : 400,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>{e.label}</span>
 
           {/* Metadata */}
           {e.commitRef ? (
-            <span style={{
-              fontFamily: 'monospace', fontSize: '10px', fontWeight: 600,
-              background: 'var(--dm-accent-light)', color: 'var(--dm-accent)',
-              padding: '0 5px', borderRadius: '3px', flexShrink: 0,
+            <span className="commit-ref" style={{
+              padding: '0 5px', flexShrink: 0, fontSize: '10px',
             }}>{e.commitRef}</span>
           ) : null}
 
           {/* Timestamp */}
-          <span style={{
-            fontSize: '10px', color: 'var(--dm-text-light)',
+          <span className="activity-timestamp" style={{
             flexShrink: 0, minWidth: '36px', textAlign: 'right',
           }}>{e.date}</span>
 
@@ -92,12 +87,11 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }) {
           <button
             onClick={(ev) => { ev.stopPropagation(); onRemove(e.key); }}
             aria-label="Remove activity"
+            className="activity-remove activity-remove-btn"
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--dm-text-light)', fontSize: '11px', padding: '0 2px',
-              lineHeight: 1, opacity: 0, transition: 'opacity 0.15s',
+              fontSize: '11px', padding: '0 2px',
+              lineHeight: 1, opacity: 0,
             }}
-            className="activity-remove"
             title="Remove"
           >×</button>
         </div>

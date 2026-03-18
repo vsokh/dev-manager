@@ -14,7 +14,7 @@ export function EpicField({ task, epics, onUpdateTask }) {
 
   return (
     <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Epic</span>
+      <span className="label">Epic</span>
       {task.group && epicColorMap[task.group] ? (
         <span style={{
           width: "8px", height: "8px", borderRadius: "50%",
@@ -27,13 +27,8 @@ export function EpicField({ task, epics, onUpdateTask }) {
         onInput={e => onUpdateTask(task.id, { group: e.target.value || undefined })}
         placeholder="None"
         list="epic-list"
-        style={{
-          flex: 1, padding: '3px 8px', fontSize: '12px', fontFamily: 'var(--dm-font)',
-          border: '1px solid var(--dm-border)', borderRadius: '4px',
-          background: 'var(--dm-bg)', outline: 'none',
-        }}
-        onFocus={e => e.target.style.borderColor = 'var(--dm-accent)'}
-        onBlur={e => e.target.style.borderColor = 'var(--dm-border)'}
+        className="input-epic"
+        style={{ flex: 1, padding: '3px 8px', fontSize: '12px' }}
       />
       <datalist id="epic-list">
         {(epics || []).map(e => (

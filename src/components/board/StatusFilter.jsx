@@ -23,13 +23,8 @@ export function StatusFilter({ pendingTasks, activeFilter, setActiveFilter, sear
             <button
               key={f.value}
               onClick={() => setActiveFilter(f.value)}
-              style={{
-                fontSize: '11px', padding: '3px 10px', borderRadius: '12px',
-                cursor: 'pointer', fontFamily: 'var(--dm-font)', fontWeight: 500,
-                transition: 'all 0.15s', border: isActive ? '1px solid var(--dm-accent)' : '1px solid var(--dm-border)',
-                background: isActive ? 'var(--dm-accent)' : 'transparent',
-                color: isActive ? 'white' : 'var(--dm-text-light)',
-              }}
+              className={`btn-filter ${isActive ? 'btn-filter--active' : 'btn-filter--inactive'}`}
+              style={{ padding: '3px 10px' }}
             >
               {f.label} {count}
             </button>
@@ -43,12 +38,8 @@ export function StatusFilter({ pendingTasks, activeFilter, setActiveFilter, sear
         onInput={e => setSearchText(e.target.value)}
         onFocus={() => setSearchFocused(true)}
         onBlur={() => setSearchFocused(false)}
-        style={{
-          fontSize: '12px', padding: '4px 10px',
-          border: searchFocused ? '1px solid var(--dm-accent)' : '1px solid var(--dm-border)',
-          borderRadius: '12px', background: 'var(--dm-bg)', color: 'var(--dm-text)',
-          outline: 'none', fontFamily: 'var(--dm-font)', width: '160px',
-        }}
+        className="input-search"
+        style={{ padding: '4px 10px', width: '160px' }}
       />
     </div>
   );

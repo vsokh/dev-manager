@@ -129,8 +129,8 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               const colors = epicColors[ep.name] || {};
               const pct = ep.total > 0 ? (ep.done / ep.total) * 100 : 0;
               return (
-                <div key={ep.name} style={{
-                  padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: 600,
+                <div key={ep.name} className="epic-progress" style={{
+                  padding: "4px 10px",
                   background: colors.bg || "var(--dm-bg)", color: colors.text || "var(--dm-text-light)",
                   position: "relative", overflow: "hidden",
                 }}>
@@ -148,7 +148,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             })}
           </div>
         ) : null}
-        <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--dm-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+        <div className="label" style={{ marginBottom: '10px' }}>
           Up next
         </div>
         {pendingTasks.length >= 2 ? (
@@ -184,18 +184,12 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
           />
         ))}
         {pendingTasks.length === 0 && !showNewForm ? (
-          <div style={{
-            padding: '20px', textAlign: 'center', color: 'var(--dm-text-light)', fontSize: '13px',
-            width: '100%',
-          }}>
+          <div className="empty-state" style={{ padding: '20px', width: '100%' }}>
             No tasks yet
           </div>
         ) : null}
         {pendingTasks.length > 0 && filteredPendingTasks.length === 0 && !showNewForm ? (
-          <div style={{
-            padding: '20px', textAlign: 'center', color: 'var(--dm-text-light)', fontSize: '13px',
-            width: '100%',
-          }}>
+          <div className="empty-state" style={{ padding: '20px', width: '100%' }}>
             No matching tasks
           </div>
         ) : null}
@@ -205,16 +199,12 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             tabIndex={0}
             onClick={() => setShowNewForm(true)}
             onKeyDown={handleKeyActivate(() => setShowNewForm(true))}
+            className="add-task-card"
             style={{
-              border: '2px dashed var(--dm-border)',
-              borderRadius: 'var(--dm-radius-sm)', padding: '12px 16px',
-              cursor: 'pointer', transition: 'all 0.15s',
+              padding: '12px 16px',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--dm-text-light)', fontSize: '13px', fontWeight: 500,
               marginTop: '8px',
             }}
-            onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--dm-accent)'; e.currentTarget.style.color = 'var(--dm-accent)'; }}
-            onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--dm-border)'; e.currentTarget.style.color = 'var(--dm-text-light)'; }}
           >+ Add task</div>
         ) : null}
         {showNewForm ? (
@@ -231,15 +221,8 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
           <div style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
               onClick={onArrange}
-              style={{
-                padding: '5px 14px', background: 'none',
-                color: 'var(--dm-amber)', border: '1px solid var(--dm-amber)',
-                borderRadius: 'var(--dm-radius-sm)', fontSize: '12px',
-                fontWeight: 600, fontFamily: 'var(--dm-font)',
-                cursor: 'pointer', transition: 'all 0.15s',
-              }}
-              onMouseOver={e => { e.target.style.background = 'var(--dm-amber)'; e.target.style.color = 'white'; }}
-              onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--dm-amber)'; }}
+              className="btn btn-amber-outline"
+              style={{ padding: '5px 14px', fontSize: '12px' }}
             >
               Arrange tasks
             </button>
@@ -249,15 +232,8 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
               return (
                 <button
                   onClick={onQueueAll}
-                  style={{
-                    padding: '5px 14px', background: 'none',
-                    color: 'var(--dm-accent)', border: '1px solid var(--dm-accent)',
-                    borderRadius: 'var(--dm-radius-sm)', fontSize: '12px',
-                    fontWeight: 600, fontFamily: 'var(--dm-font)',
-                    cursor: 'pointer', transition: 'all 0.15s',
-                  }}
-                  onMouseOver={e => { e.target.style.background = 'var(--dm-accent)'; e.target.style.color = 'white'; }}
-                  onMouseOut={e => { e.target.style.background = 'none'; e.target.style.color = 'var(--dm-accent)'; }}
+                  className="btn btn-accent-outline"
+                  style={{ padding: '5px 14px', fontSize: '12px' }}
                 >
                   Queue all ({pendingNotQueued.length})
                 </button>
