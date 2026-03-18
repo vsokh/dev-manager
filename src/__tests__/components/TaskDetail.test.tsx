@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { TaskDetail } from '../../components/TaskDetail.tsx';
 import type { Task, Epic } from '../../types';
 
@@ -95,5 +95,82 @@ describe('TaskDetail', () => {
     render(<TaskDetail {...defaultProps()} task={task} notes="Some notes" />);
     const textarea = screen.getByPlaceholderText('Instructions for Claude...');
     expect(textarea).toBeDefined();
+  });
+
+  describe('interactions', () => {
+    it('changing status dropdown calls onUpdateTask with new status', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { status: 'pending' });
+      render(<TaskDetail {...props} task={task} />);
+      const select = screen.getByLabelText('Task status');
+      fireEvent.change(select, { target: { value: 'done' } });
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'done' }));
+    });
+
+    it('clicking "Queue" button calls onQueue with the task', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { status: 'pending', manual: false });
+      render(<TaskDetail {...props} task={task} />);
+      const queueBtn = screen.getByRole('button', { name: /Queue/ });
+      fireEvent.click(queueBtn);
+      expect(props.onQueue).toHaveBeenCalledWith(task);
+    });
+
+    it('two-click delete: first click shows "Confirm delete?", second click calls onDeleteTask', () => {
+      const props = defaultProps();
+      const task = makeTask(1);
+      render(<TaskDetail {...props} task={task} />);
+      const deleteBtn = screen.getByText('Delete task');
+      fireEvent.click(deleteBtn);
+      expect(screen.getByText('Confirm delete?')).toBeDefined();
+      expect(props.onDeleteTask).not.toHaveBeenCalled();
+      const confirmBtn = screen.getByText('Confirm delete?');
+      fireEvent.click(confirmBtn);
+      expect(props.onDeleteTask).toHaveBeenCalledWith(1);
+    });
+
+    it('toggling "Needs review" checkbox calls onUpdateTask with supervision field', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { supervision: false });
+      render(<TaskDetail {...props} task={task} />);
+      const checkboxes = screen.getAllByRole('checkbox');
+      // "Needs review" is the first checkbox
+      const needsReviewCheckbox = checkboxes[0];
+      fireEvent.click(needsReviewCheckbox);
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ supervision: true }));
+    });
+
+    it('toggling "Auto-approve" checkbox calls onUpdateTask with autoApprove field', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { autoApprove: false });
+      render(<TaskDetail {...props} task={task} />);
+      const checkboxes = screen.getAllByRole('checkbox');
+      // "Auto-approve" is the second checkbox
+      const autoApproveCheckbox = checkboxes[1];
+      fireEvent.click(autoApproveCheckbox);
+      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ autoApprove: true }));
+    });
+
+    it('notes textarea blur calls onUpdateNotes', () => {
+      const props = defaultProps();
+      const task = makeTask(1);
+      render(<TaskDetail {...props} task={task} notes="" />);
+      const textarea = screen.getByPlaceholderText('Instructions for Claude...');
+      fireEvent.input(textarea, { target: { value: 'New notes content' } });
+      fireEvent.blur(textarea);
+      expect(props.onUpdateNotes).toHaveBeenCalledWith(1, 'New notes content');
+    });
+
+    it('clicking task name enters edit mode (shows input)', () => {
+      const props = defaultProps();
+      const task = makeTask(1, { name: 'My Task', fullName: 'My Task' });
+      render(<TaskDetail {...props} task={task} />);
+      const taskName = screen.getByText('My Task');
+      fireEvent.click(taskName);
+      // After clicking, an input should appear with the task name value
+      const editInput = screen.getByDisplayValue('My Task');
+      expect(editInput).toBeDefined();
+      expect(editInput.tagName).toBe('INPUT');
+    });
   });
 });

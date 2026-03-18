@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { ProjectPicker } from '../../components/ProjectPicker.tsx';
 
 afterEach(cleanup);
@@ -41,5 +41,23 @@ describe('ProjectPicker', () => {
     const { container } = render(<ProjectPicker {...defaultProps()} status="connecting" />);
     const skeletonBars = container.querySelectorAll('.skeleton-bar');
     expect(skeletonBars.length).toBeGreaterThan(0);
+  });
+
+  describe('interactions', () => {
+    it('clicking "Open project" button calls onConnect', () => {
+      const props = defaultProps();
+      render(<ProjectPicker {...props} />);
+      const openBtn = screen.getByRole('button', { name: 'Open project' });
+      fireEvent.click(openBtn);
+      expect(props.onConnect).toHaveBeenCalledTimes(1);
+    });
+
+    it('clicking "Last opened: {name}" button calls onReconnect', () => {
+      const props = defaultProps();
+      render(<ProjectPicker {...props} lastProjectName="my-app" />);
+      const reconnectBtn = screen.getByText('Last opened: my-app');
+      fireEvent.click(reconnectBtn);
+      expect(props.onReconnect).toHaveBeenCalledTimes(1);
+    });
   });
 });

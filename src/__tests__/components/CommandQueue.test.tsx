@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { CommandQueue } from '../../components/CommandQueue.tsx';
 import type { Task, QueueItem } from '../../types';
 
@@ -23,6 +23,7 @@ const defaultProps = () => ({
   onQueueAll: vi.fn(),
   onPauseTask: vi.fn(),
   onUpdateTask: vi.fn(),
+  onBatchUpdateTasks: vi.fn(),
   launchedId: null,
   projectPath: '',
   onSetPath: vi.fn(),
@@ -73,5 +74,27 @@ describe('CommandQueue', () => {
     const queue = [makeQueueItem(1, 'Manual work')];
     render(<CommandQueue {...defaultProps()} queue={queue} tasks={tasks} projectPath="/my/project" />);
     expect(screen.getByText('YOU')).toBeDefined();
+  });
+
+  describe('interactions', () => {
+    it('clicking "Unqueue all" button calls onClear', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1)];
+      const queue = [makeQueueItem(1)];
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      const unqueueBtn = screen.getByText('Unqueue all');
+      fireEvent.click(unqueueBtn);
+      expect(props.onClear).toHaveBeenCalledTimes(1);
+    });
+
+    it('clicking a "Launch task" button calls onLaunch', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1)];
+      const queue = [makeQueueItem(1, 'My task')];
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      const launchBtn = screen.getByRole('button', { name: 'Launch task' });
+      fireEvent.click(launchBtn);
+      expect(props.onLaunch).toHaveBeenCalledTimes(1);
+    });
   });
 });

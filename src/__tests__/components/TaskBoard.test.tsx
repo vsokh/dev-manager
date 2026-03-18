@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { TaskBoard } from '../../components/TaskBoard.tsx';
 import type { Task, QueueItem, Epic } from '../../types';
 
@@ -74,5 +74,33 @@ describe('TaskBoard', () => {
     const tasks = [makeTask(1)];
     render(<TaskBoard {...defaultProps()} tasks={tasks} />);
     expect(screen.queryByPlaceholderText('Search tasks...')).toBeNull();
+  });
+
+  describe('interactions', () => {
+    it('clicking "+ Add task" shows the CardForm', () => {
+      render(<TaskBoard {...defaultProps()} />);
+      const addBtn = screen.getByText('+ Add task');
+      fireEvent.click(addBtn);
+      // CardForm renders a title input with placeholder "Task title..."
+      expect(screen.getByPlaceholderText('Task title...')).toBeDefined();
+    });
+
+    it('clicking "Arrange tasks" button calls onArrange', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1)];
+      render(<TaskBoard {...props} tasks={tasks} />);
+      const arrangeBtn = screen.getByText('Arrange tasks');
+      fireEvent.click(arrangeBtn);
+      expect(props.onArrange).toHaveBeenCalledTimes(1);
+    });
+
+    it('clicking "Queue all" button calls onQueueAll', () => {
+      const props = defaultProps();
+      const tasks = [makeTask(1), makeTask(2)];
+      render(<TaskBoard {...props} tasks={tasks} />);
+      const queueAllBtn = screen.getByText(/Queue all/);
+      fireEvent.click(queueAllBtn);
+      expect(props.onQueueAll).toHaveBeenCalledTimes(1);
+    });
   });
 });
