@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { ensureDevManagerDir } from '../fs.ts';
 import { STATUS } from '../constants/statuses.ts';
 import { sortByDependencies } from '../utils/sortByDependencies.ts';
-import { escapePS, escapeCmd, shortTitle } from '../utils/queueUtils.ts';
+import { escapePS, escapeCmd, shortTitle, buildGridLayout } from '../utils/queueUtils.ts';
+import { QUEUE_LAUNCH_SET_PATH } from '../constants/strings.ts';
 import type { StateData, Task, QueueItem, Activity } from '../types';
 
 function launchProtocol(url: string): void {
@@ -96,7 +97,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
   };
 
   const handleLaunchTask = (itemKey: number, cmd: string, taskName: string) => {
-    if (!projectPath) return;
+    if (!projectPath) { onError(QUEUE_LAUNCH_SET_PATH); return; }
     const path = projectPath.replace(/\\/g, '/');
     const title = shortTitle(taskName);
     const url = 'claudecode:' + encodeURIComponent(path) + '?' + encodeURIComponent(cmd) + '?' + encodeURIComponent(title);
@@ -106,7 +107,8 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
   };
 
   const handleLaunchPhase = async (items: LaunchPhaseItem[]) => {
-    if (!projectPath || !dirHandle) return;
+    if (!projectPath) { onError(QUEUE_LAUNCH_SET_PATH); return; }
+    if (!dirHandle) return;
     const dir = projectPath.replace(/\\/g, '\\');
 
     try {
@@ -120,10 +122,11 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
         await w.close();
       }
 
-      const tabArgs = items.map(item =>
-        `new-tab --title "${escapeCmd(shortTitle(item.taskName))}" --suppressApplicationTitle -d "${dir}" pwsh -NoLogo -NoExit -File "${dir}\\.devmanager\\launch-${item.key}.ps1"`
-      ).join(' ; ');
-      const script = `@echo off\r\nstart "" wt.exe -w 0 ${tabArgs}\r\n`;
+      const paneArgs = items.map(item =>
+        `--title "${escapeCmd(shortTitle(item.taskName))}" --suppressApplicationTitle -d "${dir}" pwsh -NoLogo -NoExit -File "${dir}\\.devmanager\\launch-${item.key}.ps1"`
+      );
+      const layoutArgs = buildGridLayout(paneArgs);
+      const script = `@echo off\r\nstart "" wt.exe -w new ${layoutArgs}\r\n`;
 
       const fileHandle = await dmDir.getFileHandle('launch.cmd', { create: true });
       const writable = await fileHandle.createWritable();
@@ -145,7 +148,7 @@ export function useQueueActions({ data, save, dirHandle, projectPath, snapshotBe
   };
 
   const handleArrange = () => {
-    if (!projectPath) return;
+    if (!projectPath) { onError(QUEUE_LAUNCH_SET_PATH); return; }
     const path = projectPath.replace(/\\/g, '/');
     const url = 'claudecode:' + encodeURIComponent(path) + '?' + encodeURIComponent('/orchestrator arrange') + '?' + encodeURIComponent('Arrange tasks');
     launchProtocol(url);

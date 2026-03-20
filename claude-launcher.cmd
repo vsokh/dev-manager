@@ -53,6 +53,6 @@ set "tmpfile=%TEMP%\claude-launch-%RANDOM%.ps1"
   echo claude --dangerously-skip-permissions '!cmd!'
 ) > "!tmpfile!"
 
-:: Launch as new tab in existing Windows Terminal (or new window if none open)
+:: Launch in a new Windows Terminal window (avoids splitting into dev server, etc.)
 :: --suppressApplicationTitle prevents claude from overriding the tab name
-start "" wt.exe -w 0 new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" pwsh -NoLogo -NoExit -File "!tmpfile!"
+start "" wt.exe -w new new-tab --title "!title!" --suppressApplicationTitle -d "!dir!" pwsh -NoLogo -NoExit -File "!tmpfile!"
