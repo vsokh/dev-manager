@@ -59,7 +59,9 @@ No admin required. You only need to do this once.
 
 ### 8. Set your project path
 
-In the queue panel, set the path to your project folder (e.g. `C:\Users\you\Projects\my-app`). This is stored per project in your browser.
+In the queue panel, click **"Set project path to enable launch"** and enter the path to your project folder (e.g. `C:\Users\you\Projects\my-app`). This is stored per project in your browser.
+
+![Set project path in the queue panel](docs/set-project-path.png)
 
 ### 9. Launch
 
