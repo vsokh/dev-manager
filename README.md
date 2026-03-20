@@ -11,18 +11,23 @@ A browser-based task manager that pairs with [Claude Code](https://docs.anthropi
 
 ## Setup
 
-### 1. Install and run
+### 1. Clone and install
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/vsokh/dev-manager.git
 cd dev-manager
 npm install
+```
+
+### 2. Start the dev server
+
+```bash
 npm run dev
 ```
 
 Open the URL shown in your terminal (usually `http://localhost:5173`) in **Chrome or Edge**.
 
-### 2. Connect a project
+### 3. Connect a project
 
 Dev Manager doesn't manage its own code — it manages **your other projects**. You need to point it at a project folder.
 
@@ -32,19 +37,19 @@ Dev Manager doesn't manage its own code — it manages **your other projects**. 
 
 Dev Manager creates a `.devmanager/` folder inside that project to store tasks, notes, and state. The connection is remembered — next time you open Dev Manager it reconnects automatically.
 
-### 3. Create tasks
+### 4. Create tasks
 
 Use the task form on the left to add work items. Give each task a clear name and optional description.
 
-### 4. Write notes
+### 5. Write notes
 
 Click a task to open the detail panel on the right. Write instructions here — these notes tell Claude Code exactly what you want done.
 
-### 5. Queue work
+### 6. Queue work
 
 Hit the **queue button** on a task to add it to the work queue at the bottom. Queued tasks are what the orchestrator picks up.
 
-### 6. Register the launch protocol (Windows, one-time)
+### 7. Register the launch protocol (Windows, one-time)
 
 The play buttons next to queued tasks need a way to open Claude Code from the browser. This step registers a `claudecode://` URL protocol on your machine — similar to how `mailto:` links open your email client.
 
@@ -54,11 +59,11 @@ install-protocol.cmd
 
 No admin required. You only need to do this once.
 
-### 7. Set your project path
+### 8. Set your project path
 
 In the queue panel, set the path to your project folder (e.g. `C:\Users\you\Projects\my-app`). This is stored per project in your browser.
 
-### 8. Launch
+### 9. Launch
 
 Click the **play button** next to a queued task. Claude Code opens in a new terminal tab with the orchestrator skill loaded and your task ready to go.
 
