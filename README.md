@@ -1,91 +1,41 @@
 # Dev Manager
 
-A browser-based task manager that pairs with [Claude Code](https://docs.anthropic.com/en/docs/claude-code). You create tasks and queue work in the browser — Claude Code's orchestrator picks them up, plans the approach, and delegates to sub-agents to get the work done.
+Browser-based task manager for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Create tasks, queue work — Claude Code picks them up and gets it done.
 
-## Prerequisites
+## Quick Start
 
-- [Node.js](https://nodejs.org/) (v18 or later)
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and working
-- Chrome or Edge (requires File System Access API)
-- A terminal emulator (Windows Terminal, gnome-terminal, kitty, alacritty, or xterm)
-
-## Setup
-
-### 1. Clone and install
+**Prerequisites:** [Node.js](https://nodejs.org/) 18+, [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Chrome or Edge
 
 ```bash
 git clone https://github.com/vsokh/dev-manager.git && cd dev-manager && npm install
 ```
 
-### 2. Start the dev server
-
 ```bash
 npm run dev
 ```
 
-Open the URL shown in your terminal (usually `http://localhost:5173`) in **Chrome or Edge**.
+Open the URL from your terminal in **Chrome or Edge**.
 
-### 3. Connect a project
+## Usage
 
-Dev Manager doesn't manage its own code — it manages **your other projects**. You need to point it at a project folder.
+1. **Open project** — pick the folder of the project you want to manage (not this repo, your own project). Grant read/write access when prompted.
 
-- Click **Open project** on the landing screen.
-- In the folder picker, navigate to the **root folder of the project** you want to manage (e.g. your app's repo).
-- Your browser will ask you to grant read/write access — click **Allow**.
+2. **Create tasks** — add work items on the left, write instructions in the detail panel on the right.
 
-Dev Manager creates a `.devmanager/` folder inside that project to store tasks, notes, and state. The connection is remembered — next time you open Dev Manager it reconnects automatically.
+3. **Queue & launch** — queue a task, then hit the play button to open Claude Code with that task loaded.
 
-### 4. Create tasks
+The orchestrator reads your task, plans the approach, asks for your approval, delegates to sub-agents, and writes results back. Dev Manager picks up changes automatically.
 
-Use the task form on the left to add work items. Give each task a clear name and optional description.
+## One-Click Launch Setup (one-time)
 
-### 5. Write notes
+The play buttons need a `claudecode://` protocol registered on your machine.
 
-Click a task to open the detail panel on the right. Write instructions here — these notes tell Claude Code exactly what you want done.
+**Windows:** `install-protocol.cmd`
+**Linux:** `chmod +x install-protocol.sh && ./install-protocol.sh`
 
-### 6. Queue work
-
-Hit the **queue button** on a task to add it to the work queue at the bottom. Queued tasks are what the orchestrator picks up.
-
-### 7. Register the launch protocol (one-time)
-
-The play buttons next to queued tasks need a way to open Claude Code from the browser. This step registers a `claudecode://` URL protocol on your machine — similar to how `mailto:` links open your email client.
-
-**Windows:**
-```bash
-install-protocol.cmd
-```
-
-**Linux:**
-```bash
-chmod +x install-protocol.sh && ./install-protocol.sh
-```
-
-No admin/root required. You only need to do this once.
-
-### 8. Set your project path
-
-In the queue panel, click **"Set project path to enable launch"** and enter the path to your project folder (e.g. `C:\Users\you\Projects\my-app` on Windows or `/home/you/projects/my-app` on Linux). This is stored per project in your browser.
+Then set your project path in the queue panel:
 
 ![Set project path in the queue panel](docs/set-project-path.png)
-
-### 9. Launch
-
-Click the **play button** next to a queued task. Claude Code opens in a new terminal tab with the orchestrator skill loaded and your task ready to go.
-
-The orchestrator will read your task and notes, explore the codebase, and present a plan. You approve it, and it delegates the work to sub-agents. When it's done, it writes results back — Dev Manager picks up the changes automatically (polls every 3 seconds).
-
-## Scripts
-
-| Command | What it does |
-|---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build |
-| `npm run preview` | Preview production build |
-| `npm run test` | Run tests (watch mode) |
-| `npm run test:run` | Run tests once |
-| `npm run lint` | Check for lint errors |
-| `npm run lint:fix` | Auto-fix lint errors |
 
 ## How It Works
 
@@ -106,12 +56,6 @@ The orchestrator will read your task and notes, explore the codebase, and presen
        |                              |                              |
   See results ◄── auto-sync           |                              |
 ```
-
-## Tech Stack
-
-- React 19 + Vite
-- No backend — fully client-side via the File System Access API
-- All state lives in `.devmanager/state.json` inside your project
 
 ## License
 
