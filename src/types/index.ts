@@ -110,7 +110,20 @@ export interface QualityBaseline {
   lintErrors?: number;
   testsPassing?: boolean;
   testCount?: number;
+  testCoveragePercent?: number;
   bundleGzipKB?: number;
+  depVulnerabilities?: {
+    critical?: number;
+    high?: number;
+    moderate?: number;
+    low?: number;
+    total?: number;
+  };
+  sentry?: {
+    unresolvedCount?: number;
+    crashFreeRate?: number;
+    weeklyErrorCount?: number;
+  };
 }
 
 export interface QualityReport {

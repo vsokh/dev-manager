@@ -109,7 +109,31 @@ export function QualityPanel({ latest, history, loading, error, onRetry, project
         <Pill ok={b.buildPasses}>{b.buildPasses ? 'Build passing' : 'Build FAILING'}</Pill>
         <Pill ok={(b.lintErrors ?? 0) === 0} warn={(b.lintErrors ?? 0) > 0 && (b.lintErrors ?? 0) < 10}>Lint: {b.lintErrors ?? '?'} errors</Pill>
         <Pill ok={b.testsPassing}>{b.testCount ?? '?'} tests</Pill>
+        {b.testCoveragePercent != null && (
+          <Pill
+            ok={b.testCoveragePercent >= 80}
+            warn={b.testCoveragePercent >= 50 && b.testCoveragePercent < 80}
+          >
+            {b.testCoveragePercent}% coverage
+          </Pill>
+        )}
         <Pill ok>{b.bundleGzipKB ?? '?'}KB gzip</Pill>
+        {b.depVulnerabilities && (
+          <Pill
+            ok={(b.depVulnerabilities.total ?? 0) === 0}
+            warn={(b.depVulnerabilities.total ?? 0) > 0 && (b.depVulnerabilities.critical ?? 0) === 0 && (b.depVulnerabilities.high ?? 0) === 0}
+          >
+            {b.depVulnerabilities.total ?? 0} vulns{(b.depVulnerabilities.critical ?? 0) > 0 ? ` (${b.depVulnerabilities.critical} crit)` : (b.depVulnerabilities.high ?? 0) > 0 ? ` (${b.depVulnerabilities.high} high)` : ''}
+          </Pill>
+        )}
+        {b.sentry && (
+          <Pill
+            ok={(b.sentry.unresolvedCount ?? 0) < 5}
+            warn={(b.sentry.unresolvedCount ?? 0) >= 5 && (b.sentry.unresolvedCount ?? 0) < 15}
+          >
+            Sentry: {b.sentry.unresolvedCount ?? '?'} unresolved
+          </Pill>
+        )}
       </div>
 
       {/* -- Charts row -- */}
