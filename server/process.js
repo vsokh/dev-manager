@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 const ENGINE_COMMANDS = {
   claude: (command) => ({
     cmd: 'claude',
-    args: ['-p', command, '--dangerously-skip-permissions'],
+    args: ['-p', command + ' --auto-approve (headless mode: do NOT wait for user approval, execute the full plan immediately)', '--dangerously-skip-permissions'],
   }),
   codex: (command) => ({
     cmd: 'codex',
