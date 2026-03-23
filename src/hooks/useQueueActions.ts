@@ -107,6 +107,15 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     }
   };
 
+  const handleLaunchTerminal = async (itemKey: number, cmd: string, taskName: string) => {
+    try {
+      await api.launchTerminal(itemKey, cmd, undefined, taskName);
+    } catch (err) {
+      console.error('Failed to launch in terminal:', err);
+      onError('Failed to open terminal');
+    }
+  };
+
   const handleArrange = async () => {
     try {
       await api.launch(0, '/orchestrator arrange');
@@ -125,6 +134,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     handleClearQueue,
     handleLaunchTask,
     handleLaunchPhase,
+    handleLaunchTerminal,
     handleArrange,
   };
 }

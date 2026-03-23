@@ -199,7 +199,7 @@ export function App() {
             <div className="dm-grid-bottom">
               <div className="panel">
                 <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedId={queueActions.launchedId} defaultEngine={data.defaultEngine} processOutputs={processOutput.outputs} onClearOutput={processOutput.clearOutput} />
+                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchTerminal={queueActions.handleLaunchTerminal} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedId={queueActions.launchedId} defaultEngine={data.defaultEngine} processOutputs={processOutput.outputs} onClearOutput={processOutput.clearOutput} />
               </div>
 
               <div className="panel">

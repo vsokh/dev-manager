@@ -97,6 +97,8 @@ export const api = {
   // Launch (headless)
   launch: (taskId: number, command: string, engine?: string) =>
     post<{ pid: number }>('/api/launch', { taskId, command, engine }),
+  launchTerminal: (taskId: number, command: string, engine?: string, title?: string) =>
+    post<{ ok: true }>('/api/launch/terminal', { taskId, command, engine, title }),
   listProcesses: () => get<Array<{ pid: number; taskId: number; engine: string; startedAt: string }>>('/api/launch'),
   killProcess: (pid: number) => del<{ ok: true }>(`/api/launch/${pid}`),
 

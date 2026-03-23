@@ -734,6 +734,48 @@ export async function handleApi(req, res) {
       return true;
     }
 
+    // POST /api/launch/terminal — open task in a new terminal tab
+    if (method === 'POST' && pathname === '/api/launch/terminal') {
+      const body = await parseJsonBody(req);
+      const { taskId, command, engine, title } = body;
+      if (!command) {
+        jsonResponse(res, 400, { error: 'Missing command' });
+        return true;
+      }
+      const eng = engine || 'claude';
+      const tabTitle = title || `Task ${taskId}`;
+      const os = platform();
+
+      try {
+        if (os === 'win32') {
+          // Open in Windows Terminal new tab
+          const fullCmd = `${eng === 'claude' ? 'claude' : eng === 'codex' ? 'codex' : 'cursor-agent'} -p "${command.replace(/"/g, '\\"')}"`;
+          const { spawn: spawnProc } = await import('node:child_process');
+          spawnProc('wt', ['-w', '0', 'nt', '--title', tabTitle, '--suppressApplicationTitle', '--', 'cmd', '/k', fullCmd], {
+            cwd: projectPath,
+            detached: true,
+            stdio: 'ignore',
+          }).unref();
+        } else if (os === 'darwin') {
+          // macOS — open new Terminal.app tab
+          const fullCmd = `cd "${projectPath}" && ${eng === 'claude' ? 'claude' : eng} -p "${command.replace(/"/g, '\\"')}"`;
+          const { execFile: ef } = await import('node:child_process');
+          ef('osascript', ['-e', `tell app "Terminal" to do script "${fullCmd.replace(/"/g, '\\"')}"`], { timeout: 5000 });
+        } else {
+          // Linux — try common terminal emulators
+          const fullCmd = `cd "${projectPath}" && ${eng === 'claude' ? 'claude' : eng} -p "${command.replace(/"/g, '\\"')}"; exec bash`;
+          const { spawn: spawnProc } = await import('node:child_process');
+          spawnProc('x-terminal-emulator', ['-e', `bash -c '${fullCmd}'`], {
+            detached: true, stdio: 'ignore',
+          }).unref();
+        }
+        jsonResponse(res, 200, { ok: true });
+      } catch (err) {
+        jsonResponse(res, 500, { error: err.message });
+      }
+      return true;
+    }
+
     // GET /api/launch
     if (method === 'GET' && pathname === '/api/launch') {
       const { getProcessManager } = await import('./process.js');

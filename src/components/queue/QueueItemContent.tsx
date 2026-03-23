@@ -14,6 +14,7 @@ interface QueueItemContentProps {
   task: Task | undefined;
   launchedId: number | null;
   onLaunch: (key: number, cmd: string, taskName: string) => void;
+  onLaunchTerminal?: (key: number, cmd: string, taskName: string) => void;
   onPauseTask: (id: number) => void;
   onRemove: (key: number) => void;
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
@@ -22,7 +23,7 @@ interface QueueItemContentProps {
   defaultEngine?: string;
 }
 
-export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask, onRemove, onUpdateTask, taskMap, variant = 'flat', defaultEngine }: QueueItemContentProps) {
+export function QueueItemContent({ item, task, launchedId, onLaunch, onLaunchTerminal, onPauseTask, onRemove, onUpdateTask, taskMap, variant = 'flat', defaultEngine }: QueueItemContentProps) {
   const key = itemKey(item);
   const isLaunched = launchedId === key;
   const status: ItemStatus = getItemStatus(item, taskMap);
@@ -45,24 +46,38 @@ export function QueueItemContent({ item, task, launchedId, onLaunch, onPauseTask
           }}>YOU</span>
         )
       ) : (
-        <button
-          onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
-          aria-label={QUEUE_LAUNCH_ARIA}
-          title={isPaused ? QUEUE_LAUNCH_RESUME : `${QUEUE_LAUNCH_TERMINAL} (${engine.label})`}
-          className={`btn-launch${isActive && !isLaunched ? ' task-card-in-progress' : ''}`}
-          style={{
-            padding: '4px 8px', background: btn.bg,
-            fontSize: '12px', flexShrink: 0,
-            display: 'flex', alignItems: 'center', gap: '3px',
-          }}
-        >
-          {btn.icon}
-          <span style={{
-            fontSize: '9px',
-            lineHeight: 1,
-            opacity: 0.9,
-          }}>{engine.icon}</span>
-        </button>
+        <>
+          <button
+            onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
+            aria-label={QUEUE_LAUNCH_ARIA}
+            title={isPaused ? QUEUE_LAUNCH_RESUME : `Background (${engine.label})`}
+            className={`btn-launch${isActive && !isLaunched ? ' task-card-in-progress' : ''}`}
+            style={{
+              padding: '4px 8px', background: btn.bg,
+              fontSize: '12px', flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: '3px',
+            }}
+          >
+            {btn.icon}
+            <span style={{
+              fontSize: '9px',
+              lineHeight: 1,
+              opacity: 0.9,
+            }}>{engine.icon}</span>
+          </button>
+          {onLaunchTerminal && !isActive && (
+            <button
+              onClick={() => onLaunchTerminal(key, cmdForItem(item), item.taskName)}
+              title={`Open in terminal (${engine.label})`}
+              className="btn-ghost"
+              style={{
+                padding: '3px 5px', fontSize: '11px', flexShrink: 0,
+                fontFamily: 'monospace', lineHeight: 1,
+                color: 'var(--dm-text-muted)',
+              }}
+            >{'>_'}</button>
+          )}
+        </>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
