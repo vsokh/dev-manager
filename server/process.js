@@ -41,8 +41,8 @@ class ProcessManager {
 
     const proc = spawn(cmd, args, {
       cwd: projectPath,
-      shell: true,
       stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, FORCE_COLOR: '0' },
     });
 
     const pid = proc.pid;
