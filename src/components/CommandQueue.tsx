@@ -10,6 +10,7 @@ import { itemKey, cmdForItem, getRowClass, getItemStatus, isAllAutoApproved } fr
 import { QueueItemContent } from './queue/QueueItemContent.tsx';
 import { OutputViewer } from './queue/OutputViewer.tsx';
 import { PhaseView } from './queue/PhaseView.tsx';
+import { PipelineLegend } from './queue/PipelineLegend.tsx';
 
 interface CommandQueueProps {
   queue: QueueItem[];
@@ -95,6 +96,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
 
   return (
     <div>
+      <PipelineLegend queue={queue} taskMap={taskMap} />
       {queue.length === 0 ? (
         <div className="empty-state-sm" style={{
           padding: '20px 16px', lineHeight: 1.6,

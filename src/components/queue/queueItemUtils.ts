@@ -10,6 +10,16 @@ export type PhaseColor = {
   row: string;
 };
 
+export const PIPELINE_STAGES = [
+  { id: 'launching',  label: 'Launch',   bg: 'var(--dm-text-light)' },
+  { id: 'reading',    label: 'Read',     bg: 'var(--dm-amber)' },
+  { id: 'exploring',  label: 'Explore',  bg: 'var(--dm-amber)' },
+  { id: 'planning',   label: 'Plan',     bg: 'var(--dm-paused)' },
+  { id: 'delegating', label: 'Build',    bg: 'var(--dm-accent)' },
+  { id: 'reviewing',  label: 'Review',   bg: 'var(--dm-accent)' },
+  { id: 'merging',    label: 'Merge',    bg: 'var(--dm-success)' },
+] as const;
+
 const PHASE_COLORS: Record<string, PhaseColor> = {
   launching:  { bg: 'var(--dm-text-light)',  text: 'text-muted',  row: 'queue-item queue-item--active-working' },
   reading:    { bg: 'var(--dm-amber)',       text: 'text-amber',  row: 'queue-item queue-item--active-waiting' },
