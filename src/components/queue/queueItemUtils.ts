@@ -2,7 +2,23 @@ import { PAUSED_COLOR } from '../../constants/colors.ts';
 import { STATUS } from '../../constants/statuses.ts';
 import type { Task, QueueItem } from '../../types';
 
-export type ItemStatus = 'queued' | 'paused' | 'waiting' | 'working';
+export type ItemStatus = 'queued' | 'paused' | 'launching' | 'reading' | 'exploring' | 'planning' | 'delegating' | 'reviewing' | 'merging';
+
+export type PhaseColor = {
+  bg: string;
+  text: string;
+  row: string;
+};
+
+const PHASE_COLORS: Record<string, PhaseColor> = {
+  launching:  { bg: 'var(--dm-text-light)',  text: 'text-muted',  row: 'queue-item queue-item--active-working' },
+  reading:    { bg: 'var(--dm-amber)',       text: 'text-amber',  row: 'queue-item queue-item--active-waiting' },
+  exploring:  { bg: 'var(--dm-amber)',       text: 'text-amber',  row: 'queue-item queue-item--active-waiting' },
+  planning:   { bg: 'var(--dm-paused)',      text: 'text-paused', row: 'queue-item queue-item--active-waiting' },
+  delegating: { bg: 'var(--dm-accent)',      text: 'text-accent', row: 'queue-item queue-item--active-working' },
+  reviewing:  { bg: 'var(--dm-accent)',      text: 'text-accent', row: 'queue-item queue-item--active-working' },
+  merging:    { bg: 'var(--dm-success)',     text: 'text-success', row: 'queue-item queue-item--active-working' },
+};
 
 export function itemKey(item: QueueItem): number {
   return item.task;
@@ -18,7 +34,14 @@ export function getItemStatus(item: QueueItem, taskMap: Map<number, Task>): Item
   if (task.status === STATUS.PAUSED) return 'paused';
   if (task.status !== STATUS.IN_PROGRESS) return 'queued';
   const p = (task.progress || '').toLowerCase();
-  return /waiting|approval|planning/.test(p) ? 'waiting' : 'working';
+  if (/launch/i.test(p)) return 'launching';
+  if (/merg/i.test(p)) return 'merging';
+  if (/review/i.test(p)) return 'reviewing';
+  if (/delegat|sub-agent|implement/i.test(p)) return 'delegating';
+  if (/plan/i.test(p)) return 'planning';
+  if (/explor|analyz|investigat/i.test(p)) return 'exploring';
+  if (/read|queue|loading/i.test(p)) return 'reading';
+  return 'delegating'; // default for in-progress
 }
 
 export function getButtonStyle(
@@ -30,16 +53,23 @@ export function getButtonStyle(
   const isLaunched = launchedIds.has(itemKey(item));
   if (isLaunched) return { bg: 'var(--dm-success)', icon: '\u2713' };
   if (status === 'paused') return { bg: PAUSED_COLOR, icon: '\u25B6' };
-  if (status === 'waiting') return { bg: 'var(--dm-amber)', icon: '\u25CF' };
-  if (status === 'working') return { bg: 'var(--dm-accent)', icon: '\u25CF' };
-  return { bg: 'var(--dm-accent)', icon: '\u25B6' };
+  if (status === 'queued') return { bg: 'var(--dm-accent)', icon: '\u25B6' };
+  const phase = PHASE_COLORS[status];
+  if (phase) return { bg: phase.bg, icon: '\u25CF' };
+  return { bg: 'var(--dm-accent)', icon: '\u25CF' };
 }
 
 export function getRowClass(status: ItemStatus): string {
-  if (status === 'waiting') return 'queue-item queue-item--active-waiting';
-  if (status === 'working') return 'queue-item queue-item--active-working';
   if (status === 'paused') return 'queue-item queue-item--paused';
-  return 'queue-item';
+  if (status === 'queued') return 'queue-item';
+  const phase = PHASE_COLORS[status];
+  return phase?.row || 'queue-item queue-item--active-working';
+}
+
+export function getProgressClass(status: ItemStatus): string {
+  if (status === 'queued' || status === 'paused') return '';
+  const phase = PHASE_COLORS[status];
+  return phase?.text || 'text-accent';
 }
 
 export function isAllAutoApproved(items: QueueItem[], taskMap: Map<number, Task>): boolean {

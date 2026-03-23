@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Task, QueueItem } from '../../types';
-import { itemKey, cmdForItem, getItemStatus, getButtonStyle, type ItemStatus } from './queueItemUtils.ts';
+import { itemKey, cmdForItem, getItemStatus, getButtonStyle, getProgressClass, type ItemStatus } from './queueItemUtils.ts';
 import {
   QUEUE_MANUAL_TITLE, QUEUE_MANUAL_YOU, QUEUE_LAUNCH_ARIA, QUEUE_LAUNCH_RESUME,
   QUEUE_LAUNCH_TERMINAL, QUEUE_AUTO_APPROVED, QUEUE_CLICK_APPROVE,
@@ -29,8 +29,9 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
   const status: ItemStatus = getItemStatus(item, taskMap);
   const btn = getButtonStyle(item, taskMap, launchedIds);
   const isManual = task?.manual;
-  const isActive = status === 'waiting' || status === 'working';
+  const isActive = status !== 'queued' && status !== 'paused';
   const isPaused = status === 'paused';
+  const progressColorClass = getProgressClass(status);
   const engine = getEngine(task?.engine || defaultEngine);
 
   return (
@@ -96,7 +97,7 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
           )}
         </div>
         {isActive && task?.progress ? (
-          <span aria-live="polite" className={`progress-text-shimmer${status === 'waiting' ? ' text-amber' : ' text-accent'}`} style={{
+          <span aria-live="polite" className={`progress-text-shimmer ${progressColorClass}`} style={{
             fontSize: '10px', display: 'block', marginTop: '1px',
           }}>{task.progress}</span>
         ) : null}
