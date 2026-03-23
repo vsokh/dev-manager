@@ -40,13 +40,6 @@ export function App() {
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
 
   const [productTab, setProductTab] = useState<'board' | 'quality'>('board');
-
-  // Reset arranging flag when arrange completes (activity entry appears)
-  useEffect(() => {
-    if (!queueActions.arranging || !data?.activity) return;
-    const hasArrangeActivity = data.activity.some(a => a.label?.includes('arranged') && Date.now() - a.time < 30000);
-    if (hasArrangeActivity) queueActions.setArranging(false);
-  }, [data?.activity, queueActions.arranging]);
   const [showSkillsConfig, setShowSkillsConfig] = useState(false);
 
   const [glowTaskId, setGlowTaskId] = useState<number | null>(null);
@@ -105,6 +98,13 @@ export function App() {
 
   const taskActions = useTaskActions({ data, save, snapshotBeforeAction, onError: showError });
   const queueActions = useQueueActions({ data, save, snapshotBeforeAction, onError: showError });
+
+  // Reset arranging flag when arrange completes (activity entry appears)
+  useEffect(() => {
+    if (!queueActions.arranging || !data?.activity) return;
+    const hasArrangeActivity = data.activity.some(a => a.label?.includes('arranged') && Date.now() - a.time < 30000);
+    if (hasArrangeActivity) queueActions.setArranging(false);
+  }, [data?.activity, queueActions.arranging]);
 
   if (!connected || !data) {
     return (
