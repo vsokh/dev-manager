@@ -10,11 +10,9 @@ function openNativeFolderDialog() {
     const os = platform();
     if (os === 'win32') {
       const script = `
-Add-Type -AssemblyName System.Windows.Forms
-$d = New-Object System.Windows.Forms.FolderBrowserDialog
-$d.Description = "Select a project folder"
-$d.ShowNewFolderButton = $true
-if ($d.ShowDialog() -eq 'OK') { Write-Output $d.SelectedPath } else { Write-Output '' }
+$shell = New-Object -ComObject Shell.Application
+$folder = $shell.BrowseForFolder(0, "Select a project folder", 0x40, 0)
+if ($folder) { Write-Output $folder.Self.Path } else { Write-Output '' }
 `;
       execFile('powershell', ['-NoProfile', '-Command', script], { timeout: 60000 }, (err, stdout) => {
         if (err) return reject(err);
