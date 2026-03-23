@@ -6,7 +6,6 @@ import {
   HEADER_ENGINE_ARIA, HEADER_ENGINE_TITLE,
 } from '../constants/strings.ts';
 import { ENGINES, getEngine } from '../constants/engines.ts';
-import { FolderPicker } from './FolderPicker.tsx';
 import { api } from '../api.ts';
 
 interface ProjectInfo {
@@ -28,7 +27,6 @@ interface HeaderProps {
 export function Header({ projectName, status, projects, onSwitchProject, onOpenSkills, defaultEngine, onSetDefaultEngine }: HeaderProps) {
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
   const [showPicker, setShowPicker] = useState(false);
-  const [showBrowser, setShowBrowser] = useState(false);
 
   const toggleTheme = useCallback(() => {
     const next = !dark;
@@ -42,7 +40,6 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
     }
   }, [dark]);
 
-  const hasProjects = projects && projects.length > 0;
   const currentEngine = getEngine(defaultEngine);
 
   return (
@@ -75,7 +72,7 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
             borderRadius: 'var(--dm-radius)', boxShadow: 'var(--dm-shadow-md)',
             padding: '4px 0', minWidth: '280px', zIndex: 100,
           }}>
-            {hasProjects && projects!.map(p => (
+            {projects && projects.map(p => (
               <button
                 key={p.path}
                 onClick={() => {
@@ -97,7 +94,6 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
             <div style={{
               borderTop: '1px solid var(--dm-border)',
               padding: '8px 12px',
-              display: 'flex', gap: '6px',
             }}>
               <button
                 onClick={async () => {
@@ -109,19 +105,11 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
                 }}
                 className="btn-ghost"
                 style={{
-                  flex: 1, fontSize: '13px', padding: '6px 12px',
+                  width: '100%', fontSize: '13px', padding: '6px 12px',
                   fontWeight: 600, color: 'var(--dm-accent)',
                   border: '1px solid var(--dm-accent)', borderRadius: '4px',
                 }}
               >Open folder...</button>
-              <button
-                onClick={() => { setShowPicker(false); setShowBrowser(true); }}
-                className="btn-ghost"
-                style={{
-                  fontSize: '13px', padding: '6px 12px',
-                  color: 'var(--dm-text-muted)',
-                }}
-              >Browse</button>
             </div>
           </div>
         )}
@@ -186,15 +174,6 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
           style={{ fontSize: '16px', padding: '4px', lineHeight: 1 }}
         >{dark ? '☀' : '☽'}</button>
       </div>
-      {showBrowser && (
-        <FolderPicker
-          onSelect={(path) => {
-            setShowBrowser(false);
-            if (onSwitchProject) onSwitchProject(path);
-          }}
-          onClose={() => setShowBrowser(false)}
-        />
-      )}
     </header>
   );
 }
