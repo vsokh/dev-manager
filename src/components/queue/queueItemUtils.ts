@@ -24,10 +24,10 @@ export function getItemStatus(item: QueueItem, taskMap: Map<number, Task>): Item
 export function getButtonStyle(
   item: QueueItem,
   taskMap: Map<number, Task>,
-  launchedId: number | null
+  launchedIds: Set<number>
 ): { bg: string; icon: string } {
   const status = getItemStatus(item, taskMap);
-  const isLaunched = launchedId === itemKey(item);
+  const isLaunched = launchedIds.has(itemKey(item));
   if (isLaunched) return { bg: 'var(--dm-success)', icon: '\u2713' };
   if (status === 'paused') return { bg: PAUSED_COLOR, icon: '\u25B6' };
   if (status === 'waiting') return { bg: 'var(--dm-amber)', icon: '\u25CF' };

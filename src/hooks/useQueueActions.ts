@@ -18,7 +18,7 @@ interface LaunchPhaseItem {
 }
 
 export function useQueueActions({ data, save, snapshotBeforeAction, onError }: UseQueueActionsParams) {
-  const [launchedId, setLaunchedId] = useState<number | null>(null);
+  const [launchedIds, setLaunchedIds] = useState<Set<number>>(new Set());
 
   const tasks: Task[] = data?.tasks || [];
   const queue: QueueItem[] = data?.queue || [];
@@ -83,11 +83,15 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     updateData({ queue: [] });
   };
 
+  const markLaunched = (id: number) => {
+    setLaunchedIds(prev => new Set(prev).add(id));
+    setTimeout(() => setLaunchedIds(prev => { const next = new Set(prev); next.delete(id); return next; }), 3000);
+  };
+
   const handleLaunchTask = async (itemKey: number, cmd: string, _taskName: string) => {
     try {
+      markLaunched(itemKey);
       await api.launch(itemKey, cmd);
-      setLaunchedId(itemKey);
-      setTimeout(() => setLaunchedId(null), 3000);
     } catch (err) {
       console.error('Failed to launch task:', err);
       onError('Failed to launch task');
@@ -97,10 +101,9 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
   const handleLaunchPhase = async (items: LaunchPhaseItem[]) => {
     try {
       for (const item of items) {
+        markLaunched(item.key);
         await api.launch(item.key, item.cmd);
       }
-      items.forEach(item => setLaunchedId(item.key));
-      setTimeout(() => setLaunchedId(null), 3000);
     } catch (err) {
       console.error('Failed to launch phase:', err);
       onError('Failed to launch phase');
@@ -126,7 +129,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
   };
 
   return {
-    launchedId,
+    launchedIds,
     handleQueue,
     handleQueueAll,
     handleQueueGroup,

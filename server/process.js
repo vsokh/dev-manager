@@ -1,9 +1,20 @@
 import { spawn } from 'node:child_process';
 
+function buildClaudePrompt(command) {
+  // In -p mode, slash commands don't work. Convert to plain prompt.
+  const orchestratorMatch = command.match(/^\/orchestrator\s+task\s+(\d+)/);
+  if (orchestratorMatch) {
+    const taskId = orchestratorMatch[1];
+    return `Read .devmanager/state.json, find task #${taskId}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately, and write results back to state.json. Do not wait for user input at any point.`;
+  }
+  // For other commands, pass as-is with auto-approve note
+  return command + '\n\nThis is a headless execution. Skip plan approval and execute immediately. Do not wait for user input at any point.';
+}
+
 const ENGINE_COMMANDS = {
   claude: (command) => ({
     cmd: 'claude',
-    args: ['-p', command + '\n\nThis is a headless execution. Skip plan approval and execute immediately. Do not wait for user input at any point.', '--dangerously-skip-permissions'],
+    args: ['--dangerously-skip-permissions', '-p', buildClaudePrompt(command)],
   }),
   codex: (command) => ({
     cmd: 'codex',

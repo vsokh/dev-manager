@@ -12,7 +12,7 @@ import { getEngine } from '../../constants/engines.ts';
 interface QueueItemContentProps {
   item: QueueItem;
   task: Task | undefined;
-  launchedId: number | null;
+  launchedIds: Set<number>;
   onLaunch: (key: number, cmd: string, taskName: string) => void;
   onLaunchTerminal?: (key: number, cmd: string, taskName: string) => void;
   onPauseTask: (id: number) => void;
@@ -23,11 +23,11 @@ interface QueueItemContentProps {
   defaultEngine?: string;
 }
 
-export function QueueItemContent({ item, task, launchedId, onLaunch, onLaunchTerminal, onPauseTask, onRemove, onUpdateTask, taskMap, variant = 'flat', defaultEngine }: QueueItemContentProps) {
+export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTerminal, onPauseTask, onRemove, onUpdateTask, taskMap, variant = 'flat', defaultEngine }: QueueItemContentProps) {
   const key = itemKey(item);
-  const isLaunched = launchedId === key;
+  const isLaunched = launchedIds.has(key);
   const status: ItemStatus = getItemStatus(item, taskMap);
-  const btn = getButtonStyle(item, taskMap, launchedId);
+  const btn = getButtonStyle(item, taskMap, launchedIds);
   const isManual = task?.manual;
   const isActive = status === 'waiting' || status === 'working';
   const isPaused = status === 'paused';

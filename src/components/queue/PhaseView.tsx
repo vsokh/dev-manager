@@ -14,7 +14,7 @@ interface PhaseViewProps {
   phases: QueueItem[][];
   queue: QueueItem[];
   taskMap: Map<number, Task>;
-  launchedId: number | null;
+  launchedIds: Set<number>;
   onLaunch: (key: number, cmd: string, taskName: string) => void;
   onLaunchPhase: (items: { key: number; cmd: string; taskName: string }[]) => void;
   onRemove: (key: number) => void;
@@ -27,7 +27,7 @@ interface PhaseViewProps {
   onClearOutput?: (taskId: number) => void;
 }
 
-export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaunchPhase, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear, defaultEngine, processOutputs, onClearOutput }: PhaseViewProps) {
+export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLaunchPhase, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear, defaultEngine, processOutputs, onClearOutput }: PhaseViewProps) {
   return (
     <div>
       {phases.map((phaseItems, idx) => (
@@ -116,7 +116,7 @@ export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaun
                     <QueueItemContent
                       item={item}
                       task={taskMap.get(item.task)}
-                      launchedId={launchedId}
+                      launchedIds={launchedIds}
                       onLaunch={onLaunch}
                       onPauseTask={onPauseTask}
                       onRemove={onRemove}

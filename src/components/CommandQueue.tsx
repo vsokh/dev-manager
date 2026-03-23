@@ -23,13 +23,13 @@ interface CommandQueueProps {
   onPauseTask: (id: number) => void;
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
   onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
-  launchedId: number | null;
+  launchedIds: Set<number>;
   defaultEngine?: string;
   processOutputs?: Record<number, TaskOutput>;
   onClearOutput?: (taskId: number) => void;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedId, defaultEngine, processOutputs, onClearOutput }: CommandQueueProps) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedIds, defaultEngine, processOutputs, onClearOutput }: CommandQueueProps) {
   const taskMap = useMemo(() => new Map((tasks || []).map(t => [t.id, t])), [tasks]);
   const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
 
@@ -44,7 +44,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
             <QueueItemContent
               item={item}
               task={taskMap.get(item.task)}
-              launchedId={launchedId}
+              launchedIds={launchedIds}
               onLaunch={onLaunch}
               onLaunchTerminal={onLaunchTerminal}
               onPauseTask={onPauseTask}
@@ -106,7 +106,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
           phases={phases}
           queue={queue}
           taskMap={taskMap}
-          launchedId={launchedId}
+          launchedIds={launchedIds}
           onLaunch={onLaunch}
           onLaunchPhase={onLaunchPhase}
           onRemove={onRemove}
