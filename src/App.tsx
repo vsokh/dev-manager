@@ -44,6 +44,7 @@ export function App() {
 
   const [glowTaskId, setGlowTaskId] = useState<number | null>(null);
   const [splitting, setSplitting] = useState(false);
+  const [showScratchpad, setShowScratchpad] = useState(false);
 
   const handleSplitTasks = useCallback(async (text: string) => {
     if (!data) return;
@@ -257,16 +258,6 @@ export function App() {
               </div>
 
               <div className="panel">
-                <SectionHeader title="Scratchpad" />
-                <Scratchpad
-                  value={data.scratchpad || ''}
-                  onChange={(text) => save({ ...data, scratchpad: text })}
-                  onSplit={handleSplitTasks}
-                  splitting={splitting}
-                />
-              </div>
-
-              <div className="panel">
                 <SectionHeader title="Activity" />
                 <ActivityFeed activity={activity} onRemove={handleRemoveActivity} tasks={tasks} onNavigateToTask={handleNavigateToTask} />
               </div>
@@ -285,6 +276,57 @@ export function App() {
       ) : null}
       <UndoToast entry={undoEntry} onUndo={handleUndo} onDismiss={dismissUndo} />
       <ErrorToast message={errorMessage} onDismiss={() => { if (errorTimer.current) clearTimeout(errorTimer.current); setErrorMessage(null); }} />
+
+      {/* Floating scratchpad */}
+      {connected && data && (
+        <>
+          <button
+            onClick={() => setShowScratchpad(!showScratchpad)}
+            title="Scratchpad"
+            style={{
+              position: 'fixed', bottom: '24px', right: '24px', zIndex: 50,
+              width: '48px', height: '48px', borderRadius: '50%',
+              background: data.scratchpad ? 'var(--dm-amber)' : 'var(--dm-accent)',
+              color: '#fff', border: 'none', cursor: 'pointer',
+              fontSize: '20px', lineHeight: 1,
+              boxShadow: 'var(--dm-shadow-md)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'transform 0.2s',
+              transform: showScratchpad ? 'rotate(45deg)' : 'none',
+            }}
+          >{showScratchpad ? '+' : '\u270E'}</button>
+
+          {showScratchpad && (
+            <div style={{
+              position: 'fixed', bottom: '84px', right: '24px', zIndex: 50,
+              width: '380px', maxHeight: '50vh',
+              background: 'var(--dm-surface)',
+              border: '1px solid var(--dm-border)',
+              borderRadius: 'var(--dm-radius)',
+              boxShadow: 'var(--dm-shadow-md)',
+              display: 'flex', flexDirection: 'column',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                padding: '10px 14px',
+                borderBottom: '1px solid var(--dm-border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--dm-text)' }}>Scratchpad</span>
+                <button onClick={() => setShowScratchpad(false)} className="btn-ghost" style={{ fontSize: '16px', padding: '2px 6px' }}>×</button>
+              </div>
+              <div style={{ padding: '12px 14px', flex: 1, overflow: 'auto' }}>
+                <Scratchpad
+                  value={data.scratchpad || ''}
+                  onChange={(text) => save({ ...data, scratchpad: text })}
+                  onSplit={(text) => { handleSplitTasks(text); setShowScratchpad(false); }}
+                  splitting={splitting}
+                />
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
