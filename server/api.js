@@ -747,23 +747,26 @@ export async function handleApi(req, res) {
       const os = platform();
 
       try {
+        const cliName = eng === 'claude' ? 'claude' : eng === 'codex' ? 'codex' : 'cursor-agent';
+
         if (os === 'win32') {
-          // Open in Windows Terminal new tab
-          const fullCmd = `${eng === 'claude' ? 'claude' : eng === 'codex' ? 'codex' : 'cursor-agent'} -p "${command.replace(/"/g, '\\"')}"`;
+          // Open in Windows Terminal new tab — interactive claude with initial prompt
           const { spawn: spawnProc } = await import('node:child_process');
-          spawnProc('wt', ['-w', '0', 'nt', '--title', tabTitle, '--suppressApplicationTitle', '--', 'cmd', '/k', fullCmd], {
+          spawnProc('wt', [
+            '-w', '0', 'nt',
+            '--title', tabTitle, '--suppressApplicationTitle',
+            '--', 'cmd', '/k', `cd /d "${projectPath}" && ${cliName} "${command.replace(/"/g, '\\"')}"`
+          ], {
             cwd: projectPath,
             detached: true,
             stdio: 'ignore',
           }).unref();
         } else if (os === 'darwin') {
-          // macOS — open new Terminal.app tab
-          const fullCmd = `cd "${projectPath}" && ${eng === 'claude' ? 'claude' : eng} -p "${command.replace(/"/g, '\\"')}"`;
+          const fullCmd = `cd "${projectPath}" && ${cliName} "${command.replace(/"/g, '\\"')}"`;
           const { execFile: ef } = await import('node:child_process');
           ef('osascript', ['-e', `tell app "Terminal" to do script "${fullCmd.replace(/"/g, '\\"')}"`], { timeout: 5000 });
         } else {
-          // Linux — try common terminal emulators
-          const fullCmd = `cd "${projectPath}" && ${eng === 'claude' ? 'claude' : eng} -p "${command.replace(/"/g, '\\"')}"; exec bash`;
+          const fullCmd = `cd "${projectPath}" && ${cliName} "${command.replace(/"/g, '\\"')}"; exec bash`;
           const { spawn: spawnProc } = await import('node:child_process');
           spawnProc('x-terminal-emulator', ['-e', `bash -c '${fullCmd}'`], {
             detached: true, stdio: 'ignore',
