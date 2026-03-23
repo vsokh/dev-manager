@@ -2,7 +2,7 @@ import { PAUSED_COLOR } from '../../constants/colors.ts';
 import { STATUS } from '../../constants/statuses.ts';
 import type { Task, QueueItem } from '../../types';
 
-export type ItemStatus = 'queued' | 'paused' | 'launching' | 'reading' | 'exploring' | 'planning' | 'delegating' | 'reviewing' | 'merging';
+export type ItemStatus = 'queued' | 'paused' | 'error' | 'launching' | 'reading' | 'exploring' | 'planning' | 'delegating' | 'reviewing' | 'merging';
 
 export type PhaseColor = {
   bg: string;
@@ -44,6 +44,7 @@ export function getItemStatus(item: QueueItem, taskMap: Map<number, Task>): Item
   if (task.status === STATUS.PAUSED) return 'paused';
   if (task.status !== STATUS.IN_PROGRESS) return 'queued';
   const p = (task.progress || '').toLowerCase();
+  if (/exited with code|error|failed|limit|blocked/i.test(p)) return 'error';
   if (/launch/i.test(p)) return 'launching';
   if (/merg/i.test(p)) return 'merging';
   if (/review/i.test(p)) return 'reviewing';
@@ -63,6 +64,7 @@ export function getButtonStyle(
   const isLaunched = launchedIds.has(itemKey(item));
   if (isLaunched) return { bg: 'var(--dm-success)', icon: '\u2713' };
   if (status === 'paused') return { bg: PAUSED_COLOR, icon: '\u25B6' };
+  if (status === 'error') return { bg: 'var(--dm-danger)', icon: '\u21BB' }; // ↻ retry
   if (status === 'queued') return { bg: 'var(--dm-accent)', icon: '\u25B6' };
   const phase = PHASE_COLORS[status];
   if (phase) return { bg: phase.bg, icon: '\u25CF' };
@@ -71,6 +73,7 @@ export function getButtonStyle(
 
 export function getRowClass(status: ItemStatus): string {
   if (status === 'paused') return 'queue-item queue-item--paused';
+  if (status === 'error') return 'queue-item queue-item--error';
   if (status === 'queued') return 'queue-item';
   const phase = PHASE_COLORS[status];
   return phase?.row || 'queue-item queue-item--active-working';

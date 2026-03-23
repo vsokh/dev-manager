@@ -540,6 +540,11 @@
   background: var(--dm-paused-bg-subtle);
 }
 
+.queue-item--error {
+  background: color-mix(in srgb, var(--dm-danger) 8%, transparent);
+  border-left: 2px solid var(--dm-danger);
+}
+
 /* Queue launch button */
 .btn-launch {
   background: var(--dm-accent);

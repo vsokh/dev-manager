@@ -29,7 +29,8 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
   const status: ItemStatus = getItemStatus(item, taskMap);
   const btn = getButtonStyle(item, taskMap, launchedIds);
   const isManual = task?.manual;
-  const isActive = status !== 'queued' && status !== 'paused';
+  const isError = status === 'error';
+  const isActive = status !== 'queued' && status !== 'paused' && !isError;
   const isPaused = status === 'paused';
   const progressColorClass = getProgressClass(status);
   const engine = getEngine(task?.engine || defaultEngine);
@@ -51,7 +52,7 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
           <button
             onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
             aria-label={QUEUE_LAUNCH_ARIA}
-            title={isPaused ? QUEUE_LAUNCH_RESUME : `Background (${engine.label})`}
+            title={isError ? `Retry (${engine.label})` : isPaused ? QUEUE_LAUNCH_RESUME : `Background (${engine.label})`}
             className={`btn-launch${isActive && !isLaunched ? ' task-card-in-progress' : ''}`}
             style={{
               padding: '4px 8px', background: btn.bg,
@@ -66,7 +67,7 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
               opacity: 0.9,
             }}>{engine.icon}</span>
           </button>
-          {onLaunchTerminal && !isActive && (
+          {onLaunchTerminal && (!isActive || isError) && (
             <button
               onClick={() => onLaunchTerminal(key, cmdForItem(item), item.taskName)}
               title={`Open in terminal (${engine.label})`}
@@ -96,12 +97,16 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
             >{'\u2713'}</button>
           )}
         </div>
-        {isActive && task?.progress ? (
+        {isError && task?.progress ? (
+          <span style={{
+            fontSize: '10px', display: 'block', marginTop: '1px',
+            color: 'var(--dm-danger)',
+          }}>{task.progress}</span>
+        ) : isActive && task?.progress ? (
           <span aria-live="polite" className={`progress-text-shimmer ${progressColorClass}`} style={{
             fontSize: '10px', display: 'block', marginTop: '1px',
           }}>{task.progress}</span>
-        ) : null}
-        {isPaused ? (
+        ) : isPaused ? (
           <span className="text-paused" style={{
             fontSize: '10px', display: 'block', marginTop: '1px',
           }}>{task?.lastProgress || QUEUE_PAUSED_DEFAULT}</span>
