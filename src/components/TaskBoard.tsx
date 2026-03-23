@@ -23,6 +23,7 @@ interface TaskBoardProps {
   onQueueAll: () => void;
   onQueueGroup: (group: string) => void;
   onArrange: () => void;
+  arranging?: boolean;
   queue: QueueItem[];
   onPauseTask: (id: number) => void;
   onCancelTask: (id: number) => void;
@@ -32,7 +33,7 @@ interface TaskBoardProps {
   glowTaskId: number | null;
 }
 
-export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onQueueGroup, onArrange, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics, glowTaskId }: TaskBoardProps) {
+export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onQueueGroup, onArrange, arranging, queue, onPauseTask, onCancelTask, onRenameGroup, epics, onUpdateEpics, glowTaskId }: TaskBoardProps) {
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editGroupName, setEditGroupName] = useState('');
   const [searchText, setSearchText] = useState('');
@@ -255,10 +256,11 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
           <div style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
               onClick={onArrange}
+              disabled={arranging}
               className="btn btn-amber-outline"
-              style={{ padding: '5px 14px', fontSize: '12px' }}
+              style={{ padding: '5px 14px', fontSize: '12px', opacity: arranging ? 0.6 : 1 }}
             >
-              {BOARD_ARRANGE}
+              {arranging ? 'Arranging...' : BOARD_ARRANGE}
             </button>
             {(() => {
               const pendingNotQueued = tasks.filter(t => (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) && !(queue || []).some(q => q.task === t.id));

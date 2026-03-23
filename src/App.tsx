@@ -40,6 +40,13 @@ export function App() {
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
 
   const [productTab, setProductTab] = useState<'board' | 'quality'>('board');
+
+  // Reset arranging flag when arrange completes (activity entry appears)
+  useEffect(() => {
+    if (!queueActions.arranging || !data?.activity) return;
+    const hasArrangeActivity = data.activity.some(a => a.label?.includes('arranged') && Date.now() - a.time < 30000);
+    if (hasArrangeActivity) queueActions.setArranging(false);
+  }, [data?.activity, queueActions.arranging]);
   const [showSkillsConfig, setShowSkillsConfig] = useState(false);
 
   const [glowTaskId, setGlowTaskId] = useState<number | null>(null);
@@ -198,6 +205,7 @@ export function App() {
                     onQueueAll={queueActions.handleQueueAll}
                     onQueueGroup={queueActions.handleQueueGroup}
                     onArrange={queueActions.handleArrange}
+                    arranging={queueActions.arranging}
                     onPauseTask={pauseTask}
                     onCancelTask={cancelTask}
                     onRenameGroup={taskActions.handleRenameGroup}

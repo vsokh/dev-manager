@@ -123,17 +123,23 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     }
   };
 
+  const [arranging, setArranging] = useState(false);
+
   const handleArrange = async () => {
     try {
+      setArranging(true);
       await api.launch(0, '/orchestrator arrange');
     } catch (err) {
       console.error('Failed to launch arrange:', err);
       onError('Failed to launch arrange');
+      setArranging(false);
     }
   };
 
   return {
     launchedIds,
+    arranging,
+    setArranging,
     handleQueue,
     handleQueueAll,
     handleQueueGroup,
