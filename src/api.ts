@@ -110,6 +110,10 @@ export const api = {
   listProjects: () => get<Array<{ path: string; name: string; active: boolean }>>('/api/projects'),
   switchProject: (path: string) => put<{ ok: true; projectPath: string; projectName: string }>('/api/project', { path }),
 
+  // Git
+  gitStatus: () => get<{ branch: string | null; unpushed: number; error?: string }>('/api/git/status'),
+  gitPush: () => post<{ ok: true; output: string }>('/api/git/push'),
+
   // Browse (folder picker)
   browseNative: () => post<{ path: string | null; cancelled?: boolean }>('/api/browse/native'),
   browse: (path?: string) => get<{

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   APP_NAME, HEADER_SYNCED,
   HEADER_SYNC_ERROR, HEADER_CONNECTED, HEADER_TOGGLE_THEME_ARIA,
@@ -27,6 +27,34 @@ interface HeaderProps {
 export function Header({ projectName, status, projects, onSwitchProject, onOpenSkills, defaultEngine, onSetDefaultEngine }: HeaderProps) {
   const [dark, setDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
   const [showPicker, setShowPicker] = useState(false);
+  const [unpushed, setUnpushed] = useState(0);
+  const [pushing, setPushing] = useState(false);
+  const [pushResult, setPushResult] = useState<string | null>(null);
+
+  // Poll for unpushed commits
+  useEffect(() => {
+    if (status !== 'connected' && status !== 'synced') return;
+    const check = () => { api.gitStatus().then(r => setUnpushed(r.unpushed || 0)).catch(() => {}); };
+    check();
+    const interval = setInterval(check, 15000);
+    return () => clearInterval(interval);
+  }, [status, projectName]);
+
+  const handlePush = useCallback(async () => {
+    setPushing(true);
+    setPushResult(null);
+    try {
+      await api.gitPush();
+      setUnpushed(0);
+      setPushResult('Pushed!');
+      setTimeout(() => setPushResult(null), 3000);
+    } catch (err: any) {
+      setPushResult('Push failed');
+      setTimeout(() => setPushResult(null), 5000);
+    } finally {
+      setPushing(false);
+    }
+  }, []);
 
   const toggleTheme = useCallback(() => {
     const next = !dark;
@@ -122,6 +150,26 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
         ) : status === 'error' ? (
           <span className="text-danger" style={{ fontSize: '11px' }}>{HEADER_SYNC_ERROR}</span>
         ) : null}
+        {unpushed > 0 && (
+          <button
+            onClick={handlePush}
+            disabled={pushing}
+            title={pushing ? 'Pushing...' : `Push ${unpushed} commit${unpushed > 1 ? 's' : ''} to origin`}
+            className="btn-ghost"
+            style={{
+              fontSize: '12px', padding: '3px 10px',
+              fontWeight: 600, borderRadius: '4px',
+              color: 'var(--dm-success)',
+              border: '1px solid var(--dm-success)',
+              opacity: pushing ? 0.5 : 1,
+            }}
+          >{pushing ? 'Pushing...' : `Push ${unpushed}`}</button>
+        )}
+        {pushResult && (
+          <span style={{ fontSize: '11px', fontWeight: 500, color: pushResult === 'Pushed!' ? 'var(--dm-success)' : 'var(--dm-danger)' }}>
+            {pushResult}
+          </span>
+        )}
         {onOpenSkills && (
           <button
             onClick={onOpenSkills}
