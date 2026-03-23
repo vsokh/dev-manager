@@ -44,11 +44,13 @@ export function mergeProgressIntoState(
 
   for (const [taskId, prog] of Object.entries(progressEntries)) {
     if (taskId === 'arrange' && prog.status === 'done') {
-      activity.unshift({
+      const arrangeActivity: Activity = {
         id: 'act_' + Date.now() + '_arrange',
         time: Date.now(),
         label: prog.label || 'Tasks arranged into dependency graph',
-      });
+      };
+      if (prog.changes) arrangeActivity.changes = prog.changes;
+      activity.unshift(arrangeActivity);
       arrangeCompleted = true;
       needsWrite = true;
       hasChanges = true;

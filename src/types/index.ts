@@ -70,6 +70,7 @@ export interface Activity {
   taskId?: number;
   commitRef?: string;
   filesChanged?: number;
+  changes?: string[];
 }
 
 export interface ProgressEntry {
@@ -80,6 +81,7 @@ export interface ProgressEntry {
   branch?: string;
   label?: string;
   filesChanged?: number;
+  changes?: string[];
 }
 
 export interface StateData {

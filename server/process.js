@@ -11,7 +11,14 @@ function buildClaudePrompt(command) {
     return `Read .devmanager/state.json, find task #${taskMatch[1]}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately, and write results back to state.json. Do not wait for user input at any point.`;
   }
   if (/^\/orchestrator\s+arrange/.test(command)) {
-    return `Read .devmanager/state.json and analyze all pending tasks. Organize them into a logical dependency graph — figure out which tasks depend on others and set the dependsOn fields. Group related tasks under epics. Write the updated state back to .devmanager/state.json. Also write a progress file to .devmanager/progress/arrange.json with {"status":"done","label":"Tasks arranged into dependency graph"} when complete.`;
+    return `Read .devmanager/state.json and analyze all pending tasks. Organize them into a logical dependency graph — figure out which tasks depend on others and set the dependsOn fields. Group related tasks under epics. Write the updated state back to .devmanager/state.json.
+
+When complete, write a progress file to .devmanager/progress/arrange.json summarizing what you changed. Use this exact JSON format:
+{"status":"done","label":"<short summary of changes>","changes":[<list of change descriptions>]}
+
+Example: {"status":"done","label":"Arranged 8 tasks into 3 phases","changes":["Set task #5 depends on #3","Grouped #6,#7,#8 under 'Polish' epic","Created new epic 'Infrastructure'"]}
+
+Be specific about what dependencies you set and what groupings you made.`;
   }
   return command + '\n\nThis is a headless execution. Skip plan approval and execute immediately. Do not wait for user input at any point.';
 }

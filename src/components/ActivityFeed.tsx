@@ -1,5 +1,5 @@
 import type { Activity, Task } from '../types';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ACTIVITY_EMPTY, ACTIVITY_REMOVE_ARIA, ACTIVITY_REMOVE_TITLE,
 } from '../constants/strings.ts';
@@ -20,6 +20,7 @@ interface ActivityFeedProps {
 }
 
 export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }: ActivityFeedProps) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const taskIds = useMemo(() => new Set((tasks || []).map(t => t.id)), [tasks]);
   const entries = useMemo(() => {
     return [...activity]
@@ -36,6 +37,7 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }: Ac
           completed: isCompleted(a.label),
           commitRef: a.commitRef || null,
           filesChanged: a.filesChanged || null,
+          changes: a.changes || null,
           clickableTaskId,
           isToday,
           date: isToday
@@ -56,55 +58,73 @@ export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }: Ac
   return (
     <div style={{ padding: '2px 0' }}>
       {entries.map(e => (
-        <div
-          key={e.key}
-          className={'activity-row' + (e.clickableTaskId != null ? ' activity-clickable' : '')}
-          role={e.clickableTaskId != null ? 'button' : undefined}
-          tabIndex={e.clickableTaskId != null ? 0 : undefined}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '5px 14px',
-            opacity: e.isToday ? 1 : 0.6,
-          }}
-          onClick={e.clickableTaskId != null ? () => onNavigateToTask(e.clickableTaskId!) : undefined}
-          onKeyDown={e.clickableTaskId != null ? handleKeyActivate(() => onNavigateToTask(e.clickableTaskId!)) : undefined}
-        >
-          {/* Colored dot */}
-          <span className={`activity-dot ${e.completed ? 'activity-dot--completed' : 'activity-dot--default'}`} style={{
-            width: 6, height: 6, flexShrink: 0,
-          }} />
-
-          {/* Label */}
-          <span className="activity-label" style={{
-            flex: 1, fontSize: '12px',
-            color: e.clickableTaskId != null ? 'var(--dm-accent)' : 'var(--dm-text)',
-            fontWeight: e.isToday ? 500 : 400,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>{e.label}</span>
-
-          {/* Metadata */}
-          {e.commitRef ? (
-            <span className="commit-ref" style={{
-              padding: '0 5px', flexShrink: 0, fontSize: '10px',
-            }}>{e.commitRef}</span>
-          ) : null}
-
-          {/* Timestamp */}
-          <span className="activity-timestamp" style={{
-            flexShrink: 0, minWidth: '36px', textAlign: 'right',
-          }}>{e.date}</span>
-
-          {/* Remove */}
-          <button
-            onClick={(ev) => { ev.stopPropagation(); onRemove(e.key); }}
-            aria-label={ACTIVITY_REMOVE_ARIA}
-            className="activity-remove activity-remove-btn"
+        <div key={e.key}>
+          <div
+            className={'activity-row' + (e.clickableTaskId != null ? ' activity-clickable' : '')}
+            role={e.clickableTaskId != null || e.changes ? 'button' : undefined}
+            tabIndex={e.clickableTaskId != null || e.changes ? 0 : undefined}
             style={{
-              fontSize: '11px', padding: '0 2px',
-              lineHeight: 1, opacity: 0,
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '5px 14px',
+              opacity: e.isToday ? 1 : 0.6,
+              cursor: e.changes ? 'pointer' : undefined,
             }}
-            title={ACTIVITY_REMOVE_TITLE}
-          >×</button>
+            onClick={e.clickableTaskId != null ? () => onNavigateToTask(e.clickableTaskId!) : e.changes ? () => setExpandedId(expandedId === e.key ? null : e.key) : undefined}
+            onKeyDown={e.clickableTaskId != null ? handleKeyActivate(() => onNavigateToTask(e.clickableTaskId!)) : e.changes ? handleKeyActivate(() => setExpandedId(expandedId === e.key ? null : e.key)) : undefined}
+          >
+            {/* Colored dot */}
+            <span className={`activity-dot ${e.completed ? 'activity-dot--completed' : 'activity-dot--default'}`} style={{
+              width: 6, height: 6, flexShrink: 0,
+            }} />
+
+            {/* Label */}
+            <span className="activity-label" style={{
+              flex: 1, fontSize: '12px',
+              color: e.clickableTaskId != null ? 'var(--dm-accent)' : 'var(--dm-text)',
+              fontWeight: e.isToday ? 500 : 400,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {e.changes ? (expandedId === e.key ? '▾ ' : '▸ ') : ''}{e.label}
+            </span>
+
+            {/* Metadata */}
+            {e.commitRef ? (
+              <span className="commit-ref" style={{
+                padding: '0 5px', flexShrink: 0, fontSize: '10px',
+              }}>{e.commitRef}</span>
+            ) : null}
+
+            {/* Timestamp */}
+            <span className="activity-timestamp" style={{
+              flexShrink: 0, minWidth: '36px', textAlign: 'right',
+            }}>{e.date}</span>
+
+            {/* Remove */}
+            <button
+              onClick={(ev) => { ev.stopPropagation(); onRemove(e.key); }}
+              aria-label={ACTIVITY_REMOVE_ARIA}
+              className="activity-remove activity-remove-btn"
+              style={{
+                fontSize: '11px', padding: '0 2px',
+                lineHeight: 1, opacity: 0,
+              }}
+              title={ACTIVITY_REMOVE_TITLE}
+            >×</button>
+          </div>
+          {e.changes && expandedId === e.key && (
+            <div style={{
+              padding: '4px 14px 8px 28px',
+              fontSize: '11px', color: 'var(--dm-text-muted)',
+              lineHeight: 1.6,
+            }}>
+              {e.changes.map((c, i) => (
+                <div key={i} style={{ display: 'flex', gap: '6px' }}>
+                  <span style={{ color: 'var(--dm-amber)', flexShrink: 0 }}>-</span>
+                  <span>{c}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>
