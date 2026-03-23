@@ -16,6 +16,7 @@ import { ErrorToast } from './components/ErrorToast.tsx';
 import { QualityPanel } from './components/QualityPanel.tsx';
 import { SkillsConfigPanel } from './components/SkillsConfigPanel.tsx';
 import { useQuality } from './hooks/useQuality.ts';
+import { useProcessOutput } from './hooks/useProcessOutput.ts';
 import { APP_NAME, TAB_BOARD, TAB_QUALITY } from './constants/strings.ts';
 
 export function App() {
@@ -45,6 +46,7 @@ export function App() {
   const detailPanelRef = useFocusTrap(selectedTask != null);
 
   const quality = useQuality();
+  const processOutput = useProcessOutput();
 
   const { undoEntry, snapshotBeforeAction, handleUndo, dismissUndo } = useUndo({ data, save, showError });
 
@@ -197,7 +199,7 @@ export function App() {
             <div className="dm-grid-bottom">
               <div className="panel">
                 <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedId={queueActions.launchedId} defaultEngine={data.defaultEngine} />
+                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedId={queueActions.launchedId} defaultEngine={data.defaultEngine} processOutputs={processOutput.outputs} onClearOutput={processOutput.clearOutput} />
               </div>
 
               <div className="panel">

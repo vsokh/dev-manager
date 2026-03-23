@@ -179,6 +179,14 @@ export const QUEUE_CANCEL = 'Cancel';
 export const QUEUE_SET_PATH = 'Set project path to enable launch';
 export const QUEUE_EDIT = 'edit';
 
+// -- Output Viewer --
+export const OUTPUT_NO_OUTPUT = 'No output yet \u2014 launch the task to see live output here.';
+export const OUTPUT_CLEAR = 'Clear';
+export const OUTPUT_RUNNING = 'running';
+export const OUTPUT_EXITED = 'exited';
+export const OUTPUT_EXITED_ERROR = 'exited with error';
+export const OUTPUT_STDERR_LABEL = 'err';
+
 // -- Activity Feed --
 export const ACTIVITY_EMPTY = 'No activity yet';
 export const ACTIVITY_REMOVE_ARIA = 'Remove activity';

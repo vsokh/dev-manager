@@ -1,7 +1,9 @@
 import React from 'react';
 import type { Task, QueueItem } from '../../types';
+import type { TaskOutput } from '../../hooks/useProcessOutput.ts';
 import { itemKey, cmdForItem, getItemStatus, isAllAutoApproved } from './queueItemUtils.ts';
 import { QueueItemContent } from './QueueItemContent.tsx';
+import { OutputViewer } from './OutputViewer.tsx';
 import {
   QUEUE_PARALLEL, QUEUE_LAUNCH_PHASE_TITLE, QUEUE_LAUNCH_PHASE,
   QUEUE_REMOVE_PHASE_APPROVE, QUEUE_PHASE_APPROVE, QUEUE_AUTO_LABEL,
@@ -21,9 +23,11 @@ interface PhaseViewProps {
   onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
   onClear: () => void;
   defaultEngine?: string;
+  processOutputs?: Record<number, TaskOutput>;
+  onClearOutput?: (taskId: number) => void;
 }
 
-export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaunchPhase, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear, defaultEngine }: PhaseViewProps) {
+export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaunchPhase, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear, defaultEngine, processOutputs, onClearOutput }: PhaseViewProps) {
   return (
     <div>
       {phases.map((phaseItems, idx) => (
@@ -79,47 +83,60 @@ export function PhaseView({ phases, queue, taskMap, launchedId, onLaunch, onLaun
             const isPaused = status === 'paused';
             const rowBg = isActive ? (status === 'waiting' ? 'var(--dm-amber-bg-subtle)' : 'var(--dm-accent-bg-subtle)')
               : isPaused ? 'var(--dm-paused-bg-subtle)' : undefined;
+            const hasOutput = processOutputs && (processOutputs[item.task]?.lines.length || processOutputs[item.task]?.running);
             return (
-              <div key={itemKey(item)} style={{
-                display: 'flex', alignItems: 'stretch',
-                background: rowBg,
-              }}>
-                {/* Tree connector */}
+              <div key={itemKey(item)}>
                 <div style={{
-                  width: '24px', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  paddingLeft: '4px',
+                  display: 'flex', alignItems: 'stretch',
+                  background: rowBg,
                 }}>
-                  <div className="timeline-connector-v" style={{
-                    width: '1px', flex: isLast ? '0 0 50%' : '1',
-                  }} />
-                  <div className="timeline-connector-v" style={{
-                    width: '8px', height: '1px',
-                    alignSelf: 'flex-end', marginRight: '-4px',
-                  }} />
-                  {!isLast ? (
+                  {/* Tree connector */}
+                  <div style={{
+                    width: '24px', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    paddingLeft: '4px',
+                  }}>
                     <div className="timeline-connector-v" style={{
-                      width: '1px', flex: '1',
+                      width: '1px', flex: isLast ? '0 0 50%' : '1',
                     }} />
-                  ) : null}
+                    <div className="timeline-connector-v" style={{
+                      width: '8px', height: '1px',
+                      alignSelf: 'flex-end', marginRight: '-4px',
+                    }} />
+                    {!isLast ? (
+                      <div className="timeline-connector-v" style={{
+                        width: '1px', flex: '1',
+                      }} />
+                    ) : null}
+                  </div>
+                  {/* Item content */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    padding: '4px 8px 4px 4px', flex: 1, minWidth: 0,
+                  }}>
+                    <QueueItemContent
+                      item={item}
+                      task={taskMap.get(item.task)}
+                      launchedId={launchedId}
+                      onLaunch={onLaunch}
+                      onPauseTask={onPauseTask}
+                      onRemove={onRemove}
+                      onUpdateTask={onUpdateTask}
+                      taskMap={taskMap}
+                      variant="phase"
+                      defaultEngine={defaultEngine}
+                    />
+                  </div>
                 </div>
-                {/* Item content */}
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '4px 8px 4px 4px', flex: 1, minWidth: 0,
-                }}>
-                  <QueueItemContent
-                    item={item}
-                    task={taskMap.get(item.task)}
-                    launchedId={launchedId}
-                    onLaunch={onLaunch}
-                    onPauseTask={onPauseTask}
-                    onRemove={onRemove}
-                    onUpdateTask={onUpdateTask}
-                    taskMap={taskMap}
-                    variant="phase"
-                    defaultEngine={defaultEngine}
-                  />
-                </div>
+                {hasOutput && onClearOutput ? (
+                  <div style={{ marginLeft: '24px' }}>
+                    <OutputViewer
+                      taskId={item.task}
+                      taskName={item.taskName}
+                      output={processOutputs[item.task]}
+                      onClear={onClearOutput}
+                    />
+                  </div>
+                ) : null}
               </div>
             );
           })}

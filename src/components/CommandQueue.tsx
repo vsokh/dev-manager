@@ -5,8 +5,10 @@ import {
   QUEUE_UNQUEUE_ALL, QUEUE_EMPTY,
 } from '../constants/strings.ts';
 import type { Task, QueueItem } from '../types';
+import type { TaskOutput } from '../hooks/useProcessOutput.ts';
 import { itemKey, cmdForItem, getRowClass, getItemStatus, isAllAutoApproved } from './queue/queueItemUtils.ts';
 import { QueueItemContent } from './queue/QueueItemContent.tsx';
+import { OutputViewer } from './queue/OutputViewer.tsx';
 import { PhaseView } from './queue/PhaseView.tsx';
 
 interface CommandQueueProps {
@@ -22,30 +24,42 @@ interface CommandQueueProps {
   onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
   launchedId: number | null;
   defaultEngine?: string;
+  processOutputs?: Record<number, TaskOutput>;
+  onClearOutput?: (taskId: number) => void;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedId, defaultEngine }: CommandQueueProps) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedId, defaultEngine, processOutputs, onClearOutput }: CommandQueueProps) {
   const taskMap = useMemo(() => new Map((tasks || []).map(t => [t.id, t])), [tasks]);
   const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
 
   const renderFlatList = () => (
     <div>
       {queue.map(item => (
-        <div key={itemKey(item)} className={getRowClass(getItemStatus(item, taskMap))} style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          padding: '6px 12px',
-        }}>
-          <QueueItemContent
-            item={item}
-            task={taskMap.get(item.task)}
-            launchedId={launchedId}
-            onLaunch={onLaunch}
-            onPauseTask={onPauseTask}
-            onRemove={onRemove}
-            onUpdateTask={onUpdateTask}
-            taskMap={taskMap}
-            defaultEngine={defaultEngine}
-          />
+        <div key={itemKey(item)}>
+          <div className={getRowClass(getItemStatus(item, taskMap))} style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            padding: '6px 12px',
+          }}>
+            <QueueItemContent
+              item={item}
+              task={taskMap.get(item.task)}
+              launchedId={launchedId}
+              onLaunch={onLaunch}
+              onPauseTask={onPauseTask}
+              onRemove={onRemove}
+              onUpdateTask={onUpdateTask}
+              taskMap={taskMap}
+              defaultEngine={defaultEngine}
+            />
+          </div>
+          {processOutputs && onClearOutput && (processOutputs[item.task]?.lines.length || processOutputs[item.task]?.running) ? (
+            <OutputViewer
+              taskId={item.task}
+              taskName={item.taskName}
+              output={processOutputs[item.task]}
+              onClear={onClearOutput}
+            />
+          ) : null}
         </div>
       ))}
       <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
@@ -99,6 +113,8 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchPhase, onRemove, 
           onBatchUpdateTasks={onBatchUpdateTasks}
           onClear={onClear}
           defaultEngine={defaultEngine}
+          processOutputs={processOutputs}
+          onClearOutput={onClearOutput}
         />
       ) : renderFlatList()}
     </div>

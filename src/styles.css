@@ -71,6 +71,15 @@ input, textarea { color: var(--dm-text); }
 /* Attachment thumbnails — show delete button on hover */
 .attachment-thumb:hover .attachment-delete-btn { opacity: 1 !important; }
 
+/* Output viewer blinking cursor */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.output-cursor {
+  animation: blink-cursor 1s step-end infinite;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
