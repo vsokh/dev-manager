@@ -756,7 +756,7 @@ export async function handleApi(req, res) {
             '-w', '0', 'nt',
             '--title', tabTitle, '--suppressApplicationTitle',
             '-d', projectPath,
-            '--', 'pwsh', '-NoExit', '-Command', `& ${cliName} --dangerously-skip-permissions "${command.replace(/"/g, '`"')}"`,
+            '--', 'pwsh', '-NoExit', '-Command', `${cliName} --dangerously-skip-permissions '${command.replace(/'/g, "''")}'`,
           ], {
             cwd: projectPath,
             detached: true,
