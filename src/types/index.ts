@@ -182,3 +182,41 @@ export interface UndoEntry {
   label: string;
   timestamp: number;
 }
+
+// WebSocket message types (discriminated union)
+export interface StateMessage {
+  type: 'state';
+  data: StateData;
+  lastModified: number;
+}
+
+export interface ProgressMessage {
+  type: 'progress';
+  data: Record<string, ProgressEntry>;
+}
+
+export interface QualityMessage {
+  type: 'quality';
+  data: QualityReport;
+}
+
+export interface ProjectSwitchedMessage {
+  type: 'project-switched';
+}
+
+export interface OutputMessage {
+  type: 'output';
+  taskId: number;
+  text: string;
+  stream?: 'stdout' | 'stderr';
+  pid?: number;
+}
+
+export interface ExitMessage {
+  type: 'exit';
+  taskId: number;
+  code?: number;
+  error?: string;
+}
+
+export type WebSocketMessage = StateMessage | ProgressMessage | QualityMessage | ProjectSwitchedMessage | OutputMessage | ExitMessage;

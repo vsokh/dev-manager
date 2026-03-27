@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { connectWebSocket } from '../api.ts';
+import type { WebSocketMessage } from '../types';
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'synced' | 'error' | 'template-picker';
 
 interface UseConnectionOptions {
-  onMessage: (msg: any) => void;
+  onMessage: (msg: WebSocketMessage) => void;
   onReconnect?: () => void;
 }
 
