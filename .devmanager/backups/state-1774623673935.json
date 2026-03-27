@@ -1,6 +1,5 @@
 {
-  "savedAt": "2026-03-27T20:16:25.186Z",
-  "_v": 1,
+  "savedAt": "2026-03-27T12:26:32.353Z",
   "project": "dev-manager",
   "tasks": [
     {
@@ -386,125 +385,60 @@
       "name": "Extract server middleware layer",
       "fullName": "Extract error handling and middleware from server/api.js",
       "description": "api.js has no middleware or error abstraction. Extract shared error handling, request validation, and response formatting into middleware so route handlers stay focused on business logic.",
-      "status": "pending",
+      "status": "in-progress",
       "group": "Server Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
       "progress": "Exploring codebase...",
-      "startedAt": "2026-03-27T12:25:05.890Z",
-      "history": [
-        {
-          "status": "created",
-          "at": "2026-03-27T12:18:42.542Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T15:01:27.266Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T20:15:54.210Z"
-        }
-      ]
+      "startedAt": "2026-03-27T12:25:05.890Z"
     },
     {
       "id": 109,
       "name": "Extract folder dialog helpers",
       "fullName": "Extract inline PowerShell/osascript folder dialogs to utility",
       "description": "server/api.js has inline PowerShell and osascript commands for native folder dialogs. Extract these platform-specific scripts into a dedicated utility module (e.g. server/dialogs.js) with a clean async interface.",
-      "status": "pending",
+      "status": "in-progress",
       "group": "Server Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
-      "progress": "Exploring codebase...",
-      "startedAt": "2026-03-27T12:25:05.890Z",
-      "history": [
-        {
-          "status": "created",
-          "at": "2026-03-27T12:18:42.542Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T15:01:31.650Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T20:15:56.984Z"
-        }
-      ]
+      "progress": "Launching...",
+      "startedAt": "2026-03-27T12:25:05.890Z"
     },
     {
       "id": 110,
       "name": "Extract useConnection hook",
       "fullName": "Extract WebSocket connection logic from useProject.ts",
       "description": "useProject.ts (415 lines) is a god hook. Extract WebSocket setup, reconnection, and connection state management into a dedicated useConnection hook.",
-      "status": "done",
+      "status": "in-progress",
       "group": "Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
-      "startedAt": "2026-03-27T15:27:55.203Z",
-      "history": [
-        {
-          "status": "created",
-          "at": "2026-03-27T12:18:42.542Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T15:01:22.375Z"
-        }
-      ],
-      "completedAt": "2026-03-27T15:35:00.000Z",
-      "commitRef": "54fcfc1",
-      "summary": "The main project hook (useProject) has been slimmed down by extracting all WebSocket connection logic into a dedicated useConnection hook. This makes the codebase more maintainable and sets the stage for further hook decomposition without any user-facing behavior changes."
+      "progress": "Exploring codebase...",
+      "startedAt": "2026-03-27T12:26:32.353Z"
     },
     {
       "id": 111,
       "name": "Extract useSync hook",
       "fullName": "Extract file I/O and state sync from useProject.ts",
       "description": "Extract file I/O, state merging, conflict handling, and sync polling logic from useProject.ts into a dedicated useSync hook that useProject composes.",
-      "status": "done",
+      "status": "in-progress",
       "group": "Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
-      "startedAt": "2026-03-27T15:42:52.746Z",
+      "progress": "Exploring codebase...",
+      "startedAt": "2026-03-27T12:25:05.890Z",
       "dependsOn": [
         110
-      ],
-      "history": [
-        {
-          "status": "created",
-          "at": "2026-03-27T12:18:42.542Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T15:01:34.545Z"
-        }
-      ],
-      "completedAt": "2026-03-27",
-      "commitRef": "0fd4484"
+      ]
     },
     {
       "id": 112,
       "name": "Extract useTemplate hook",
       "fullName": "Extract template loading logic from useProject.ts",
       "description": "Extract template/skill loading and project scaffolding logic from useProject.ts into a dedicated useTemplate hook.",
-      "status": "pending",
+      "status": "in-progress",
       "group": "Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
       "progress": "Exploring codebase...",
       "startedAt": "2026-03-27T12:25:05.890Z",
       "dependsOn": [
         111
-      ],
-      "history": [
-        {
-          "status": "created",
-          "at": "2026-03-27T12:18:42.542Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T15:02:08.810Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T20:16:19.648Z"
-        }
       ]
     },
     {
@@ -512,52 +446,22 @@
       "name": "Add ActionContext for App.tsx",
       "fullName": "Create ActionContext to eliminate prop drilling in App.tsx",
       "description": "App.tsx destructures 36+ props and passes 42+ event handlers down. Create an ActionContext (or similar) so child components can consume actions directly instead of receiving them through layers of props.",
-      "status": "pending",
+      "status": "in-progress",
       "group": "Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
-      "progress": "Process exited with code 1",
-      "startedAt": "2026-03-27T15:30:14.357Z",
-      "history": [
-        {
-          "status": "created",
-          "at": "2026-03-27T12:18:42.542Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T15:01:48.626Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T20:14:26.689Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T20:16:25.186Z"
-        }
-      ]
+      "progress": "Launching...",
+      "startedAt": "2026-03-27T12:25:05.890Z"
     },
     {
       "id": 114,
       "name": "Extract App.tsx layout concerns",
       "fullName": "Extract tab routing, modal state, and scratchpad from App.tsx",
       "description": "App.tsx (342 lines) handles tab routing, modal state, floating scratchpad, and undo/redo all in one component. Extract these into focused hooks or sub-components (e.g. useTabRouting, useUndoRedo, ModalManager).",
-      "status": "in-progress",
+      "status": "pending",
       "group": "Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
       "dependsOn": [
         113
-      ],
-      "progress": "Delegating to sub-agent...",
-      "startedAt": "2026-03-27T20:13:26.513Z",
-      "history": [
-        {
-          "status": "created",
-          "at": "2026-03-27T12:18:42.542Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T20:15:59.620Z"
-        }
       ]
     },
     {
@@ -565,60 +469,34 @@
       "name": "Extract task filtering utils",
       "fullName": "Extract shared filtering/grouping logic from TaskBoard",
       "description": "Epic color calculation, status filtering, and grouping logic in TaskBoard.tsx repeats across TaskBoard, StatusFilter, and CommandQueue. Extract into a shared utility (e.g. taskFilters.ts) used by all three.",
-      "status": "done",
+      "status": "in-progress",
       "group": "Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
-      "startedAt": "2026-03-27T15:31:02.421Z",
-      "history": [
-        {
-          "status": "created",
-          "at": "2026-03-27T12:18:42.542Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T15:01:46.204Z"
-        }
-      ],
-      "completedAt": "2026-03-27T15:35:00.000Z",
-      "commitRef": "a0cbeb5",
-      "summary": "Task board, queue, and detail panels now share a single source of truth for filtering, grouping, and epic color logic — eliminating duplicated calculations that could drift out of sync. No visible UI changes, but the codebase is cleaner and more maintainable for future feature work."
+      "progress": "Exploring codebase...",
+      "startedAt": "2026-03-27T12:25:05.890Z"
     },
     {
       "id": 116,
       "name": "Reduce TaskBoard memoization",
       "fullName": "Simplify TaskBoard.tsx memoization strategy",
       "description": "TaskBoard.tsx has 37 useMemo calls. After extracting shared filtering utils, audit remaining memos — remove unnecessary ones, consolidate related ones, and keep only those with measurable perf impact.",
-      "status": "in-progress",
+      "status": "pending",
       "group": "Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
       "dependsOn": [
         115
-      ],
-      "progress": "Merging to master...",
-      "startedAt": "2026-03-27T20:13:43.848Z"
+      ]
     },
     {
       "id": 117,
       "name": "Extract shared addActivity hook",
       "fullName": "Deduplicate activity logging across action hooks",
       "description": "useTaskActions.ts and useQueueActions.ts both have identical addActivity helper functions. Extract to a shared useActivity hook or utility that both consume.",
-      "status": "done",
+      "status": "in-progress",
       "group": "Refactoring",
       "createdAt": "2026-03-27T12:18:42.542Z",
-      "startedAt": "2026-03-27T12:26:16.392Z",
-      "history": [
-        {
-          "status": "created",
-          "at": "2026-03-27T12:18:42.542Z"
-        },
-        {
-          "status": "pending",
-          "at": "2026-03-27T15:01:51.642Z"
-        }
-      ],
-      "completedAt": "2026-03-27T00:00:00.000Z",
-      "commitRef": "e5f9f61",
-      "summary": "Activity logging is now powered by a single shared utility instead of duplicated code in two places. No visible changes for users — this is a behind-the-scenes cleanup that makes future activity-related features easier and safer to build."
+      "progress": "Planning approach...",
+      "startedAt": "2026-03-27T12:26:16.392Z"
     },
     {
       "id": 118,
@@ -839,8 +717,48 @@
   "features": [],
   "queue": [
     {
+      "task": 111,
+      "taskName": "Extract useSync hook",
+      "notes": ""
+    },
+    {
       "task": 112,
       "taskName": "Extract useTemplate hook",
+      "notes": ""
+    },
+    {
+      "task": 113,
+      "taskName": "Add ActionContext for App.tsx",
+      "notes": ""
+    },
+    {
+      "task": 115,
+      "taskName": "Extract task filtering utils",
+      "notes": ""
+    },
+    {
+      "task": 108,
+      "taskName": "Extract server middleware layer",
+      "notes": ""
+    },
+    {
+      "task": 109,
+      "taskName": "Extract folder dialog helpers",
+      "notes": ""
+    },
+    {
+      "task": 114,
+      "taskName": "Extract App.tsx layout concerns",
+      "notes": ""
+    },
+    {
+      "task": 116,
+      "taskName": "Reduce TaskBoard memoization",
+      "notes": ""
+    },
+    {
+      "task": 107,
+      "taskName": "Split api.js into route modules",
       "notes": ""
     },
     {
@@ -852,164 +770,148 @@
   "taskNotes": {},
   "activity": [
     {
-      "id": "act_1774642585186",
-      "time": 1774642585186,
-      "label": "Add ActionContext for App.tsx marked pending",
-      "taskId": 113
-    },
-    {
-      "id": "act_1774642579648",
-      "time": 1774642579648,
-      "label": "Extract useTemplate hook marked pending",
-      "taskId": 112
-    },
-    {
-      "id": "act_1774642559620",
-      "time": 1774642559620,
-      "label": "Extract App.tsx layout concerns marked pending",
-      "taskId": 114
-    },
-    {
-      "id": "act_1774642556984",
-      "time": 1774642556984,
-      "label": "Extract folder dialog helpers marked pending",
-      "taskId": 109
-    },
-    {
-      "id": "act_1774642554210",
-      "time": 1774642554210,
-      "label": "Extract server middleware layer marked pending",
-      "taskId": 108
-    },
-    {
-      "id": "act_1774642466689",
-      "time": 1774642466689,
-      "label": "Add ActionContext for App.tsx marked pending",
-      "taskId": 113
-    },
-    {
-      "id": "act_1774626523845_111",
-      "time": 1774626523845,
-      "label": "Extract useSync hook completed",
-      "taskId": 111,
-      "commitRef": "0fd4484"
-    },
-    {
-      "id": "act_111_done",
-      "time": 1774626518631,
-      "label": "Extract useSync hook completed",
-      "commitRef": "0fd4484"
-    },
-    {
-      "id": "act_1774625954241_115",
-      "time": 1774625954241,
-      "label": "Extract task filtering utils completed",
-      "taskId": 115,
-      "commitRef": "a0cbeb5",
-      "filesChanged": 5,
+      "id": "act_1774614378669_arrange",
+      "time": 1774614378669,
+      "label": "Arranged 30 pending tasks: 17 new dependencies, 3 dependency chains",
       "changes": [
-        "Task board, queue, and detail panels now share a single source of truth for filtering, grouping, and epic color logic — eliminating duplicated calculations that could drift out of sync. No visible UI changes, but the codebase is cleaner and more maintainable for future feature work."
+        "Set #111 (useSync) depends on #110 (useConnection) — sequential useProject.ts extraction",
+        "Set #112 (useTemplate) depends on #111 (useSync) — sequential useProject.ts extraction",
+        "Set #121 (list knowledge) depends on #120 (init endpoint)",
+        "Set #122 (read knowledge) depends on #120 (init endpoint)",
+        "Set #123 (save knowledge) depends on #120 (init endpoint)",
+        "Set #124 (delete knowledge) depends on #120 (init endpoint)",
+        "Set #125 (watch knowledge dirs) depends on #120 (init endpoint)",
+        "Set #126 (useKnowledge hook) depends on #121 (list) and #125 (watch)",
+        "Set #127 (KnowledgePanel shell) depends on #126 (useKnowledge hook)",
+        "Set #128 (file list + search) depends on #127 (KnowledgePanel shell)",
+        "Set #129 (markdown detail view) depends on #128 (file list)",
+        "Set #130 (inline editor) depends on #129 (detail view)",
+        "Set #131 (new entry form) depends on #127 (KnowledgePanel shell)",
+        "Set #132 (delete with confirmation) depends on #129 (detail view)",
+        "Set #133 (decision status badge) depends on #128 (file list)",
+        "Set #134 (seed-knowledge button) depends on #127 (KnowledgePanel shell)",
+        "Set #135 (Knowledge tab) depends on #127 (KnowledgePanel shell)",
+        "Preserved existing deps: #62→#61, #104→#110, #107→#108+#109, #114→#113, #116→#115, #118→#114+#115, #119→#107",
+        "Epics unchanged — 8 existing groups cover all tasks: Security, Quality, Product Vision, Refactoring, Server Refactoring, Infrastructure, Task Board, Knowledge Panel"
       ]
     },
     {
-      "id": "act_1774625941414_110",
-      "time": 1774625941414,
-      "label": "Extract useConnection hook completed",
-      "taskId": 110,
-      "commitRef": "54fcfc1",
-      "filesChanged": 2,
-      "changes": [
-        "The main project hook (useProject) has been slimmed down by extracting all WebSocket connection logic into a dedicated useConnection hook. This makes the codebase more maintainable and sets the stage for further hook decomposition without any user-facing behavior changes."
-      ]
+      "id": "act_1774614252382",
+      "time": 1774614252382,
+      "label": "3 Server Refactoring tasks queued"
     },
     {
-      "id": "act_115_done",
-      "time": 1774625928183,
-      "label": "Extract task filtering utils completed",
-      "commitRef": "a0cbeb5"
-    },
-    {
-      "id": "act_1774625918269_110",
-      "time": 1774625918269,
-      "label": "Extract useConnection hook completed",
-      "taskId": 110,
-      "commitRef": "54fcfc1",
-      "filesChanged": 2,
-      "changes": [
-        "The main project hook (useProject) has been slimmed down by extracting all WebSocket connection logic into a dedicated useConnection hook. This makes the codebase more maintainable and sets the stage for further hook decomposition without any user-facing behavior changes."
-      ]
-    },
-    {
-      "id": "act_1774625900278_110",
-      "time": 1774625900278,
-      "label": "Extract useConnection hook completed",
-      "taskId": 110,
-      "commitRef": "54fcfc1",
-      "filesChanged": 2,
-      "changes": [
-        "The main project hook (useProject) has been slimmed down by extracting all WebSocket connection logic into a dedicated useConnection hook. This makes the codebase more maintainable and sets the stage for further hook decomposition without any user-facing behavior changes."
-      ]
-    },
-    {
-      "id": "act_1774625887422_110",
-      "time": 1774625887422,
-      "label": "Extract useConnection hook completed",
-      "taskId": 110,
-      "commitRef": "54fcfc1",
-      "filesChanged": 2,
-      "changes": [
-        "The main project hook (useProject) has been slimmed down by extracting all WebSocket connection logic into a dedicated useConnection hook. This makes the codebase more maintainable and sets the stage for further hook decomposition without any user-facing behavior changes."
-      ]
-    },
-    {
-      "id": "act_1774625878513_110",
-      "time": 1774625878513,
-      "label": "Extract useConnection hook completed",
-      "taskId": 110,
-      "commitRef": "54fcfc1",
-      "filesChanged": 2,
-      "changes": [
-        "The main project hook (useProject) has been slimmed down by extracting all WebSocket connection logic — setup, reconnection, and cleanup — into a dedicated useConnection hook. This makes the codebase more maintainable and sets the stage for further hook decomposition without any user-facing behavior changes."
-      ]
-    },
-    {
-      "id": "act_1774625858822_110",
-      "time": 1774625858822,
-      "label": "Extract useConnection hook completed",
-      "taskId": 110,
-      "commitRef": "54fcfc1",
-      "filesChanged": 2,
-      "changes": [
-        "The main project hook (useProject) has been slimmed down by extracting all WebSocket connection logic — setup, reconnection, and cleanup — into a dedicated useConnection hook. This makes the codebase more maintainable and sets the stage for further hook decomposition without any user-facing behavior changes."
-      ]
-    },
-    {
-      "id": "act_1774625648842_117",
-      "time": 1774625648842,
-      "label": "Extract shared addActivity hook completed",
-      "taskId": 117,
-      "commitRef": "e5f9f61",
-      "filesChanged": 3,
-      "changes": [
-        "Activity logging is now powered by a single shared utility instead of duplicated code in two places. No visible changes for users — this is a behind-the-scenes cleanup that makes future activity-related features easier and safer to build."
-      ]
-    },
-    {
-      "id": "act_117_done",
-      "time": 1774625641319,
-      "label": "Extract shared addActivity hook completed",
-      "commitRef": "e5f9f61"
-    },
-    {
-      "id": "act_1774624548099",
-      "time": 1774624548099,
+      "id": "act_1774614251591",
+      "time": 1774614251591,
       "label": "9 Refactoring tasks queued"
     },
     {
-      "id": "act_1774623728810",
-      "time": 1774623728810,
-      "label": "Extract useTemplate hook marked pending",
-      "taskId": 112
+      "id": "act_split_1774614211615",
+      "time": 1774614211615,
+      "label": "16 tasks created from scratchpad"
+    },
+    {
+      "id": "act_1774614137707_arrange",
+      "time": 1774614137707,
+      "label": "Arranged 22 pending tasks: 7 dependencies, 2 new epics",
+      "changes": [
+        "Set #62 (static hosting) depends on #61 (npx devmanager)",
+        "Set #104 (type WS messages) depends on #110 (extract useConnection)",
+        "Set #107 (split api.js) depends on #108 (middleware) and #109 (dialog helpers)",
+        "Set #114 (extract App.tsx layout) depends on #113 (ActionContext)",
+        "Set #116 (reduce memoization) depends on #115 (extract filtering utils)",
+        "Set #118 (inline styles to CSS) depends on #114 and #115",
+        "Set #119 (server API tests) depends on #107 (split api.js)",
+        "Created 'Security' epic for #100, #101 (was Quality)",
+        "Created 'Server Refactoring' epic for #107, #108, #109 (was Refactoring)",
+        "Phase 1 (no deps): #100, #101, #102, #103, #105, #106 — quick fixes",
+        "Phase 2 (no deps): #108, #109, #110, #111, #112, #113, #115, #117 — foundation extractions",
+        "Phase 3 (has deps): #104, #107, #114, #116 — dependent refactoring",
+        "Phase 4 (has deps): #118, #119 — polish after restructuring settles",
+        "Phase 5: #61, #62 — product distribution"
+      ]
+    },
+    {
+      "id": "act_1774825200000_arrange",
+      "time": 1774825200000,
+      "label": "Tasks arranged: 7 dependencies set, 2 new epics created (Security, Server Refactoring)"
+    },
+    {
+      "id": "act_split_1774613922542",
+      "time": 1774613922542,
+      "label": "13 tasks created from scratchpad"
+    },
+    {
+      "id": "act_22_done",
+      "time": 1774612697777,
+      "label": "Error boundary + loading completed",
+      "commitRef": "5101554"
+    },
+    {
+      "id": "act_21_done",
+      "time": 1774612697730,
+      "label": "Inline styles to CSS completed",
+      "commitRef": "a8f6d67"
+    },
+    {
+      "id": "act_20_done",
+      "time": 1774612697681,
+      "label": "Add TypeScript completed",
+      "commitRef": "c0e4120"
+    },
+    {
+      "id": "act_1774612379462_arrange",
+      "time": 1774612379462,
+      "label": "Tasks arranged into epics"
+    },
+    {
+      "id": "act_58_done",
+      "time": 1774531200000,
+      "label": "Output panel UI completed",
+      "commitRef": "57f2f32"
+    },
+    {
+      "id": "act_59_done",
+      "time": 1774531200000,
+      "label": "Project templates completed",
+      "commitRef": "40dcace"
+    },
+    {
+      "id": "act_60_done",
+      "time": 1774531200000,
+      "label": "Engine selector UI completed",
+      "commitRef": "9bf8b0c"
+    },
+    {
+      "id": "act_17_done",
+      "time": 1774531200000,
+      "label": "Split TaskDetail completed",
+      "commitRef": "774ede2"
+    },
+    {
+      "id": "act_18_done",
+      "time": 1774531200000,
+      "label": "Split TaskBoard completed"
+    },
+    {
+      "id": "act_19_done",
+      "time": 1774531200000,
+      "label": "Split CommandQueue completed"
+    },
+    {
+      "id": "act_1774221583751_arrange",
+      "time": 1774221583751,
+      "label": "Tasks arranged into epics"
+    },
+    {
+      "id": "act_1774221581625_arrange",
+      "time": 1774221581625,
+      "label": "Tasks arranged into epics"
+    },
+    {
+      "id": "act_1774220068266_arrange",
+      "time": 1774220068266,
+      "label": "Tasks arranged into epics"
     }
   ],
   "epics": [
