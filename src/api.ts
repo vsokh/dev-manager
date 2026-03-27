@@ -1,6 +1,6 @@
 // Bridge server API client
 
-import type { StateData, ProgressEntry, SkillInfo, SkillsConfig, QualityReport, QualityHistoryEntry } from './types';
+import type { StateData, ProgressEntry, SkillInfo, SkillsConfig, QualityReport, QualityHistoryEntry, WebSocketMessage } from './types';
 
 const BASE_URL = ''; // Same origin (vite proxy in dev, served by bridge in prod)
 
@@ -39,7 +39,7 @@ async function del<T>(path: string): Promise<T> {
 
 // WebSocket connection
 export function connectWebSocket(
-  onMessage: (msg: any) => void,
+  onMessage: (msg: WebSocketMessage) => void,
   onClose?: () => void,
 ): WebSocket {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';

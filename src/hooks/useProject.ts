@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { StateData, SkillsConfig, SkillInfo } from '../types';
+import type { StateData, SkillsConfig, SkillInfo, WebSocketMessage } from '../types';
 import { api } from '../api.ts';
 import {
   readState,
@@ -26,10 +26,10 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
 
   // useConnection uses a ref for onMessage, so the handler can safely
   // close over setStatus even though it's returned by the same hook call.
-  const handleWsMessageRef = useRef<(msg: any) => void>(() => {});
+  const handleWsMessageRef = useRef<(msg: WebSocketMessage) => void>(() => {});
 
   const { connected, setConnected, status, setStatus, closeWebSocket } = useConnection({
-    onMessage: (msg: any) => handleWsMessageRef.current(msg),
+    onMessage: (msg: WebSocketMessage) => handleWsMessageRef.current(msg),
   });
 
   const { data, setData, projectName, setProjectName, save, handleSyncMessage, pauseTask, cancelTask, flushPendingSave, lastWriteTime } = useSync({ setStatus });
@@ -46,7 +46,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
   });
 
   // Now that setStatus is available, define the real handler
-  handleWsMessageRef.current = (msg: any) => {
+  handleWsMessageRef.current = (msg: WebSocketMessage) => {
     if (handleSyncMessage(msg)) return;
     if (msg.type === 'quality') {
       // Quality updates are handled by useQuality hook

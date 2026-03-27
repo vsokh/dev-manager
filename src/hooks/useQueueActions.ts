@@ -89,7 +89,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     updateData({ queue: [] });
   };
 
-  const setTaskProgress = (taskId: number, progress: string, status: TaskStatus = 'in-progress') => {
+  const setTaskProgress = (taskId: number, progress: string | undefined, status: TaskStatus = 'in-progress') => {
     if (!data) return;
     const tasks = (data.tasks || []).map(t =>
       t.id === taskId ? { ...t, status, progress, startedAt: t.startedAt || new Date().toISOString() } : t
@@ -107,7 +107,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
       }
     } catch (err) {
       console.error('Failed to launch task:', err);
-      if (launchMode !== 'terminal') setTaskProgress(itemKey, undefined as any, 'pending');
+      if (launchMode !== 'terminal') setTaskProgress(itemKey, undefined, 'pending');
       onError('Failed to launch task');
     }
   };

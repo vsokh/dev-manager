@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { StateData, Activity, Task } from '../types';
+import type { StateData, Activity, Task, WebSocketMessage } from '../types';
 import {
   writeState,
   readProgressFiles,
@@ -169,7 +169,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
   }, [setStatus]);
 
   // Returns true if the message was handled as a sync message
-  const handleSyncMessage = useCallback((msg: any): boolean => {
+  const handleSyncMessage = useCallback((msg: WebSocketMessage): boolean => {
     if (msg.type === 'state') {
       if (msg.lastModified > lastWriteTime.current + 1000) {
         // Regression guard: reject incoming state with a stale version counter
