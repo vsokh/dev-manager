@@ -41,9 +41,11 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   const [searchText, setSearchText] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchFocused, setSearchFocused] = useState(false);
-  const pendingTasks = useMemo(() => getActiveTasks(tasks), [tasks]);
-  const backlogTasks = useMemo(() => getBacklogTasks(tasks), [tasks]);
-  const doneTasks = useMemo(() => getDoneTasks(tasks), [tasks]);
+  const { pendingTasks, backlogTasks, doneTasks } = useMemo(() => ({
+    pendingTasks: getActiveTasks(tasks),
+    backlogTasks: getBacklogTasks(tasks),
+    doneTasks: getDoneTasks(tasks),
+  }), [tasks]);
   const allGroups = useMemo(() => getAllGroups(tasks), [tasks]);
   // Derive colors from epics registry (stable), fallback to hash for unregistered
   const epicColors = useMemo(() => getEpicColors(epics || [], allGroups), [allGroups, epics]);
@@ -66,7 +68,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
     }
   }, [allGroups, epics, onUpdateEpics]);  // NOTE: keeps EPIC_PALETTE + hashString for index computation
   // All epic names for autocomplete (from registry, which includes auto-registered ones)
-  const epicNames = useMemo(() => (epics || []).map(e => e.name), [epics]);
+  const epicNames = (epics || []).map(e => e.name);
   const hiddenEpicNames = useMemo(() => {
     return new Set((epics || []).filter(e => e.hidden).map(e => e.name));
   }, [epics]);
@@ -88,8 +90,10 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
     return filtered;
   }, [pendingTasks, activeFilter, searchText]);
   const pendingGroups = useMemo(() => groupTasksBy(filteredPendingTasks, { hiddenEpics: hiddenEpicNames }), [filteredPendingTasks, hiddenEpicNames]);
-  const doneGroups = useMemo(() => groupTasksBy(doneTasks, { defaultGroup: 'Other' }), [doneTasks]);
-  const backlogGroups = useMemo(() => groupTasksBy(backlogTasks, { defaultGroup: 'Other' }), [backlogTasks]);
+  const { doneGroups, backlogGroups } = useMemo(() => ({
+    doneGroups: groupTasksBy(doneTasks, { defaultGroup: 'Other' }),
+    backlogGroups: groupTasksBy(backlogTasks, { defaultGroup: 'Other' }),
+  }), [doneTasks, backlogTasks]);
   const [showNewForm, setShowNewForm] = useState(false);
   const [showBacklog, setShowBacklog] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
