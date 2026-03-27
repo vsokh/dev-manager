@@ -59,7 +59,11 @@ export function mergeProgressIntoState(
 
     const id = Number(taskId);
     const idx = tasks.findIndex(t => t.id === id);
-    if (idx === -1) continue;
+    if (idx === -1) {
+      staleProgressIds.push(id);
+      console.warn(`[sync] Progress entry references unknown task ID: ${id}`);
+      continue;
+    }
 
     if (prog.status === 'done') {
       tasks[idx] = {
@@ -110,8 +114,13 @@ export function mergeProgressIntoState(
     }
   }
 
+  const truncatedActivity = activity.slice(0, 20);
+  if (activity.length > 20) {
+    console.warn(`[sync] Activity log truncated: ${activity.length} entries → 20 (${activity.length - 20} dropped)`);
+  }
+
   return {
-    data: { ...stateData, tasks, activity: activity.slice(0, 20), queue },
+    data: { ...stateData, tasks, activity: truncatedActivity, queue },
     needsWrite,
     hasChanges: hasChanges || needsWrite,
     completedTaskIds,

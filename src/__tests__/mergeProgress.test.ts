@@ -146,6 +146,7 @@ describe('mergeProgressIntoState', () => {
       };
       const result = mergeProgressIntoState(state, progress);
       expect(result.hasChanges).toBe(false);
+      expect(result.staleProgressIds).toContain(999);
     });
   });
 
@@ -221,6 +222,22 @@ describe('mergeProgressIntoState', () => {
       // All three removed from queue (1 and 3 via in-progress, 2 via done)
       expect(result.data.queue).toHaveLength(0);
       expect(result.completedTaskIds).toEqual([2]);
+    });
+  });
+
+  describe('activity truncation', () => {
+    it('truncates activity to 20 entries', () => {
+      const activity = Array.from({ length: 25 }, (_, i) => ({
+        id: `act_${i}`,
+        time: Date.now() - i * 1000,
+        label: `Activity ${i}`,
+      }));
+      const state = makeState({ tasks: [makeTask(1, { status: 'in-progress' })], activity });
+      const progress: Record<string, ProgressEntry> = {
+        '1': { status: 'done', commitRef: 'abc' },
+      };
+      const result = mergeProgressIntoState(state, progress);
+      expect(result.data.activity).toHaveLength(20);
     });
   });
 });

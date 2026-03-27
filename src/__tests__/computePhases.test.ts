@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { computePhases } from '../utils/computePhases.ts';
 import type { QueueItem, Task } from '../types';
 
@@ -47,12 +47,17 @@ describe('computePhases', () => {
   });
 
   it('cyclic deps get safety-pushed into same phase', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const queue = [q(1), q(2)];
     const tasks = [t(1, [2]), t(2, [1])];
     const result = computePhases(queue, tasks);
     expect(result).not.toBeNull();
     const allIds = result!.flatMap(phase => phase.map(r => r.task)).sort();
     expect(allIds).toEqual([1, 2]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Circular dependency detected')
+    );
+    warnSpy.mockRestore();
   });
 
   it('empty queue returns null', () => {

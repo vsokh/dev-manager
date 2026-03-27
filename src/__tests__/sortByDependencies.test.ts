@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { sortByDependencies } from '../utils/sortByDependencies.ts';
 import type { QueueItem, Task } from '../types';
 
@@ -54,11 +54,16 @@ describe('sortByDependencies', () => {
   });
 
   it('handles cyclic dependencies (appends at end)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const queue = [q(1), q(2)];
     const tasks = [t(1, [2]), t(2, [1])];
     const result = sortByDependencies(queue, tasks);
     expect(result).toHaveLength(2);
     expect(result.map(r => r.task).sort()).toEqual([1, 2]);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Circular dependency detected')
+    );
+    warnSpy.mockRestore();
   });
 
   it('empty queue returns empty array', () => {

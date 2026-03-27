@@ -34,6 +34,8 @@ export function computePhases(queue: QueueItem[], tasks: Task[]): QueueItem[][] 
     }
 
     if (thisPhase.length === 0) {
+      const cycleIds = stillRemaining.map(item => item.task);
+      console.warn(`[computePhases] Circular dependency detected among tasks: ${cycleIds.join(', ')}. Force-assigning to phase ${phaseNum}.`);
       for (const item of stillRemaining) {
         thisPhase.push(item);
         assigned.set(item.task, phaseNum);

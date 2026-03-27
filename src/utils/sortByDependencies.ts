@@ -33,8 +33,10 @@ export function sortByDependencies(queueItems: QueueItem[], allTasks: Task[]): Q
       if (inDegree.get(next) === 0) ready.push(next);
     }
   }
-  for (const item of queueItems) {
-    if (!result.includes(item)) result.push(item);
+  const cycleItems = queueItems.filter(item => !result.includes(item));
+  if (cycleItems.length > 0) {
+    console.warn(`[sortByDependencies] Circular dependency detected: tasks ${cycleItems.map(i => i.task).join(', ')} could not be topologically sorted.`);
+    result.push(...cycleItems);
   }
   return result;
 }
