@@ -1,6 +1,7 @@
 import { saveAttachment, deleteAttachment } from '../fs.ts';
 import { STATUS } from '../constants/statuses.ts';
-import type { StateData, Task, Epic, QueueItem, Activity, Attachment } from '../types';
+import { createActivityList } from '../utils/activityUtils.ts';
+import type { StateData, Task, Epic, QueueItem, Attachment } from '../types';
 
 interface UseTaskActionsParams {
   data: StateData | null;
@@ -19,11 +20,8 @@ export function useTaskActions({ data, save, snapshotBeforeAction, onError }: Us
     save({ ...data!, ...partial });
   };
 
-  const addActivity = (label: string, taskId?: number): Activity[] => {
-    const entry: Activity = { id: 'act_' + Date.now(), time: Date.now(), label };
-    if (taskId != null) entry.taskId = taskId;
-    return [entry, ...(data?.activity || [])].slice(0, 20);
-  };
+  const addActivity = (label: string, taskId?: number) =>
+    createActivityList(label, data?.activity || [], taskId);
 
   const handleUpdateTask = (id: number, updates: Partial<Task>) => {
     const existing = tasks.find(t => t.id === id);

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { api } from '../api.ts';
 import { STATUS } from '../constants/statuses.ts';
 import { sortByDependencies } from '../utils/sortByDependencies.ts';
-import type { StateData, Task, QueueItem, Activity } from '../types';
+import { createActivityList } from '../utils/activityUtils.ts';
+import type { StateData, Task, QueueItem } from '../types';
 
 interface UseQueueActionsParams {
   data: StateData | null;
@@ -28,11 +29,8 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     save({ ...data!, ...partial });
   };
 
-  const addActivity = (label: string, taskId?: number): Activity[] => {
-    const entry: Activity = { id: 'act_' + Date.now(), time: Date.now(), label };
-    if (taskId != null) entry.taskId = taskId;
-    return [entry, ...(data?.activity || [])].slice(0, 20);
-  };
+  const addActivity = (label: string, taskId?: number) =>
+    createActivityList(label, data?.activity || [], taskId);
 
   const handleQueue = (task: Task) => {
     if (queue.some(q => q.task === task.id)) return;
