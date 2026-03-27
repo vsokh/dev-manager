@@ -82,6 +82,15 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
   }, [allGroups, epics, onUpdateEpics]);
   // All epic names for autocomplete (from registry, which includes auto-registered ones)
   const epicNames = useMemo(() => (epics || []).map(e => e.name), [epics]);
+  const hiddenEpicNames = useMemo(() => {
+    return new Set((epics || []).filter(e => e.hidden).map(e => e.name));
+  }, [epics]);
+  const handleToggleEpicVisibility = (epicName: string) => {
+    const updated = (epics || []).map(e =>
+      e.name === epicName ? { ...e, hidden: !e.hidden } : e
+    );
+    onUpdateEpics(updated);
+  };
   const filteredPendingTasks = useMemo(() => {
     let filtered = pendingTasks;
     if (activeFilter !== 'all') {
@@ -98,13 +107,14 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
     grouped.set(null, []); // ungrouped
     for (const t of filteredPendingTasks) {
       const g = t.group || null;
+      if (g && hiddenEpicNames.has(g)) continue; // skip hidden epics
       if (!grouped.has(g)) grouped.set(g, []);
       grouped.get(g).push(t);
     }
     // Remove empty null group
     if (grouped.get(null).length === 0) grouped.delete(null);
     return grouped;
-  }, [filteredPendingTasks]);
+  }, [filteredPendingTasks, hiddenEpicNames]);
   const doneGroups = useMemo(() => {
     const grouped = new Map();
     for (const t of doneTasks) {
@@ -163,13 +173,30 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             {epicStats.map(ep => {
               const colors = epicColors[ep.name!] || {};
               const pct = ep.total > 0 ? (ep.done / ep.total) * 100 : 0;
+              const isHidden = hiddenEpicNames.has(ep.name!);
               return (
-                <div key={ep.name} className="epic-progress" style={{
-                  padding: "4px 10px",
-                  background: colors.bg || "var(--dm-bg)", color: colors.text || "var(--dm-text-light)",
-                  position: "relative", overflow: "hidden",
-                }}>
-                  <span>{ep.name} {ep.done}/{ep.total}</span>
+                <div
+                  key={ep.name}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleToggleEpicVisibility(ep.name!)}
+                  onKeyDown={handleKeyActivate(() => handleToggleEpicVisibility(ep.name!))}
+                  className="epic-progress"
+                  title={isHidden ? 'Show ' + ep.name : 'Hide ' + ep.name}
+                  style={{
+                    padding: "4px 10px",
+                    background: colors.bg || "var(--dm-bg)", color: colors.text || "var(--dm-text-light)",
+                    position: "relative", overflow: "hidden",
+                    opacity: isHidden ? 0.45 : 1,
+                    cursor: 'pointer',
+                    transition: 'opacity 0.2s',
+                    userSelect: 'none',
+                  }}
+                >
+                  <span style={isHidden ? { textDecoration: 'line-through' } : undefined}>
+                    {ep.name}
+                  </span>
+                  <span> {ep.done}/{ep.total}</span>
                   <div style={{
                     position: "absolute", bottom: 0, left: 0, width: "100%", height: "3px",
                     background: colors.border || "var(--dm-border)", opacity: 0.3,
@@ -218,6 +245,35 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             glowTaskId={glowTaskId}
           />
         ))}
+        {hiddenEpicNames.size > 0 ? (
+          <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', color: 'var(--dm-text-light)', opacity: 0.6 }}>Hidden:</span>
+            {(epics || []).filter(e => e.hidden).map(e => {
+              const colors = epicColors[e.name] || {};
+              const hiddenCount = tasks.filter(t => t.group === e.name && t.status !== 'done' && t.status !== 'backlog').length;
+              return (
+                <div
+                  key={e.name}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleToggleEpicVisibility(e.name)}
+                  onKeyDown={handleKeyActivate(() => handleToggleEpicVisibility(e.name))}
+                  className="epic-label"
+                  title={'Show ' + e.name}
+                  style={{
+                    color: colors.text || 'var(--dm-text-light)',
+                    padding: '2px 6px',
+                    background: colors.bg || 'transparent',
+                    opacity: 0.5,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {e.name} ({hiddenCount})
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
         {pendingTasks.length === 0 && !showNewForm ? (
           <div className="empty-state" style={{ padding: '20px', width: '100%' }}>
             {BOARD_NO_TASKS}

@@ -62,6 +62,7 @@ export interface QueueItem {
 export interface Epic {
   name: string;
   color?: number;
+  hidden?: boolean;
 }
 
 export interface Activity {
