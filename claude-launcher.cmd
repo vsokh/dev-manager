@@ -39,6 +39,16 @@ if defined title for /f "usebackq delims=" %%x in (`powershell -NoProfile -Comma
 if not defined cmd set "cmd=/orchestrator next"
 if not defined title set "title=Claude Code"
 
+:: Validate command against allowlist (prevents injection via crafted URLs)
+echo !cmd! | findstr /r /c:"^/orchestrator " >nul 2>&1
+if errorlevel 1 (
+  echo !cmd! | findstr /r /c:"^Read \.devmanager/" >nul 2>&1
+  if errorlevel 1 (
+    echo ERROR: Invalid command format: !cmd!
+    exit /b 1
+  )
+)
+
 :: Special: __launch_file runs .devmanager/launch.cmd (multi-tab launch)
 if "!cmd!"=="__launch_file" (
   call "!dir!\.devmanager\launch.cmd"
@@ -48,9 +58,12 @@ if "!cmd!"=="__launch_file" (
 :: Write launch script into .devmanager/ (keeps temp files together for easy cleanup)
 if not exist "!dir!\.devmanager" mkdir "!dir!\.devmanager"
 set "tmpfile=!dir!\.devmanager\launch-single.ps1"
+:: Escape single quotes for PowerShell (double them)
+set "safecmd=!cmd:'=''!"
+set "safetitle=!title:'=''!"
 (
-  echo $Host.UI.RawUI.WindowTitle = '!title!'
-  echo claude --dangerously-skip-permissions '!cmd!'
+  echo $Host.UI.RawUI.WindowTitle = '!safetitle!'
+  echo claude --dangerously-skip-permissions '!safecmd!'
 ) > "!tmpfile!"
 
 :: Launch in a new Windows Terminal window (avoids splitting into dev server, etc.)

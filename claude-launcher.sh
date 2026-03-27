@@ -36,21 +36,36 @@ title="$(urldecode "$title")"
 [ -z "$cmd" ] && cmd="/orchestrator next"
 [ -z "$title" ] && title="Claude Code"
 
+# Validate command against allowlist (prevents injection via crafted URLs)
+if [[ ! "$cmd" =~ ^/orchestrator\ (next|arrange|status|task\ [0-9]+|[0-9]+)$ ]] && [[ ! "$cmd" =~ ^Read\ \.devmanager/ ]]; then
+  echo "ERROR: Invalid command format: $cmd" >&2
+  exit 1
+fi
+
 # Special: __launch_file runs .devmanager/launch.sh (multi-tab launch)
 if [ "$cmd" = "__launch_file" ]; then
   exec bash "$dir/.devmanager/launch.sh"
 fi
 
+# Write launch script (avoids shell interpolation)
+mkdir -p "$dir/.devmanager"
+script_path="$dir/.devmanager/launch-single.sh"
+cat > "$script_path" << SCRIPT_EOF
+#!/bin/bash
+cd "$(printf '%s' "$dir" | sed 's/"/\\"/g')" && claude --dangerously-skip-permissions "$(printf '%s' "$cmd" | sed 's/"/\\"/g')"; exec bash
+SCRIPT_EOF
+chmod +x "$script_path"
+
 # Detect terminal emulator and launch
 if command -v gnome-terminal &>/dev/null; then
-  gnome-terminal --title="$title" --working-directory="$dir" -- bash -c "claude --dangerously-skip-permissions '$cmd'; exec bash"
+  gnome-terminal --title="$title" --working-directory="$dir" -- bash "$script_path"
 elif command -v kitty &>/dev/null; then
-  kitty --title "$title" --directory "$dir" bash -c "claude --dangerously-skip-permissions '$cmd'; exec bash"
+  kitty --title "$title" --directory "$dir" bash "$script_path"
 elif command -v alacritty &>/dev/null; then
-  alacritty --title "$title" --working-directory "$dir" -e bash -c "claude --dangerously-skip-permissions '$cmd'; exec bash"
+  alacritty --title "$title" --working-directory "$dir" -e bash "$script_path"
 elif command -v xterm &>/dev/null; then
-  xterm -title "$title" -e "cd '$dir' && claude --dangerously-skip-permissions '$cmd'; exec bash"
+  xterm -title "$title" -e bash "$script_path"
 else
   # Fallback: run in current terminal
-  cd "$dir" && claude --dangerously-skip-permissions "$cmd"
+  bash "$script_path"
 fi

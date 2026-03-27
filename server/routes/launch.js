@@ -1,5 +1,10 @@
 import { platform } from 'node:os';
+import { writeFileSync, mkdirSync, chmodSync } from 'node:fs';
+import { join } from 'node:path';
 import { jsonResponse, parseJsonBody, matchRoute } from '../middleware.js';
+
+// Allowlist pattern for commands passed to terminal launchers
+const ALLOWED_CMD_RE = /^\/orchestrator\s+(next|arrange|status|task\s+\d+|\d+)$|^Read \.devmanager\//;
 
 export async function handleLaunch(method, pathname, req, res, url, ctx) {
   const { projectPath } = ctx;
@@ -29,6 +34,11 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
       jsonResponse(res, 400, { error: 'Missing command' });
       return true;
     }
+    // Layer 1: Validate command against allowlist
+    if (!ALLOWED_CMD_RE.test(command)) {
+      jsonResponse(res, 400, { error: 'Invalid command format' });
+      return true;
+    }
     const eng = engine || 'claude';
     const tabTitle = title || `Task ${taskId}`;
     const os = platform();
@@ -36,27 +46,41 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
     try {
       const cliName = eng === 'claude' ? 'claude' : eng === 'codex' ? 'codex' : 'cursor-agent';
 
+      // Layer 2: Write temp script files to avoid shell string interpolation
+      const scriptDir = join(projectPath, '.devmanager');
+      mkdirSync(scriptDir, { recursive: true });
+
       if (os === 'win32') {
-        // Open in Windows Terminal new tab — interactive claude with initial prompt
+        const scriptPath = join(scriptDir, `launch-${taskId || 'term'}.ps1`);
+        // PowerShell single-quote escaping: double any single quotes
+        const safeCmd = command.replace(/'/g, "''");
+        writeFileSync(scriptPath, `& ${cliName} --dangerously-skip-permissions '${safeCmd}'\n`);
+
         const { spawn: spawnProc } = await import('node:child_process');
         spawnProc('wt', [
           '-w', '0', 'nt',
           '--title', tabTitle, '--suppressApplicationTitle',
           '-d', projectPath,
-          '--', 'pwsh', '-NoExit', '-Command', `${cliName} --dangerously-skip-permissions '${command.replace(/'/g, "''")}'`,
+          '--', 'pwsh', '-NoExit', '-NoLogo', '-File', scriptPath,
         ], {
           cwd: projectPath,
           detached: true,
           stdio: 'ignore',
         }).unref();
       } else if (os === 'darwin') {
-        const fullCmd = `cd "${projectPath}" && ${cliName} "${command.replace(/"/g, '\\"')}"`;
-        const { execFile: ef } = await import('node:child_process');
-        ef('osascript', ['-e', `tell app "Terminal" to do script "${fullCmd.replace(/"/g, '\\"')}"`], { timeout: 5000 });
-      } else {
-        const fullCmd = `cd "${projectPath}" && ${cliName} "${command.replace(/"/g, '\\"')}"; exec bash`;
+        const scriptPath = join(scriptDir, `launch-${taskId || 'term'}.sh`);
+        writeFileSync(scriptPath, `#!/bin/bash\ncd "${projectPath.replace(/"/g, '\\"')}" && exec ${cliName} --dangerously-skip-permissions "${command.replace(/"/g, '\\"')}"\n`);
+        chmodSync(scriptPath, 0o755);
+
         const { spawn: spawnProc } = await import('node:child_process');
-        spawnProc('x-terminal-emulator', ['-e', `bash -c '${fullCmd}'`], {
+        spawnProc('open', ['-a', 'Terminal', scriptPath], { detached: true, stdio: 'ignore' }).unref();
+      } else {
+        const scriptPath = join(scriptDir, `launch-${taskId || 'term'}.sh`);
+        writeFileSync(scriptPath, `#!/bin/bash\ncd "${projectPath.replace(/"/g, '\\"')}" && ${cliName} --dangerously-skip-permissions "${command.replace(/"/g, '\\"')}"; exec bash\n`);
+        chmodSync(scriptPath, 0o755);
+
+        const { spawn: spawnProc } = await import('node:child_process');
+        spawnProc('x-terminal-emulator', ['-e', scriptPath], {
           detached: true, stdio: 'ignore',
         }).unref();
       }
