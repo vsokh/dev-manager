@@ -1,6 +1,6 @@
 import { readFile, writeFile, readdir, stat, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { jsonResponse, parseJsonBody, ensureDir, matchRoute, readJsonOrNull, handleNotFound } from '../middleware.js';
+import { jsonResponse, parseJsonBody, ensureDir, matchRoute, readJsonOrNull, handleNotFound, safePath } from '../middleware.js';
 
 export async function handleState(method, pathname, req, res, url, ctx) {
   const { projectPath } = ctx;
@@ -149,7 +149,11 @@ Rules:
   // DELETE /api/progress/:taskId
   params = matchRoute(method, pathname, 'DELETE', '/api/progress/:taskId');
   if (params) {
-    const filePath = join(projectPath, '.devmanager', 'progress', `${params.taskId}.json`);
+    const filePath = safePath(projectPath, '.devmanager', 'progress', `${params.taskId}.json`);
+    if (!filePath) {
+      jsonResponse(res, 400, { error: 'Invalid path' });
+      return true;
+    }
     try {
       await unlink(filePath);
       jsonResponse(res, 200, { ok: true });

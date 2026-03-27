@@ -1,6 +1,6 @@
 import { readFile, writeFile, unlink } from 'node:fs/promises';
-import { join, extname } from 'node:path';
-import { jsonResponse, parseBody, ensureDir, matchRoute, handleNotFound } from '../middleware.js';
+import { extname } from 'node:path';
+import { jsonResponse, parseBody, ensureDir, matchRoute, handleNotFound, safePath } from '../middleware.js';
 
 const MIME_TYPES = {
   '.png': 'image/png',
@@ -31,10 +31,19 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
       jsonResponse(res, 400, { error: 'Missing ?name= query parameter for filename' });
       return true;
     }
-    const attachDir = join(projectPath, '.devmanager', 'attachments', taskId);
+    const attachDir = safePath(projectPath, '.devmanager', 'attachments', taskId);
+    if (!attachDir) {
+      jsonResponse(res, 400, { error: 'Invalid path' });
+      return true;
+    }
     await ensureDir(attachDir);
     const buf = await parseBody(req);
-    await writeFile(join(attachDir, filename), buf);
+    const filePath = safePath(attachDir, filename);
+    if (!filePath) {
+      jsonResponse(res, 400, { error: 'Invalid filename' });
+      return true;
+    }
+    await writeFile(filePath, buf);
     jsonResponse(res, 200, {
       ok: true,
       path: `.devmanager/attachments/${taskId}/${filename}`,
@@ -45,7 +54,11 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
   // GET /api/attachments/:taskId/:filename
   params = matchRoute(method, pathname, 'GET', '/api/attachments/:taskId/:filename');
   if (params) {
-    const filePath = join(projectPath, '.devmanager', 'attachments', params.taskId, params.filename);
+    const filePath = safePath(projectPath, '.devmanager', 'attachments', params.taskId, params.filename);
+    if (!filePath) {
+      jsonResponse(res, 400, { error: 'Invalid path' });
+      return true;
+    }
     try {
       const content = await readFile(filePath);
       const ext = extname(params.filename).toLowerCase();
@@ -68,7 +81,11 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
   // DELETE /api/attachments/:taskId/:filename
   params = matchRoute(method, pathname, 'DELETE', '/api/attachments/:taskId/:filename');
   if (params) {
-    const filePath = join(projectPath, '.devmanager', 'attachments', params.taskId, params.filename);
+    const filePath = safePath(projectPath, '.devmanager', 'attachments', params.taskId, params.filename);
+    if (!filePath) {
+      jsonResponse(res, 400, { error: 'Invalid path' });
+      return true;
+    }
     try {
       await unlink(filePath);
       jsonResponse(res, 200, { ok: true });

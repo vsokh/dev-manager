@@ -1,6 +1,6 @@
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { jsonResponse, parseJsonBody, ensureDir, fileExists, requireFields, readJsonOrNull } from '../middleware.js';
+import { jsonResponse, parseJsonBody, ensureDir, fileExists, requireFields, readJsonOrNull, safePath } from '../middleware.js';
 
 // --- Helpers (only used by skills routes) ---
 
@@ -103,12 +103,14 @@ export async function handleSkills(method, pathname, req, res, url, ctx) {
     const { skillName, filename, content } = body;
     const err = requireFields(body, 'skillName', 'filename', 'content');
     if (err) { jsonResponse(res, 400, { error: err }); return true; }
-    const skillDir = join(projectPath, '.claude', 'skills', skillName);
+    const skillDir = safePath(projectPath, '.claude', 'skills', skillName);
+    if (!skillDir) { jsonResponse(res, 400, { error: 'Invalid skill name' }); return true; }
     await ensureDir(skillDir);
 
     // Check hash to skip if unchanged
     const hash = simpleHash(content);
-    const hashPath = join(skillDir, '.hash');
+    const hashPath = safePath(skillDir, '.hash');
+    if (!hashPath) { jsonResponse(res, 400, { error: 'Invalid path' }); return true; }
     try {
       const existingHash = await readFile(hashPath, 'utf-8');
       if (existingHash.trim() === hash) {
@@ -117,7 +119,9 @@ export async function handleSkills(method, pathname, req, res, url, ctx) {
       }
     } catch { /* no hash file yet */ }
 
-    await writeFile(join(skillDir, filename), content, 'utf-8');
+    const skillFilePath = safePath(skillDir, filename);
+    if (!skillFilePath) { jsonResponse(res, 400, { error: 'Invalid filename' }); return true; }
+    await writeFile(skillFilePath, content, 'utf-8');
     await writeFile(hashPath, hash, 'utf-8');
     jsonResponse(res, 200, { ok: true, deployed: true });
     return true;
@@ -132,9 +136,12 @@ export async function handleSkills(method, pathname, req, res, url, ctx) {
     const agentsDir = join(projectPath, '.claude', 'agents');
     await ensureDir(agentsDir);
 
-    const agentDir = join(agentsDir, agentName);
+    const agentDir = safePath(agentsDir, agentName);
+    if (!agentDir) { jsonResponse(res, 400, { error: 'Invalid agent name' }); return true; }
     await ensureDir(agentDir);
-    await writeFile(join(agentDir, filename), content, 'utf-8');
+    const agentFilePath = safePath(agentDir, filename);
+    if (!agentFilePath) { jsonResponse(res, 400, { error: 'Invalid filename' }); return true; }
+    await writeFile(agentFilePath, content, 'utf-8');
     jsonResponse(res, 200, { ok: true, deployed: true });
     return true;
   }

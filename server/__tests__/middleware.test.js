@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { writeFile, mkdtemp, rm, stat as fsStat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import {
   jsonResponse,
@@ -12,6 +12,7 @@ import {
   ensureDir,
   fileExists,
   dirExists,
+  safePath,
   matchRoute,
   requireFields,
   readJsonOrNull,
@@ -214,6 +215,45 @@ describe('dirExists', () => {
     const filePath = join(tmpDir, 'file.txt');
     await writeFile(filePath, 'data');
     expect(await dirExists(filePath)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// safePath
+// ---------------------------------------------------------------------------
+
+describe('safePath', () => {
+  it('returns resolved path for valid segments', () => {
+    const result = safePath('/base', 'sub', 'file.txt');
+    expect(result).toBe(resolve('/base', 'sub', 'file.txt'));
+  });
+
+  it('returns the base itself when no extra segments', () => {
+    const result = safePath('/base');
+    expect(result).toBe(resolve('/base'));
+  });
+
+  it('returns null for traversal with ..', () => {
+    expect(safePath('/base', '..', 'etc', 'passwd')).toBe(null);
+  });
+
+  it('returns null for encoded traversal segments', () => {
+    // If someone passes a pre-decoded ../ segment (e.g. from URL decoding)
+    expect(safePath('/base', '../etc')).toBe(null);
+  });
+
+  it('returns null when resolved path equals parent of base', () => {
+    expect(safePath('/base/sub', '..')).toBe(null);
+  });
+
+  it('allows nested subdirectories', () => {
+    const result = safePath('/base', 'a', 'b', 'c.txt');
+    expect(result).toBe(resolve('/base', 'a', 'b', 'c.txt'));
+  });
+
+  it('returns null for path that is a prefix but not a child', () => {
+    // /base-extra is not inside /base
+    expect(safePath('/base', '..', 'base-extra')).toBe(null);
   });
 });
 

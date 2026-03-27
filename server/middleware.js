@@ -1,4 +1,5 @@
 import { readFile, mkdir, stat } from 'node:fs/promises';
+import { resolve, sep } from 'node:path';
 
 // --- Shared HTTP helpers ---
 
@@ -51,6 +52,21 @@ async function dirExists(dirPath) {
   } catch {
     return false;
   }
+}
+
+// --- Path safety ---
+
+/**
+ * Resolve path segments under a base directory. Returns the resolved path,
+ * or null if the result escapes the base (path traversal).
+ */
+function safePath(base, ...segments) {
+  const resolved = resolve(base, ...segments);
+  const resolvedBase = resolve(base);
+  if (!resolved.startsWith(resolvedBase + sep) && resolved !== resolvedBase) {
+    return null;
+  }
+  return resolved;
 }
 
 // --- Route matching ---
@@ -111,6 +127,7 @@ export {
   ensureDir,
   fileExists,
   dirExists,
+  safePath,
   matchRoute,
   requireFields,
   readJsonOrNull,

@@ -123,6 +123,62 @@ describe('handleAttachments', () => {
     });
   });
 
+  describe('path traversal protection', () => {
+    // matchRoute decodes URL params, so ..%2F becomes ../
+    // Paths are resolved under projectPath, so we need enough ../
+    // to escape: projectPath/.devmanager/attachments/<taskId> needs 3+ levels
+
+    it('rejects path traversal in taskId for POST', async () => {
+      const res = mockRes();
+      const req = mockReq(['file content']);
+      // Use enough ../ to escape projectPath: .devmanager/attachments/../../../../x
+      const traversal = '..%2F..%2F..%2F..%2Fetc';
+      const url = mockUrl(`/api/attachments/${traversal}?name=passwd`);
+      await handleAttachments('POST', `/api/attachments/${traversal}`, req, res, url, mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const body = JSON.parse(res.end.mock.calls[0][0]);
+      expect(body.error).toBe('Invalid path');
+    });
+
+    it('rejects path traversal in filename for POST', async () => {
+      const res = mockRes();
+      const req = mockReq(['file content']);
+      // filename is resolved under attachDir, so ../../../../.. escapes projectPath
+      const url = mockUrl('/api/attachments/5?name=..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd');
+      await handleAttachments('POST', '/api/attachments/5', req, res, url, mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const body = JSON.parse(res.end.mock.calls[0][0]);
+      expect(body.error).toBe('Invalid filename');
+    });
+
+    it('rejects path traversal in taskId for GET', async () => {
+      const res = mockRes();
+      const traversal = '..%2F..%2F..%2F..%2Fetc';
+      await handleAttachments('GET', `/api/attachments/${traversal}/passwd`, mockReq(), res, mockUrl(`/api/attachments/${traversal}/passwd`), mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const body = JSON.parse(res.end.mock.calls[0][0]);
+      expect(body.error).toBe('Invalid path');
+    });
+
+    it('rejects path traversal in filename for GET', async () => {
+      const res = mockRes();
+      const traversal = '..%2F..%2F..%2F..%2F..%2Fetc%2Fpasswd';
+      await handleAttachments('GET', `/api/attachments/5/${traversal}`, mockReq(), res, mockUrl(`/api/attachments/5/${traversal}`), mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const body = JSON.parse(res.end.mock.calls[0][0]);
+      expect(body.error).toBe('Invalid path');
+    });
+
+    it('rejects path traversal in taskId for DELETE', async () => {
+      const res = mockRes();
+      const traversal = '..%2F..%2F..%2F..%2Fetc';
+      await handleAttachments('DELETE', `/api/attachments/${traversal}/passwd`, mockReq(), res, mockUrl(`/api/attachments/${traversal}/passwd`), mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const body = JSON.parse(res.end.mock.calls[0][0]);
+      expect(body.error).toBe('Invalid path');
+    });
+  });
+
   describe('DELETE /api/attachments/:taskId/:filename', () => {
     it('deletes an attachment', async () => {
       const attachDir = join(tmpDir, '.devmanager', 'attachments', '5');

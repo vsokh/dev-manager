@@ -139,6 +139,18 @@ describe('handleState', () => {
     });
   });
 
+  describe('DELETE /api/progress/:taskId — path traversal', () => {
+    it('rejects path traversal in taskId', async () => {
+      const res = mockRes();
+      // Need enough ../ to escape projectPath: .devmanager/progress/../../../../x.json
+      const traversal = '..%2F..%2F..%2F..%2Fetc';
+      await handleState('DELETE', `/api/progress/${traversal}`, mockReq(), res, mockUrl(`/api/progress/${traversal}`), mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const body = JSON.parse(res.end.mock.calls[0][0]);
+      expect(body.error).toBe('Invalid path');
+    });
+  });
+
   describe('DELETE /api/progress/:taskId', () => {
     it('deletes a progress file', async () => {
       const progDir = join(tmpDir, '.devmanager', 'progress');

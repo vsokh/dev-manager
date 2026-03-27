@@ -148,6 +148,27 @@ describe('handleSkills', () => {
       await handleSkills('POST', '/api/skills/deploy', req, res, mockUrl('/api/skills/deploy'), mockCtx(tmpDir));
       expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
     });
+
+    it('rejects path traversal in skillName', async () => {
+      const res = mockRes();
+      // Need enough ../ to escape projectPath: .claude/skills/../../../../x
+      const body = { skillName: '../../../../etc', filename: 'SKILL.md', content: 'bad' };
+      const req = mockReq([JSON.stringify(body)]);
+      await handleSkills('POST', '/api/skills/deploy', req, res, mockUrl('/api/skills/deploy'), mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const respBody = JSON.parse(res.end.mock.calls[0][0]);
+      expect(respBody.error).toBe('Invalid skill name');
+    });
+
+    it('rejects path traversal in filename', async () => {
+      const res = mockRes();
+      const body = { skillName: 'legit-skill', filename: '../../etc/passwd', content: 'bad' };
+      const req = mockReq([JSON.stringify(body)]);
+      await handleSkills('POST', '/api/skills/deploy', req, res, mockUrl('/api/skills/deploy'), mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const respBody = JSON.parse(res.end.mock.calls[0][0]);
+      expect(respBody.error).toBe('Invalid filename');
+    });
   });
 
   describe('POST /api/agents/deploy', () => {
@@ -167,6 +188,27 @@ describe('handleSkills', () => {
       const req = mockReq([JSON.stringify({ agentName: 'test' })]);
       await handleSkills('POST', '/api/agents/deploy', req, res, mockUrl('/api/agents/deploy'), mockCtx(tmpDir));
       expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+    });
+
+    it('rejects path traversal in agentName', async () => {
+      const res = mockRes();
+      // Need enough ../ to escape projectPath: .claude/agents/<name>/../../../../x
+      const body = { agentName: '../../../../etc', filename: 'SKILL.md', content: 'bad' };
+      const req = mockReq([JSON.stringify(body)]);
+      await handleSkills('POST', '/api/agents/deploy', req, res, mockUrl('/api/agents/deploy'), mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const respBody = JSON.parse(res.end.mock.calls[0][0]);
+      expect(respBody.error).toBe('Invalid agent name');
+    });
+
+    it('rejects path traversal in agent filename', async () => {
+      const res = mockRes();
+      const body = { agentName: 'legit-agent', filename: '../../etc/passwd', content: 'bad' };
+      const req = mockReq([JSON.stringify(body)]);
+      await handleSkills('POST', '/api/agents/deploy', req, res, mockUrl('/api/agents/deploy'), mockCtx(tmpDir));
+      expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object));
+      const respBody = JSON.parse(res.end.mock.calls[0][0]);
+      expect(respBody.error).toBe('Invalid filename');
     });
   });
 
