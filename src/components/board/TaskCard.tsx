@@ -4,6 +4,7 @@ import {
   CARD_MANUAL_TITLE, CARD_PAUSE_TITLE, CARD_CANCEL_TITLE,
   CARD_PAUSE_ARIA, CARD_CANCEL_ARIA,
 } from '../../constants/strings.ts';
+import { useActions } from '../../contexts/ActionContext.tsx';
 import type { Task } from '../../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -45,14 +46,10 @@ const getCardClass = (task: Task, selectedTask: number | null) => {
 interface TaskCardProps {
   task: Task;
   tasks: Task[];
-  selectedTask: number | null;
-  onSelectTask: (id: number) => void;
-  onPauseTask: (id: number) => void;
-  onCancelTask: (id: number) => void;
-  glowTaskId: number | null;
 }
 
-export function TaskCard({ task, tasks, selectedTask, onSelectTask, onPauseTask, onCancelTask, glowTaskId }: TaskCardProps) {
+export function TaskCard({ task, tasks }: TaskCardProps) {
+  const { selectedTask, handleSelectTask: onSelectTask, pauseTask: onPauseTask, cancelTask: onCancelTask, glowTaskId } = useActions();
   const statusCls = getCardClass(task, selectedTask);
   const animCls = (task.status === STATUS.IN_PROGRESS ? 'task-card-in-progress' : '') + (glowTaskId === task.id ? ' task-card-glow' : '');
   const className = `${statusCls}${animCls ? ' ' + animCls.trim() : ''}` || undefined;

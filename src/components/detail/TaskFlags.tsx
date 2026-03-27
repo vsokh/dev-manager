@@ -2,14 +2,15 @@ import React from 'react';
 import {
   DETAIL_NEEDS_REVIEW, DETAIL_REVIEW_HELP, DETAIL_AUTO_APPROVE, DETAIL_AUTO_APPROVE_HELP,
 } from '../../constants/strings.ts';
+import { useActions } from '../../contexts/ActionContext.tsx';
 import type { Task } from '../../types';
 
 interface TaskFlagsProps {
   task: Task;
-  onUpdateTask: (id: number, updates: Partial<Task>) => void;
 }
 
-export function TaskFlags({ task, onUpdateTask }: TaskFlagsProps) {
+export function TaskFlags({ task }: TaskFlagsProps) {
+  const { handleUpdateTask: onUpdateTask } = useActions();
   return (
     <>
       <div className="mb-12 flex-center gap-8">

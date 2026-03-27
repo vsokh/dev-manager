@@ -8,22 +8,17 @@ import {
   QUEUE_REMOVE_TITLE,
 } from '../../constants/strings.ts';
 import { getEngine } from '../../constants/engines.ts';
+import { useActions } from '../../contexts/ActionContext.tsx';
 
 interface QueueItemContentProps {
   item: QueueItem;
   task: Task | undefined;
-  launchedIds: Set<number>;
-  onLaunch: (key: number, cmd: string, taskName: string) => void;
-  onLaunchTerminal?: (key: number, cmd: string, taskName: string) => void;
-  onPauseTask: (id: number) => void;
-  onRemove: (key: number) => void;
-  onUpdateTask: (id: number, updates: Partial<Task>) => void;
   taskMap: Map<number, Task>;
   variant?: 'flat' | 'phase';
-  defaultEngine?: string;
 }
 
-export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTerminal, onPauseTask, onRemove, onUpdateTask, taskMap, variant = 'flat', defaultEngine }: QueueItemContentProps) {
+export function QueueItemContent({ item, task, taskMap, variant = 'flat' }: QueueItemContentProps) {
+  const { launchedIds, handleLaunchTask: onLaunch, handleLaunchTerminal: onLaunchTerminal, pauseTask: onPauseTask, handleRemoveFromQueue: onRemove, handleUpdateTask: onUpdateTask, defaultEngine } = useActions();
   const key = itemKey(item);
   const isLaunched = launchedIds.has(key);
   const status: ItemStatus = getItemStatus(item, taskMap);

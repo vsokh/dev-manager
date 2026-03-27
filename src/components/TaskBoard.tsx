@@ -10,6 +10,7 @@ import {
   BOARD_UP_NEXT, BOARD_NO_TASKS, BOARD_NO_MATCHING, BOARD_ADD_TASK, BOARD_ARRANGE,
 } from '../constants/strings.ts';
 import { getActiveTasks, getDoneTasks, getBacklogTasks, getAllGroups, getEpicColors, getEpicStats, groupTasksBy, getUnqueuedTasks, getActiveCountForGroup } from '../utils/taskFilters.ts';
+import { useActions } from '../contexts/ActionContext.tsx';
 import type { Task, QueueItem, Epic, EpicColor } from '../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -18,24 +19,12 @@ const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => voi
 
 interface TaskBoardProps {
   tasks: Task[];
-  selectedTask: number | null;
-  onSelectTask: (id: number | null) => void;
-  onAddTask: (task: Partial<Task>) => void;
-  onQueueAll: () => void;
-  onQueueGroup: (group: string) => void;
-  onArrange: () => void;
-  arranging?: boolean;
-  queue: QueueItem[];
-  onPauseTask: (id: number) => void;
-  onCancelTask: (id: number) => void;
-  onRenameGroup: (oldName: string, newName: string) => void;
-  onDeleteGroup: (groupName: string) => void;
   epics: Epic[];
-  onUpdateEpics: (epics: Epic[]) => void;
-  glowTaskId: number | null;
+  queue: QueueItem[];
 }
 
-export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueueAll, onQueueGroup, onArrange, arranging, queue, onPauseTask, onCancelTask, onRenameGroup, onDeleteGroup, epics, onUpdateEpics, glowTaskId }: TaskBoardProps) {
+export function TaskBoard({ tasks, epics, queue }: TaskBoardProps) {
+  const { selectedTask, handleSelectTask: onSelectTask, handleAddTask: onAddTask, handleQueueAll: onQueueAll, handleQueueGroup: onQueueGroup, handleArrange: onArrange, arranging, handleRenameGroup: onRenameGroup, handleDeleteGroup: onDeleteGroup, handleUpdateEpics: onUpdateEpics, glowTaskId } = useActions();
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editGroupName, setEditGroupName] = useState('');
   const [searchText, setSearchText] = useState('');
@@ -186,15 +175,7 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
             setEditingGroup={setEditingGroup}
             editGroupName={editGroupName}
             setEditGroupName={setEditGroupName}
-            onRenameGroup={onRenameGroup}
-            onDeleteGroup={onDeleteGroup}
-            onQueueGroup={onQueueGroup}
             queue={queue}
-            selectedTask={selectedTask}
-            onSelectTask={onSelectTask}
-            onPauseTask={onPauseTask}
-            onCancelTask={onCancelTask}
-            glowTaskId={glowTaskId}
           />
         ))}
         {hiddenEpicNames.size > 0 ? (
@@ -292,9 +273,6 @@ export function TaskBoard({ tasks, selectedTask, onSelectTask, onAddTask, onQueu
         showBacklog={showBacklog}
         setShowBacklog={setShowBacklog}
         epicColors={epicColors}
-        selectedTask={selectedTask}
-        onSelectTask={onSelectTask}
-        glowTaskId={glowTaskId}
       />
     </div>
   );

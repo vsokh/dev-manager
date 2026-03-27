@@ -4,6 +4,7 @@ import {
   QUEUE_LAUNCH_ALL, QUEUE_UNAPPROVE_ALL, QUEUE_APPROVE_ALL,
   QUEUE_UNQUEUE_ALL, QUEUE_EMPTY,
 } from '../constants/strings.ts';
+import { useActions } from '../contexts/ActionContext.tsx';
 import type { Task, QueueItem } from '../types';
 import type { LaunchMode } from '../hooks/useQueueActions.ts';
 import type { TaskOutput } from '../hooks/useProcessOutput.ts';
@@ -16,25 +17,12 @@ import { PipelineLegend } from './queue/PipelineLegend.tsx';
 interface CommandQueueProps {
   queue: QueueItem[];
   tasks: Task[];
-  onLaunch: (key: number, cmd: string, taskName: string) => void;
-  onLaunchTerminal?: (key: number, cmd: string, taskName: string) => void;
-  onLaunchPhase: (items: { key: number; cmd: string; taskName: string }[], phaseIndex?: number) => void;
-  onRetryFailed: (items: { key: number; cmd: string; taskName: string }[], phaseIndex?: number) => void;
-  onRemove: (key: number) => void;
-  onClear: () => void;
-  onQueueAll: () => void;
-  onPauseTask: (id: number) => void;
-  onUpdateTask: (id: number, updates: Partial<Task>) => void;
-  onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
-  launchedIds: Set<number>;
-  launchMode: LaunchMode;
-  onSetLaunchMode: (mode: LaunchMode) => void;
-  defaultEngine?: string;
   processOutputs?: Record<number, TaskOutput>;
   onClearOutput?: (taskId: number) => void;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunchPhase, onRetryFailed, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedIds, launchMode, onSetLaunchMode, defaultEngine, processOutputs, onClearOutput }: CommandQueueProps) {
+export function CommandQueue({ queue, tasks, processOutputs, onClearOutput }: CommandQueueProps) {
+  const { handleLaunchTask: onLaunch, handleLaunchTerminal: onLaunchTerminal, handleLaunchPhase: onLaunchPhase, handleRetryFailed: onRetryFailed, handleRemoveFromQueue: onRemove, handleClearQueue: onClear, handleBatchUpdateTasks: onBatchUpdateTasks, launchedIds, launchMode, setLaunchMode: onSetLaunchMode, pauseTask: onPauseTask, handleUpdateTask: onUpdateTask, defaultEngine } = useActions();
   const taskMap = useMemo(() => new Map((tasks || []).map(t => [t.id, t])), [tasks]);
   const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
 
@@ -48,14 +36,7 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
             <QueueItemContent
               item={item}
               task={taskMap.get(item.task)}
-              launchedIds={launchedIds}
-              onLaunch={onLaunch}
-              onLaunchTerminal={onLaunchTerminal}
-              onPauseTask={onPauseTask}
-              onRemove={onRemove}
-              onUpdateTask={onUpdateTask}
               taskMap={taskMap}
-              defaultEngine={defaultEngine}
             />
           </div>
           {processOutputs && onClearOutput && (processOutputs[item.task]?.lines.length || processOutputs[item.task]?.running) ? (
@@ -138,17 +119,6 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
           phases={phases}
           queue={queue}
           taskMap={taskMap}
-          launchedIds={launchedIds}
-          onLaunch={onLaunch}
-          onLaunchTerminal={onLaunchTerminal}
-          onLaunchPhase={onLaunchPhase}
-          onRetryFailed={onRetryFailed}
-          onRemove={onRemove}
-          onPauseTask={onPauseTask}
-          onUpdateTask={onUpdateTask}
-          onBatchUpdateTasks={onBatchUpdateTasks}
-          onClear={onClear}
-          defaultEngine={defaultEngine}
           processOutputs={processOutputs}
           onClearOutput={onClearOutput}
         />

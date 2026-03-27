@@ -9,27 +9,18 @@ import {
   QUEUE_REMOVE_PHASE_APPROVE, QUEUE_PHASE_APPROVE, QUEUE_AUTO_LABEL,
   QUEUE_UNAPPROVE_ALL, QUEUE_APPROVE_ALL, QUEUE_UNQUEUE_ALL,
 } from '../../constants/strings.ts';
+import { useActions } from '../../contexts/ActionContext.tsx';
 
 interface PhaseViewProps {
   phases: QueueItem[][];
   queue: QueueItem[];
   taskMap: Map<number, Task>;
-  launchedIds: Set<number>;
-  onLaunch: (key: number, cmd: string, taskName: string) => void;
-  onLaunchTerminal?: (key: number, cmd: string, taskName: string) => void;
-  onLaunchPhase: (items: { key: number; cmd: string; taskName: string }[], phaseIndex: number) => void;
-  onRetryFailed: (items: { key: number; cmd: string; taskName: string }[], phaseIndex: number) => void;
-  onRemove: (key: number) => void;
-  onPauseTask: (id: number) => void;
-  onUpdateTask: (id: number, updates: Partial<Task>) => void;
-  onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
-  onClear: () => void;
-  defaultEngine?: string;
   processOutputs?: Record<number, TaskOutput>;
   onClearOutput?: (taskId: number) => void;
 }
 
-export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLaunchTerminal, onLaunchPhase, onRetryFailed, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear, defaultEngine, processOutputs, onClearOutput }: PhaseViewProps) {
+export function PhaseView({ phases, queue, taskMap, processOutputs, onClearOutput }: PhaseViewProps) {
+  const { launchedIds, handleLaunchPhase: onLaunchPhase, handleRetryFailed: onRetryFailed, handleBatchUpdateTasks: onBatchUpdateTasks, handleClearQueue: onClear } = useActions();
   return (
     <div>
       {phases.map((phaseItems, idx) => (
@@ -130,15 +121,8 @@ export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLau
                     <QueueItemContent
                       item={item}
                       task={taskMap.get(item.task)}
-                      launchedIds={launchedIds}
-                      onLaunch={onLaunch}
-                      onLaunchTerminal={onLaunchTerminal}
-                      onPauseTask={onPauseTask}
-                      onRemove={onRemove}
-                      onUpdateTask={onUpdateTask}
                       taskMap={taskMap}
                       variant="phase"
-                      defaultEngine={defaultEngine}
                     />
                   </div>
                 </div>

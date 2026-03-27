@@ -1,5 +1,6 @@
 import React from 'react';
 import { SECTION_BACKLOG, SECTION_DONE } from '../../constants/strings.ts';
+import { useActions } from '../../contexts/ActionContext.tsx';
 import type { Task, EpicColor } from '../../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -16,12 +17,10 @@ interface DoneSectionProps {
   showBacklog: boolean;
   setShowBacklog: (fn: (prev: boolean) => boolean) => void;
   epicColors: Record<string, EpicColor>;
-  selectedTask: number | null;
-  onSelectTask: (id: number) => void;
-  glowTaskId: number | null;
 }
 
-export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups, showCompleted, setShowCompleted, showBacklog, setShowBacklog, epicColors, selectedTask, onSelectTask, glowTaskId }: DoneSectionProps) {
+export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups, showCompleted, setShowCompleted, showBacklog, setShowBacklog, epicColors }: DoneSectionProps) {
+  const { selectedTask, handleSelectTask: onSelectTask, glowTaskId } = useActions();
   return (
     <>
       {backlogTasks.length > 0 ? (

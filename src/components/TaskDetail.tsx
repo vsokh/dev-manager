@@ -14,6 +14,7 @@ import {
   DETAIL_ENGINE_LABEL, DETAIL_ENGINE_DEFAULT,
 } from '../constants/strings.ts';
 import { ENGINES, getEngine } from '../constants/engines.ts';
+import { useActions } from '../contexts/ActionContext.tsx';
 import type { Task, TaskStatus, Epic } from '../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -24,17 +25,11 @@ interface TaskDetailProps {
   task: Task | null;
   tasks: Task[];
   epics: Epic[];
-  onQueue: (task: Task) => void;
-  onUpdateTask: (id: number, updates: Partial<Task>) => void;
-  onDeleteTask: (id: number) => void;
   notes: string;
-  onUpdateNotes: (id: number, note: string) => void;
-  onAddAttachment: (taskId: number, file: File) => void;
-  onDeleteAttachment: (taskId: number, attachmentId: string) => void;
-  defaultEngine?: string;
 }
 
-export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDeleteTask, notes, onUpdateNotes, onAddAttachment, onDeleteAttachment, defaultEngine }: TaskDetailProps) {
+export function TaskDetail({ task, tasks, epics, notes }: TaskDetailProps) {
+  const { handleQueue: onQueue, handleUpdateTask: onUpdateTask, handleDeleteTask: onDeleteTask, handleUpdateNotes: onUpdateNotes, handleAddAttachment: onAddAttachment, handleDeleteAttachment: onDeleteAttachment, defaultEngine } = useActions();
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editingDesc, setEditingDesc] = useState(false);
@@ -209,9 +204,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
         </div>
       )}
 
-      <EpicField task={task} epics={epics} onUpdateTask={onUpdateTask} />
+      <EpicField task={task} epics={epics} />
 
-      <TaskFlags task={task} onUpdateTask={onUpdateTask} />
+      <TaskFlags task={task} />
 
       {!task.manual ? (
         <div className="mb-12 flex-center gap-8">
@@ -266,9 +261,9 @@ export function TaskDetail({ task, tasks, epics, onQueue, onUpdateTask, onDelete
 
       <AttachmentsList task={task} thumbUrls={thumbUrls} onDeleteAttachment={onDeleteAttachment} />
 
-      <Dependencies task={task} tasks={tasks} onUpdateTask={onUpdateTask} />
+      <Dependencies task={task} tasks={tasks} />
 
-      <ActionButtons task={task} onQueue={onQueue} onUpdateTask={onUpdateTask} onDeleteTask={onDeleteTask} />
+      <ActionButtons task={task} />
     </div>
   );
 }

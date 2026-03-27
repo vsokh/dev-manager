@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TaskCard } from './TaskCard.tsx';
 import { EPIC_RENAME_TITLE, EPIC_DELETE_TITLE, EPIC_CONFIRM_DELETE } from '../../constants/strings.ts';
 import { getGroupStats, getUnqueuedTasks } from '../../utils/taskFilters.ts';
+import { useActions } from '../../contexts/ActionContext.tsx';
 import type { Task, QueueItem, EpicColor } from '../../types';
 
 const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => void) => (e: React.KeyboardEvent<HTMLElement>) => {
@@ -17,18 +18,11 @@ interface EpicGroupProps {
   setEditingGroup: (group: string | null) => void;
   editGroupName: string;
   setEditGroupName: (name: string) => void;
-  onRenameGroup: (oldName: string, newName: string) => void;
-  onDeleteGroup?: (groupName: string) => void;
-  onQueueGroup: ((group: string) => void) | null;
   queue: QueueItem[];
-  selectedTask: number | null;
-  onSelectTask: (id: number) => void;
-  onPauseTask: (id: number) => void;
-  onCancelTask: (id: number) => void;
-  glowTaskId: number | null;
 }
 
-export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGroup, setEditingGroup, editGroupName, setEditGroupName, onRenameGroup, onDeleteGroup, onQueueGroup, queue, selectedTask, onSelectTask, onPauseTask, onCancelTask, glowTaskId }: EpicGroupProps) {
+export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGroup, setEditingGroup, editGroupName, setEditGroupName, queue }: EpicGroupProps) {
+  const { handleRenameGroup: onRenameGroup, handleDeleteGroup: onDeleteGroup, handleQueueGroup: onQueueGroup, selectedTask, handleSelectTask: onSelectTask, glowTaskId } = useActions();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
@@ -117,11 +111,6 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
             key={task.id}
             task={task}
             tasks={tasks}
-            selectedTask={selectedTask}
-            onSelectTask={onSelectTask}
-            onPauseTask={onPauseTask}
-            onCancelTask={onCancelTask}
-            glowTaskId={glowTaskId}
           />
         ))}
       </div>

@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react';
 import { EPIC_LABEL, EPIC_PLACEHOLDER } from '../../constants/strings.ts';
 import { getEpicColorMap } from '../../utils/taskFilters.ts';
+import { useActions } from '../../contexts/ActionContext.tsx';
 import type { Task, Epic, EpicColor } from '../../types';
 
 interface EpicFieldProps {
   task: Task;
   epics: Epic[];
-  onUpdateTask: (id: number, updates: Partial<Task>) => void;
 }
 
-export function EpicField({ task, epics, onUpdateTask }: EpicFieldProps) {
+export function EpicField({ task, epics }: EpicFieldProps) {
+  const { handleUpdateTask: onUpdateTask } = useActions();
   const epicColorMap = useMemo(() => getEpicColorMap(epics), [epics]);
 
   return (

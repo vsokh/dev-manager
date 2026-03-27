@@ -1,15 +1,16 @@
 import React from 'react';
 import { STATUS } from '../../constants/statuses.ts';
 import { DEPS_TITLE, DEPS_REMOVE_TITLE, DEPS_ADD_TITLE } from '../../constants/strings.ts';
+import { useActions } from '../../contexts/ActionContext.tsx';
 import type { Task } from '../../types';
 
 interface DependenciesProps {
   task: Task;
   tasks: Task[];
-  onUpdateTask: (id: number, updates: Partial<Task>) => void;
 }
 
-export function Dependencies({ task, tasks, onUpdateTask }: DependenciesProps) {
+export function Dependencies({ task, tasks }: DependenciesProps) {
+  const { handleUpdateTask: onUpdateTask } = useActions();
   const otherTasks = (tasks || []).filter(t => t.id !== task.id && (t.status === STATUS.PENDING || t.status === STATUS.IN_PROGRESS));
   if (otherTasks.length === 0) return null;
 

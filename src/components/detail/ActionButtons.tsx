@@ -4,16 +4,15 @@ import {
   DETAIL_ACTIVATE_TOOLTIP, DETAIL_ACTIVATE, DETAIL_MARK_DONE, DETAIL_MOVE_BACKLOG,
   DETAIL_BACKLOG, DETAIL_QUEUE, DETAIL_CONFIRM_DELETE, DETAIL_DELETE,
 } from '../../constants/strings.ts';
+import { useActions } from '../../contexts/ActionContext.tsx';
 import type { Task } from '../../types';
 
 interface ActionButtonsProps {
   task: Task;
-  onQueue: (task: Task) => void;
-  onUpdateTask: (id: number, updates: Partial<Task>) => void;
-  onDeleteTask: (id: number) => void;
 }
 
-export function ActionButtons({ task, onQueue, onUpdateTask, onDeleteTask }: ActionButtonsProps) {
+export function ActionButtons({ task }: ActionButtonsProps) {
+  const { handleQueue: onQueue, handleUpdateTask: onUpdateTask, handleDeleteTask: onDeleteTask } = useActions();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Reset confirm state when task changes

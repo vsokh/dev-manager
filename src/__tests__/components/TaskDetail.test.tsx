@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { TaskDetail } from '../../components/TaskDetail.tsx';
+import { ActionProvider, type ActionContextValue } from '../../contexts/ActionContext.tsx';
 import type { Task, Epic } from '../../types';
 
 vi.mock('../../fs.ts', () => ({
@@ -13,35 +14,62 @@ function makeTask(id: number, overrides: Partial<Task> = {}): Task {
   return { id, name: `Task ${id}`, status: 'pending', ...overrides };
 }
 
-const defaultProps = () => ({
-  task: null as Task | null,
-  tasks: [] as Task[],
-  epics: [] as Epic[],
-  onQueue: vi.fn(),
-  onUpdateTask: vi.fn(),
-  onDeleteTask: vi.fn(),
-  notes: '',
-  onUpdateNotes: vi.fn(),
-  dirHandle: null,
-  onAddAttachment: vi.fn(),
-  onDeleteAttachment: vi.fn(),
+const mockActions = (): ActionContextValue => ({
+  handleUpdateTask: vi.fn(),
+  handleBatchUpdateTasks: vi.fn(),
+  handleUpdateNotes: vi.fn(),
+  handleAddTask: vi.fn(),
+  handleRenameGroup: vi.fn(),
+  handleDeleteGroup: vi.fn(),
+  handleUpdateEpics: vi.fn(),
+  handleDeleteTask: vi.fn(),
+  handleAddAttachment: vi.fn(),
+  handleDeleteAttachment: vi.fn(),
+  handleQueue: vi.fn(),
+  handleQueueAll: vi.fn(),
+  handleQueueGroup: vi.fn(),
+  handleRemoveFromQueue: vi.fn(),
+  handleClearQueue: vi.fn(),
+  handleLaunchTask: vi.fn(),
+  handleLaunchPhase: vi.fn(),
+  handleRetryFailed: vi.fn(),
+  handleLaunchTerminal: vi.fn(),
+  handleArrange: vi.fn(),
+  launchedIds: new Set<number>(),
+  launchMode: 'background' as const,
+  setLaunchMode: vi.fn(),
+  arranging: false,
+  setArranging: vi.fn(),
+  pauseTask: vi.fn(),
+  cancelTask: vi.fn(),
+  selectedTask: null,
+  handleSelectTask: vi.fn(),
+  handleNavigateToTask: vi.fn(),
+  glowTaskId: null,
+  handleRemoveActivity: vi.fn(),
+  defaultEngine: undefined,
 });
+
+function renderWithActions(ui: React.ReactElement, actionsOverride?: Partial<ActionContextValue>) {
+  const actions = { ...mockActions(), ...actionsOverride };
+  return { ...render(<ActionProvider value={actions}>{ui}</ActionProvider>), actions };
+}
 
 describe('TaskDetail', () => {
   it('renders empty state when task is null', () => {
-    render(<TaskDetail {...defaultProps()} />);
+    renderWithActions(<TaskDetail task={null} tasks={[]} epics={[]} notes="" />);
     expect(screen.getByText('Click a task to see details')).toBeDefined();
   });
 
   it('renders task name when task is provided', () => {
     const task = makeTask(1, { name: 'Login page', fullName: 'Login page' });
-    render(<TaskDetail {...defaultProps()} task={task} />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
     expect(screen.getByText('Login page')).toBeDefined();
   });
 
   it('shows status dropdown with current status', () => {
     const task = makeTask(1, { status: 'pending' });
-    render(<TaskDetail {...defaultProps()} task={task} />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
     const select = screen.getByLabelText('Task status') as HTMLSelectElement;
     expect(select).toBeDefined();
     expect(select.value).toBe('pending');
@@ -49,122 +77,115 @@ describe('TaskDetail', () => {
 
   it('shows "Queue" button for pending non-manual tasks', () => {
     const task = makeTask(1, { status: 'pending', manual: false });
-    render(<TaskDetail {...defaultProps()} task={task} />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
     const queueBtn = screen.getByRole('button', { name: /Queue/ });
     expect(queueBtn).toBeDefined();
   });
 
   it('shows "Mark done" button for pending manual tasks', () => {
     const task = makeTask(1, { status: 'pending', manual: true });
-    render(<TaskDetail {...defaultProps()} task={task} />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
     expect(screen.getByText(/Mark done/)).toBeDefined();
   });
 
   it('shows "Activate" button for backlog tasks', () => {
     const task = makeTask(1, { status: 'backlog' });
-    render(<TaskDetail {...defaultProps()} task={task} />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
     expect(screen.getByText(/Activate/)).toBeDefined();
   });
 
   it('shows blocked reason input when status is blocked', () => {
     const task = makeTask(1, { status: 'blocked' });
-    render(<TaskDetail {...defaultProps()} task={task} />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
     expect(screen.getByPlaceholderText('Why is this blocked?')).toBeDefined();
   });
 
   it('shows "Needs review" checkbox', () => {
     const task = makeTask(1);
-    render(<TaskDetail {...defaultProps()} task={task} />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
     expect(screen.getByText('Needs review')).toBeDefined();
   });
 
   it('shows "Auto-approve" checkbox', () => {
     const task = makeTask(1);
-    render(<TaskDetail {...defaultProps()} task={task} />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
     expect(screen.getByText('Auto-approve')).toBeDefined();
   });
 
   it('shows "Delete task" button', () => {
     const task = makeTask(1);
-    render(<TaskDetail {...defaultProps()} task={task} />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
     expect(screen.getByText('Delete task')).toBeDefined();
   });
 
   it('shows notes textarea', () => {
     const task = makeTask(1);
-    render(<TaskDetail {...defaultProps()} task={task} notes="Some notes" />);
+    renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="Some notes" />);
     const textarea = screen.getByPlaceholderText('Instructions for Claude...');
     expect(textarea).toBeDefined();
   });
 
   describe('interactions', () => {
-    it('changing status dropdown calls onUpdateTask with new status', () => {
-      const props = defaultProps();
+    it('changing status dropdown calls handleUpdateTask with new status', () => {
       const task = makeTask(1, { status: 'pending' });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const select = screen.getByLabelText('Task status');
       fireEvent.change(select, { target: { value: 'done' } });
-      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'done' }));
+      expect(actions.handleUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'done' }));
     });
 
-    it('clicking "Queue" button calls onQueue with the task', () => {
-      const props = defaultProps();
+    it('clicking "Queue" button calls handleQueue with the task', () => {
       const task = makeTask(1, { status: 'pending', manual: false });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const queueBtn = screen.getByRole('button', { name: /Queue/ });
       fireEvent.click(queueBtn);
-      expect(props.onQueue).toHaveBeenCalledWith(task);
+      expect(actions.handleQueue).toHaveBeenCalledWith(task);
     });
 
-    it('two-click delete: first click shows "Confirm delete?", second click calls onDeleteTask', () => {
-      const props = defaultProps();
+    it('two-click delete: first click shows "Confirm delete?", second click calls handleDeleteTask', () => {
       const task = makeTask(1);
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const deleteBtn = screen.getByText('Delete task');
       fireEvent.click(deleteBtn);
       expect(screen.getByText('Confirm delete?')).toBeDefined();
-      expect(props.onDeleteTask).not.toHaveBeenCalled();
+      expect(actions.handleDeleteTask).not.toHaveBeenCalled();
       const confirmBtn = screen.getByText('Confirm delete?');
       fireEvent.click(confirmBtn);
-      expect(props.onDeleteTask).toHaveBeenCalledWith(1);
+      expect(actions.handleDeleteTask).toHaveBeenCalledWith(1);
     });
 
-    it('toggling "Needs review" checkbox calls onUpdateTask with supervision field', () => {
-      const props = defaultProps();
+    it('toggling "Needs review" checkbox calls handleUpdateTask with supervision field', () => {
       const task = makeTask(1, { supervision: false });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const checkboxes = screen.getAllByRole('checkbox');
       // "Needs review" is the first checkbox
       const needsReviewCheckbox = checkboxes[0];
       fireEvent.click(needsReviewCheckbox);
-      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ supervision: true }));
+      expect(actions.handleUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ supervision: true }));
     });
 
-    it('toggling "Auto-approve" checkbox calls onUpdateTask with autoApprove field', () => {
-      const props = defaultProps();
+    it('toggling "Auto-approve" checkbox calls handleUpdateTask with autoApprove field', () => {
       const task = makeTask(1, { autoApprove: false });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const checkboxes = screen.getAllByRole('checkbox');
       // "Auto-approve" is the second checkbox
       const autoApproveCheckbox = checkboxes[1];
       fireEvent.click(autoApproveCheckbox);
-      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ autoApprove: true }));
+      expect(actions.handleUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ autoApprove: true }));
     });
 
-    it('notes textarea blur calls onUpdateNotes', () => {
-      const props = defaultProps();
+    it('notes textarea blur calls handleUpdateNotes', () => {
       const task = makeTask(1);
-      render(<TaskDetail {...props} task={task} notes="" />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const textarea = screen.getByPlaceholderText('Instructions for Claude...');
       fireEvent.input(textarea, { target: { value: 'New notes content' } });
       fireEvent.blur(textarea);
-      expect(props.onUpdateNotes).toHaveBeenCalledWith(1, 'New notes content');
+      expect(actions.handleUpdateNotes).toHaveBeenCalledWith(1, 'New notes content');
     });
 
     it('clicking task name enters edit mode (shows input)', () => {
-      const props = defaultProps();
       const task = makeTask(1, { name: 'My Task', fullName: 'My Task' });
-      render(<TaskDetail {...props} task={task} />);
+      renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const taskName = screen.getByText('My Task');
       fireEvent.click(taskName);
       // After clicking, an input should appear with the task name value
@@ -173,71 +194,64 @@ describe('TaskDetail', () => {
       expect(editInput.tagName).toBe('INPUT');
     });
 
-    it('clicking "Mark done" on manual task calls onUpdateTask with status done', () => {
-      const props = defaultProps();
+    it('clicking "Mark done" on manual task calls handleUpdateTask with status done', () => {
       const task = makeTask(1, { status: 'pending', manual: true });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const markDoneBtn = screen.getByText(/Mark done/);
       fireEvent.click(markDoneBtn);
-      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'done' }));
+      expect(actions.handleUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'done' }));
     });
 
-    it('clicking "Activate" on backlog task calls onUpdateTask with status pending', () => {
-      const props = defaultProps();
+    it('clicking "Activate" on backlog task calls handleUpdateTask with status pending', () => {
       const task = makeTask(1, { status: 'backlog' });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const activateBtn = screen.getByText(/Activate/);
       fireEvent.click(activateBtn);
-      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'pending' }));
+      expect(actions.handleUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'pending' }));
     });
 
-    it('clicking "Backlog" button on pending task calls onUpdateTask with status backlog', () => {
-      const props = defaultProps();
+    it('clicking "Backlog" button on pending task calls handleUpdateTask with status backlog', () => {
       const task = makeTask(1, { status: 'pending', manual: true });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const backlogBtn = screen.getByText('Backlog');
       fireEvent.click(backlogBtn);
-      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'backlog' }));
+      expect(actions.handleUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ status: 'backlog' }));
     });
 
-    it('blocked reason input blur saves the reason via onUpdateTask', () => {
-      const props = defaultProps();
+    it('blocked reason input blur saves the reason via handleUpdateTask', () => {
       const task = makeTask(1, { status: 'blocked' });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const blockedInput = screen.getByPlaceholderText('Why is this blocked?');
       fireEvent.input(blockedInput, { target: { value: 'Waiting for API' } });
       fireEvent.blur(blockedInput);
-      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ blockedReason: 'Waiting for API' }));
+      expect(actions.handleUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ blockedReason: 'Waiting for API' }));
     });
 
     it('name edit: pressing Enter saves and exits edit mode', () => {
-      const props = defaultProps();
       const task = makeTask(1, { name: 'Old Name', fullName: 'Old Name' });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       fireEvent.click(screen.getByText('Old Name'));
       const editInput = screen.getByDisplayValue('Old Name');
       fireEvent.input(editInput, { target: { value: 'New Name' } });
       fireEvent.keyDown(editInput, { key: 'Enter' });
-      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ fullName: 'New Name' }));
+      expect(actions.handleUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({ fullName: 'New Name' }));
     });
 
     it('name edit: pressing Escape cancels without saving', () => {
-      const props = defaultProps();
       const task = makeTask(1, { name: 'Original', fullName: 'Original' });
-      render(<TaskDetail {...props} task={task} />);
+      renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       fireEvent.click(screen.getByText('Original'));
       const editInput = screen.getByDisplayValue('Original');
       fireEvent.input(editInput, { target: { value: 'Changed' } });
       fireEvent.keyDown(editInput, { key: 'Escape' });
-      // Should exit edit mode without calling onUpdateTask
+      // Should exit edit mode without calling handleUpdateTask
       // The h3 with 'Original' should be back
       expect(screen.getByText('Original')).toBeDefined();
     });
 
     it('delete button resets to non-confirm state on blur', () => {
-      const props = defaultProps();
       const task = makeTask(1);
-      render(<TaskDetail {...props} task={task} />);
+      renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const deleteBtn = screen.getByText('Delete task');
       fireEvent.click(deleteBtn);
       expect(screen.getByText('Confirm delete?')).toBeDefined();
@@ -246,12 +260,11 @@ describe('TaskDetail', () => {
     });
 
     it('changing from blocked to another status clears blocked reason', () => {
-      const props = defaultProps();
       const task = makeTask(1, { status: 'blocked', blockedReason: 'Some issue' });
-      render(<TaskDetail {...props} task={task} />);
+      const { actions } = renderWithActions(<TaskDetail task={task} tasks={[]} epics={[]} notes="" />);
       const select = screen.getByLabelText('Task status');
       fireEvent.change(select, { target: { value: 'pending' } });
-      expect(props.onUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({
+      expect(actions.handleUpdateTask).toHaveBeenCalledWith(1, expect.objectContaining({
         status: 'pending',
         blockedReason: ''
       }));

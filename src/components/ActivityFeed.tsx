@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import {
   ACTIVITY_EMPTY, ACTIVITY_REMOVE_ARIA, ACTIVITY_REMOVE_TITLE,
 } from '../constants/strings.ts';
+import { useActions } from '../contexts/ActionContext.tsx';
 
 function isCompleted(label: string) {
   return /completed|done/i.test(label);
@@ -14,12 +15,11 @@ const handleKeyActivate = (handler: (e: React.KeyboardEvent<HTMLElement>) => voi
 
 interface ActivityFeedProps {
   activity: Activity[];
-  onRemove: (id: string) => void;
   tasks: Task[];
-  onNavigateToTask: (taskId: number) => void;
 }
 
-export function ActivityFeed({ activity, onRemove, tasks, onNavigateToTask }: ActivityFeedProps) {
+export function ActivityFeed({ activity, tasks }: ActivityFeedProps) {
+  const { handleRemoveActivity: onRemove, handleNavigateToTask: onNavigateToTask } = useActions();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const taskIds = useMemo(() => new Set((tasks || []).map(t => t.id)), [tasks]);
   const entries = useMemo(() => {

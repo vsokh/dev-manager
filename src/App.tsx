@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useProject } from './hooks/useProject.ts';
 import { useTaskActions } from './hooks/useTaskActions.ts';
 import { useQueueActions } from './hooks/useQueueActions.ts';
@@ -23,6 +23,7 @@ import { useQuality } from './hooks/useQuality.ts';
 import { useProcessOutput } from './hooks/useProcessOutput.ts';
 import { APP_NAME, TAB_BOARD, TAB_QUALITY } from './constants/strings.ts';
 import { TASK_ID_CODEHEALTH, TASK_ID_AUTOFIX } from './components/quality/LaunchButtons.tsx';
+import { ActionProvider } from './contexts/ActionContext.tsx';
 
 export function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -84,22 +85,22 @@ export function App() {
   const taskNotes = data.taskNotes || {};
   const activity = data.activity || [];
 
-  const handleDeleteTask = (id: number) => {
+  const handleDeleteTask = useCallback((id: number) => {
     taskActions.handleDeleteTask(id);
     setSelectedTask(null);
-  };
+  }, [taskActions.handleDeleteTask]);
 
-  const handleSelectTask = (id: number | null) => {
+  const handleSelectTask = useCallback((id: number | null) => {
     setSelectedTask(prev => prev === id ? null : id);
-  };
+  }, []);
 
-  const handleRemoveActivity = (id: string) => {
+  const handleRemoveActivity = useCallback((id: string) => {
     snapshotBeforeAction('Activity removed');
     const newActivity = activity.filter(a => a.id !== id);
     save({ ...data, activity: newActivity });
-  };
+  }, [activity, data, save, snapshotBeforeAction]);
 
-  const handleNavigateToTask = (taskId: number) => {
+  const handleNavigateToTask = useCallback((taskId: number) => {
     setSelectedTask(taskId);
     setProductTab('board');
     if (glowTimer.current) clearTimeout(glowTimer.current);
@@ -116,11 +117,54 @@ export function App() {
       }
     };
     setTimeout(tryScroll, 50);
-  };
+  }, [setProductTab]);
+
+  const actions = useMemo(() => ({
+    // Task actions
+    handleUpdateTask: taskActions.handleUpdateTask,
+    handleBatchUpdateTasks: taskActions.handleBatchUpdateTasks,
+    handleUpdateNotes: taskActions.handleUpdateNotes,
+    handleAddTask: taskActions.handleAddTask,
+    handleRenameGroup: taskActions.handleRenameGroup,
+    handleDeleteGroup: taskActions.handleDeleteGroup,
+    handleUpdateEpics: taskActions.handleUpdateEpics,
+    handleDeleteTask,
+    handleAddAttachment: taskActions.handleAddAttachment,
+    handleDeleteAttachment: taskActions.handleDeleteAttachment,
+    // Queue actions
+    handleQueue: queueActions.handleQueue,
+    handleQueueAll: queueActions.handleQueueAll,
+    handleQueueGroup: queueActions.handleQueueGroup,
+    handleRemoveFromQueue: queueActions.handleRemoveFromQueue,
+    handleClearQueue: queueActions.handleClearQueue,
+    handleLaunchTask: queueActions.handleLaunchTask,
+    handleLaunchPhase: queueActions.handleLaunchPhase,
+    handleRetryFailed: queueActions.handleRetryFailed,
+    handleLaunchTerminal: queueActions.handleLaunchTerminal,
+    handleArrange: queueActions.handleArrange,
+    launchedIds: queueActions.launchedIds,
+    launchMode: queueActions.launchMode,
+    setLaunchMode: queueActions.setLaunchMode,
+    arranging: queueActions.arranging,
+    setArranging: queueActions.setArranging,
+    // Project actions
+    pauseTask,
+    cancelTask,
+    // Selection
+    selectedTask,
+    handleSelectTask,
+    handleNavigateToTask,
+    glowTaskId,
+    // Activity
+    handleRemoveActivity,
+    // Config
+    defaultEngine: data.defaultEngine,
+  }), [taskActions, queueActions, pauseTask, cancelTask, selectedTask, handleSelectTask, handleNavigateToTask, glowTaskId, handleDeleteTask, handleRemoveActivity, data?.defaultEngine]);
 
   const selectedTaskData = tasks.find(t => t.id === selectedTask) || null;
 
   return (
+    <ActionProvider value={actions}>
     <div className="min-h-screen flex-col">
       <Header projectName={projectName} status={status} projects={projects} onSwitchProject={switchProject} onOpenSkills={() => setShowSkillsConfig(true)} defaultEngine={data.defaultEngine} onSetDefaultEngine={(engineId: string) => save({ ...data, defaultEngine: engineId })} />
 
@@ -159,21 +203,8 @@ export function App() {
                 <div className="p-16">
                   <TaskBoard
                     tasks={tasks}
-                    selectedTask={selectedTask}
-                    onSelectTask={handleSelectTask}
-                    onAddTask={taskActions.handleAddTask}
-                    onQueueAll={queueActions.handleQueueAll}
-                    onQueueGroup={queueActions.handleQueueGroup}
-                    onArrange={queueActions.handleArrange}
-                    arranging={queueActions.arranging}
-                    onPauseTask={pauseTask}
-                    onCancelTask={cancelTask}
-                    onRenameGroup={taskActions.handleRenameGroup}
-                    onDeleteGroup={taskActions.handleDeleteGroup}
                     epics={epics}
-                    onUpdateEpics={taskActions.handleUpdateEpics}
                     queue={queue}
-                    glowTaskId={glowTaskId}
                   />
                 </div>
               </div>
@@ -197,14 +228,7 @@ export function App() {
                   task={selectedTaskData}
                   tasks={tasks}
                   epics={epics}
-                  onQueue={queueActions.handleQueue}
-                  onUpdateTask={taskActions.handleUpdateTask}
-                  onDeleteTask={handleDeleteTask}
                   notes={selectedTask ? (taskNotes[selectedTask] || '') : ''}
-                  onUpdateNotes={taskActions.handleUpdateNotes}
-                  onAddAttachment={taskActions.handleAddAttachment}
-                  onDeleteAttachment={taskActions.handleDeleteAttachment}
-                  defaultEngine={data.defaultEngine}
                 />
               </div>
             </div>
@@ -212,12 +236,12 @@ export function App() {
             <div className="dm-grid-bottom">
               <div className="panel">
                 <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchTerminal={queueActions.handleLaunchTerminal} onLaunchPhase={queueActions.handleLaunchPhase} onRetryFailed={queueActions.handleRetryFailed} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedIds={queueActions.launchedIds} launchMode={queueActions.launchMode} onSetLaunchMode={queueActions.setLaunchMode} defaultEngine={data.defaultEngine} processOutputs={processOutput.outputs} onClearOutput={processOutput.clearOutput} />
+                <CommandQueue queue={queue} tasks={tasks} processOutputs={processOutput.outputs} onClearOutput={processOutput.clearOutput} />
               </div>
 
               <div className="panel">
                 <SectionHeader title="Activity" />
-                <ActivityFeed activity={activity} onRemove={handleRemoveActivity} tasks={tasks} onNavigateToTask={handleNavigateToTask} />
+                <ActivityFeed activity={activity} tasks={tasks} />
               </div>
             </div>
           </>
@@ -247,5 +271,6 @@ export function App() {
         />
       )}
     </div>
+    </ActionProvider>
   );
 }
