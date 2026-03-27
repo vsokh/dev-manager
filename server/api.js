@@ -2,57 +2,9 @@ import { readFile, writeFile, mkdir, readdir, stat, unlink, copyFile, rm } from 
 import { join, basename, extname, dirname, resolve, sep } from 'node:path';
 import { homedir, platform } from 'node:os';
 import { openNativeFolderDialog } from './dialogs.js';
+import { jsonResponse, parseBody, parseJsonBody, ensureDir, fileExists, dirExists, matchRoute, requireFields, readJsonOrNull, handleNotFound } from './middleware.js';
 
 // --- Helpers ---
-
-function jsonResponse(res, statusCode, data) {
-  const body = JSON.stringify(data, null, 2);
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(body),
-  });
-  res.end(body);
-}
-
-function parseBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', (chunk) => chunks.push(chunk));
-    req.on('end', () => {
-      const buf = Buffer.concat(chunks);
-      resolve(buf);
-    });
-    req.on('error', reject);
-  });
-}
-
-async function parseJsonBody(req) {
-  const buf = await parseBody(req);
-  if (buf.length === 0) return {};
-  return JSON.parse(buf.toString('utf-8'));
-}
-
-async function ensureDir(dirPath) {
-  await mkdir(dirPath, { recursive: true });
-}
-
-async function fileExists(filePath) {
-  try {
-    const s = await stat(filePath);
-    return s.isFile();
-  } catch {
-    return false;
-  }
-}
-
-async function dirExists(dirPath) {
-  try {
-    const s = await stat(dirPath);
-    return s.isDirectory();
-  } catch {
-    return false;
-  }
-}
 
 function simpleHash(str) {
   let hash = 0;
@@ -108,24 +60,6 @@ const MIME_TYPES = {
   '.css': 'text/css',
   '.js': 'application/javascript',
 };
-
-// --- Route matching ---
-
-function matchRoute(method, pathname, routeMethod, routePattern) {
-  if (method !== routeMethod) return null;
-  const routeParts = routePattern.split('/');
-  const pathParts = pathname.split('/');
-  if (routeParts.length !== pathParts.length) return null;
-  const params = {};
-  for (let i = 0; i < routeParts.length; i++) {
-    if (routeParts[i].startsWith(':')) {
-      params[routeParts[i].slice(1)] = decodeURIComponent(pathParts[i]);
-    } else if (routeParts[i] !== pathParts[i]) {
-      return null;
-    }
-  }
-  return params;
-}
 
 // --- API handler ---
 
@@ -367,20 +301,11 @@ Rules:
     // GET /api/state
     if (method === 'GET' && pathname === '/api/state') {
       const statePath = join(projectPath, '.devmanager', 'state.json');
-      try {
-        const content = await readFile(statePath, 'utf-8');
-        const data = JSON.parse(content);
-        const fileStat = await stat(statePath);
-        jsonResponse(res, 200, {
-          data,
-          lastModified: fileStat.mtimeMs,
-        });
-      } catch (err) {
-        if (err.code === 'ENOENT') {
-          jsonResponse(res, 404, { error: 'State file not found' });
-        } else {
-          throw err;
-        }
+      const result = await readJsonOrNull(statePath);
+      if (!result) {
+        jsonResponse(res, 404, { error: 'State file not found' });
+      } else {
+        jsonResponse(res, 200, { data: result.data, lastModified: result.stat.mtimeMs });
       }
       return true;
     }
@@ -454,11 +379,7 @@ Rules:
         await unlink(filePath);
         jsonResponse(res, 200, { ok: true });
       } catch (err) {
-        if (err.code === 'ENOENT') {
-          jsonResponse(res, 404, { error: 'Progress file not found' });
-        } else {
-          throw err;
-        }
+        handleNotFound(res, err, 'Progress file not found');
       }
       return true;
     }
@@ -518,10 +439,8 @@ Rules:
     if (method === 'POST' && pathname === '/api/skills/deploy') {
       const body = await parseJsonBody(req);
       const { skillName, filename, content } = body;
-      if (!skillName || !filename || !content) {
-        jsonResponse(res, 400, { error: 'Missing skillName, filename, or content' });
-        return true;
-      }
+      const err = requireFields(body, 'skillName', 'filename', 'content');
+      if (err) { jsonResponse(res, 400, { error: err }); return true; }
       const skillDir = join(projectPath, '.claude', 'skills', skillName);
       await ensureDir(skillDir);
 
@@ -546,10 +465,8 @@ Rules:
     if (method === 'POST' && pathname === '/api/agents/deploy') {
       const body = await parseJsonBody(req);
       const { agentName, filename, content } = body;
-      if (!agentName || !filename || !content) {
-        jsonResponse(res, 400, { error: 'Missing agentName, filename, or content' });
-        return true;
-      }
+      const err = requireFields(body, 'agentName', 'filename', 'content');
+      if (err) { jsonResponse(res, 400, { error: err }); return true; }
       const agentsDir = join(projectPath, '.claude', 'agents');
       await ensureDir(agentsDir);
 
@@ -563,16 +480,11 @@ Rules:
     // GET /api/skills-config
     if (method === 'GET' && pathname === '/api/skills-config') {
       const configPath = join(projectPath, '.devmanager', 'skills.json');
-      try {
-        const content = await readFile(configPath, 'utf-8');
-        const parsed = JSON.parse(content);
-        jsonResponse(res, 200, parsed);
-      } catch (err) {
-        if (err.code === 'ENOENT') {
-          jsonResponse(res, 404, { error: 'Skills config not found' });
-        } else {
-          throw err;
-        }
+      const result = await readJsonOrNull(configPath);
+      if (!result) {
+        jsonResponse(res, 404, { error: 'Skills config not found' });
+      } else {
+        jsonResponse(res, 200, result.data);
       }
       return true;
     }
@@ -590,15 +502,11 @@ Rules:
     // GET /api/quality/latest
     if (method === 'GET' && pathname === '/api/quality/latest') {
       const filePath = join(projectPath, '.devmanager', 'quality', 'latest.json');
-      try {
-        const content = await readFile(filePath, 'utf-8');
-        jsonResponse(res, 200, JSON.parse(content));
-      } catch (err) {
-        if (err.code === 'ENOENT') {
-          jsonResponse(res, 404, { error: 'Quality report not found' });
-        } else {
-          throw err;
-        }
+      const result = await readJsonOrNull(filePath);
+      if (!result) {
+        jsonResponse(res, 404, { error: 'Quality report not found' });
+      } else {
+        jsonResponse(res, 200, result.data);
       }
       return true;
     }
@@ -606,15 +514,11 @@ Rules:
     // GET /api/quality/history
     if (method === 'GET' && pathname === '/api/quality/history') {
       const filePath = join(projectPath, '.devmanager', 'quality', 'history.json');
-      try {
-        const content = await readFile(filePath, 'utf-8');
-        jsonResponse(res, 200, JSON.parse(content));
-      } catch (err) {
-        if (err.code === 'ENOENT') {
-          jsonResponse(res, 404, { error: 'Quality history not found' });
-        } else {
-          throw err;
-        }
+      const result = await readJsonOrNull(filePath);
+      if (!result) {
+        jsonResponse(res, 404, { error: 'Quality history not found' });
+      } else {
+        jsonResponse(res, 200, result.data);
       }
       return true;
     }
@@ -670,11 +574,7 @@ Rules:
         await unlink(filePath);
         jsonResponse(res, 200, { ok: true });
       } catch (err) {
-        if (err.code === 'ENOENT') {
-          jsonResponse(res, 404, { error: 'Attachment not found' });
-        } else {
-          throw err;
-        }
+        handleNotFound(res, err, 'Attachment not found');
       }
       return true;
     }
