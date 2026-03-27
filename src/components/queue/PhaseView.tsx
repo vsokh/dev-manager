@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Task, QueueItem } from '../../types';
 import type { TaskOutput } from '../../hooks/useProcessOutput.ts';
-import { itemKey, cmdForItem, getItemStatus, isAllAutoApproved } from './queueItemUtils.ts';
+import { itemKey, cmdForItem, getItemStatus, isAllAutoApproved, type ItemStatus } from './queueItemUtils.ts';
 import { QueueItemContent } from './QueueItemContent.tsx';
 import { OutputViewer } from './OutputViewer.tsx';
 import {
@@ -16,7 +16,9 @@ interface PhaseViewProps {
   taskMap: Map<number, Task>;
   launchedIds: Set<number>;
   onLaunch: (key: number, cmd: string, taskName: string) => void;
-  onLaunchPhase: (items: { key: number; cmd: string; taskName: string }[]) => void;
+  onLaunchTerminal?: (key: number, cmd: string, taskName: string) => void;
+  onLaunchPhase: (items: { key: number; cmd: string; taskName: string }[], phaseIndex: number) => void;
+  onRetryFailed: (items: { key: number; cmd: string; taskName: string }[], phaseIndex: number) => void;
   onRemove: (key: number) => void;
   onPauseTask: (id: number) => void;
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
@@ -27,7 +29,7 @@ interface PhaseViewProps {
   onClearOutput?: (taskId: number) => void;
 }
 
-export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLaunchPhase, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear, defaultEngine, processOutputs, onClearOutput }: PhaseViewProps) {
+export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLaunchTerminal, onLaunchPhase, onRetryFailed, onRemove, onPauseTask, onUpdateTask, onBatchUpdateTasks, onClear, defaultEngine, processOutputs, onClearOutput }: PhaseViewProps) {
   return (
     <div>
       {phases.map((phaseItems, idx) => (
@@ -57,13 +59,25 @@ export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLau
                     key: itemKey(item),
                     cmd: cmdForItem(item),
                     taskName: item.taskName,
-                  })))}
+                  })), idx)}
                   title={QUEUE_LAUNCH_PHASE_TITLE}
                   className="btn-launch-phase"
                   style={{ padding: '1px 8px' }}
                 >{QUEUE_LAUNCH_PHASE}</button>
               </>
             ) : null}
+            {phaseItems.some(item => getItemStatus(item, taskMap) === 'error') && (
+              <button
+                onClick={() => onRetryFailed(phaseItems.map(item => ({
+                  key: itemKey(item),
+                  cmd: cmdForItem(item),
+                  taskName: item.taskName,
+                })), idx)}
+                title="Retry all failed tasks in this phase"
+                className="btn-launch-phase"
+                style={{ padding: '1px 8px', color: 'var(--dm-danger)' }}
+              >{'\u21BB'} Retry failed</button>
+            )}
             <button
               onClick={() => {
                 const nonManual = phaseItems.filter(item => !taskMap.get(item.task)?.manual);
@@ -79,9 +93,13 @@ export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLau
           {phaseItems.map((item, itemIdx) => {
             const isLast = itemIdx === phaseItems.length - 1;
             const status = getItemStatus(item, taskMap);
-            const isActive = status === 'waiting' || status === 'working';
+            const waitingStatuses: ItemStatus[] = ['reading', 'exploring', 'planning'];
+            const workingStatuses: ItemStatus[] = ['launching', 'delegating', 'reviewing', 'merging'];
+            const isWaiting = waitingStatuses.includes(status);
+            const isWorking = workingStatuses.includes(status);
+            const isActive = isWaiting || isWorking;
             const isPaused = status === 'paused';
-            const rowBg = isActive ? (status === 'waiting' ? 'var(--dm-amber-bg-subtle)' : 'var(--dm-accent-bg-subtle)')
+            const rowBg = isActive ? (isWaiting ? 'var(--dm-amber-bg-subtle)' : 'var(--dm-accent-bg-subtle)')
               : isPaused ? 'var(--dm-paused-bg-subtle)' : undefined;
             const hasOutput = processOutputs && (processOutputs[item.task]?.lines.length || processOutputs[item.task]?.running);
             return (
@@ -118,6 +136,7 @@ export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLau
                       task={taskMap.get(item.task)}
                       launchedIds={launchedIds}
                       onLaunch={onLaunch}
+                      onLaunchTerminal={onLaunchTerminal}
                       onPauseTask={onPauseTask}
                       onRemove={onRemove}
                       onUpdateTask={onUpdateTask}

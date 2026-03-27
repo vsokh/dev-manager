@@ -38,21 +38,25 @@ Dev Manager polls every 3s — in-progress is a UI overlay, done triggers merge 
 ## \`/orchestrator next\` | \`/orchestrator task N\`
 
 ### 1. Read queue → pick task
-Read \`.devmanager/state.json\`. For \`next\`: pick first \`queue\` item. For \`task N\`: find task by ID.
-If queue empty: "Nothing queued. Add tasks in Dev Manager."
-Read \`notes\` field from queue item — these are manager's instructions (HIGH PRIORITY).
+\`\`\`bash
+node .devmanager/bin/queue-next.cjs
+\`\`\`
+For \`task N\`: read \`.devmanager/state.json\` directly to find the task by ID.
+
+The output tells you everything: \`TASK_ID\`, \`TASK_NAME\`, \`TASK_FULL\`, \`TASK_GROUP\`, \`NOTES\` (manager instructions — HIGH PRIORITY), plus resume state (\`HAS_BRANCH\`, \`HAS_WORKTREE\`, \`HAS_NOTES\`).
+If \`QUEUE_EMPTY=true\`: "Nothing queued. Add tasks in Dev Manager."
 Write progress: \`"Reading queue..."\`
 
 ### 2. Check for previous work (resume detection)
-Check:
-- \`.devmanager/notes/{taskId}.md\` — exploration/plan from a prior session
-- \`git branch --list "task-{taskId}-*"\` — feature branch
-- \`.devmanager/worktrees/task-{taskId}/\` — worktree directory
+The \`queue-next.cjs\` output already includes resume state:
+- \`HAS_NOTES=yes\` — exploration/plan from a prior session (\`.devmanager/notes/{taskId}.md\`)
+- \`HAS_BRANCH=yes\` + \`BRANCH=<name>\` — feature branch exists
+- \`HAS_WORKTREE=yes\` — worktree directory exists
 
-| Notes | Branch | Action |
-|-------|--------|--------|
-| yes | yes | **Resume with code.** Worktree should exist (if not: \`git worktree add .devmanager/worktrees/task-{taskId} task-{taskId}-{slug}\`). Read notes, skip to step 5. |
-| yes | no | **Resume exploration.** Read notes. If \`autoApprove\`: skip to step 4. Otherwise: present plan for approval, skip to step 4. |
+| HAS_NOTES | HAS_BRANCH | Action |
+|-----------|------------|--------|
+| yes | yes | **Resume with code.** Worktree should exist (if not: \`git worktree add .devmanager/worktrees/task-{taskId} <BRANCH>\`). Read notes, skip to step 5. |
+| yes | no | **Resume exploration.** Read notes. If \`AUTO_APPROVE=yes\`: skip to step 4. Otherwise: present plan for approval, skip to step 4. |
 | no | no | **Fresh task.** Continue to step 3. |
 
 ### 3. Explore + plan (fresh tasks only)
@@ -88,6 +92,11 @@ This file lives on master — survives session interruptions at any phase.
 **Otherwise:** Present the plan to the user. **STOP. Wait for approval.** Do NOT launch sub-agents until they say go.
 
 ### 4. Create worktree + branch (after approval only)
+
+Mark the task as started (removes from queue, sets in-progress):
+\`\`\`bash
+node .devmanager/bin/task-start.cjs {taskId}
+\`\`\`
 
 **Use git worktrees** — each task gets an isolated working copy. Main repo stays on master.
 
@@ -135,31 +144,33 @@ Check in the **worktree directory**: requirements met? Build passes? Fix or re-d
 Write progress: \`"Merging to master..."\`
 
 \`\`\`bash
-# Acquire lock — wait if another task is merging
-while [ -f .devmanager/merge.lock ]; do sleep 2; done
-echo {taskId} > .devmanager/merge.lock
-
-# Rebase onto latest master (picks up other tasks' work)
-cd .devmanager/worktrees/task-{taskId}
-git rebase master
-cd ../../..
-
-# Merge from main dir (already on master)
-git merge task-{taskId}-{slug} --no-edit
-
-# Verify no accidental reverts
-git diff HEAD~1 --stat
-
-# Clean up
-git worktree remove .devmanager/worktrees/task-{taskId}
-git branch -d task-{taskId}-{slug}
-rm .devmanager/merge.lock
+node .devmanager/bin/merge-safe.cjs {taskId}
 \`\`\`
 
-**If rebase conflicts:** Resolve them — read both sides, keep BOTH changes. Only escalate truly contradictory changes.
-**ALWAYS release lock** (\`rm .devmanager/merge.lock\`) even on failure.
+On success, the script prints:
+\`\`\`
+MERGE_OK=yes
+COMMIT=abc1234
+BRANCH=task-42-google-login
+\`\`\`
+
+On failure, the script prints the failure type and conflict files:
+\`\`\`
+MERGE_FAILED=rebase_conflict
+CONFLICT_FILES=src/App.tsx, src/api.ts
+\`\`\`
+
+**If merge fails with conflicts:** Resolve them in the worktree — read both sides, keep BOTH changes. Then rerun \`merge-safe.cjs\` (it's idempotent). Only escalate truly contradictory changes.
+
+The script handles lock acquisition/release automatically (including on failure).
 
 ### 8. Report back
+After a successful merge, mark the task as done using the commit hash from merge-safe:
+\`\`\`bash
+# merge-safe.cjs prints COMMIT=<hash> on success
+node .devmanager/bin/task-done.cjs {taskId} --commit <hash>
+\`\`\`
+
 Write to \`.devmanager/progress/{taskId}.json\`: \`commitRef\`, \`completedAt\`, \`branch\` (if merge failed).
 Dev Manager handles the rest.
 
@@ -208,7 +219,7 @@ The user wears a **manager hat**. Talk to them in product terms:
 
 1. **Manager notes override everything.** If the manager says "skip X, focus on Y" — do that.
 2. **Delegate, don't implement.** Sub-agents write code. You plan, review, and coordinate.
-3. **NEVER write to state.json** (except arrange: \`dependsOn\`/\`group\` only). No activity entries, no new tasks, no status changes. All communication is through progress files.
+3. **NEVER manually edit state.json** (except arrange: \`dependsOn\`/\`group\` only). Use the CLI helpers: \`task-start.cjs\`, \`task-done.cjs\`, \`merge-safe.cjs\`, \`queue-next.cjs\`. No manual activity entries, no manual status changes.
 4. **Wait for approval** before delegating — unless the task has \`autoApprove: true\`, in which case skip straight to implementation.
 5. **Worktree per task.** Use \`git worktree add\` — never \`git checkout\`. Main repo stays on master. Sub-agents work in \`.devmanager/worktrees/task-{id}/\`.
 6. **Stay in scope.** Only do what the task asks. Don't create new tasks or rearrange things. If you discover something, tell the user.

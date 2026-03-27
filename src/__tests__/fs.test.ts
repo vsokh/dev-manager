@@ -1,10 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MockDirectoryHandle } from './mocks/fsa.ts';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   createDefaultState,
-  verifyHandle,
-  requestAccess,
-  ensureDevManagerDir,
   writeState,
   readState,
   readProgressFiles,
@@ -12,11 +8,20 @@ import {
   snapshotState,
 } from '../fs.ts';
 import type { StateData } from '../types';
+import { api } from '../api.ts';
 
-// Cast mock handles to FileSystemDirectoryHandle for the API calls
-function asFSHandle(mock: MockDirectoryHandle): FileSystemDirectoryHandle {
-  return mock as unknown as FileSystemDirectoryHandle;
-}
+// Mock the api module
+vi.mock('../api.ts', () => ({
+  api: {
+    readState: vi.fn(),
+    writeState: vi.fn(),
+    readProgress: vi.fn(),
+    deleteProgress: vi.fn(),
+    snapshotState: vi.fn(),
+  },
+}));
+
+const mockedApi = vi.mocked(api);
 
 describe('createDefaultState', () => {
   it('returns valid state with correct project name', () => {
@@ -37,43 +42,7 @@ describe('createDefaultState', () => {
   });
 });
 
-describe('verifyHandle', () => {
-  it('returns false for null handle', async () => {
-    const result = await verifyHandle(null);
-    expect(result).toBe(false);
-  });
-
-  it('returns true when permission is granted', async () => {
-    const mock = new MockDirectoryHandle('test-project');
-    const result = await verifyHandle(asFSHandle(mock));
-    expect(result).toBe(true);
-  });
-});
-
-describe('requestAccess', () => {
-  it('returns false for null handle', async () => {
-    const result = await requestAccess(null);
-    expect(result).toBe(false);
-  });
-
-  it('returns true when permission is granted', async () => {
-    const mock = new MockDirectoryHandle('test-project');
-    const result = await requestAccess(asFSHandle(mock));
-    expect(result).toBe(true);
-  });
-});
-
-describe('ensureDevManagerDir', () => {
-  it('creates and returns .devmanager directory handle', async () => {
-    const mock = new MockDirectoryHandle('test-project');
-    const dir = await ensureDevManagerDir(asFSHandle(mock));
-    expect(dir).toBeDefined();
-    expect((dir as unknown as MockDirectoryHandle).name).toBe('.devmanager');
-  });
-});
-
 describe('writeState + readState round-trip', () => {
-  let root: MockDirectoryHandle;
   const sampleState: StateData = {
     project: 'test-project',
     tasks: [{ id: 1, name: 'Task 1', status: 'pending' }],
@@ -83,14 +52,16 @@ describe('writeState + readState round-trip', () => {
   };
 
   beforeEach(() => {
-    root = new MockDirectoryHandle('test-project');
+    vi.clearAllMocks();
   });
 
   it('writes state and reads it back with matching data', async () => {
-    const writeOk = await writeState(asFSHandle(root), sampleState);
-    expect(writeOk).toBe(true);
+    mockedApi.writeState.mockResolvedValue({ ok: true as const, lastModified: Date.now() });
+    const writeResult = await writeState(sampleState);
+    expect(writeResult.ok).toBe(true);
 
-    const result = await readState(asFSHandle(root));
+    mockedApi.readState.mockResolvedValue({ data: sampleState, lastModified: Date.now() });
+    const result = await readState();
     expect(result).not.toBeNull();
     expect(result!.data.project).toBe('test-project');
     expect(result!.data.tasks).toHaveLength(1);
@@ -104,93 +75,75 @@ describe('writeState + readState round-trip', () => {
 });
 
 describe('readState edge cases', () => {
-  it('returns null when state file does not exist', async () => {
-    const root = new MockDirectoryHandle('empty-project');
-    const result = await readState(asFSHandle(root));
-    expect(result).toBeNull();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('returns null when state file contains invalid JSON', async () => {
-    const root = new MockDirectoryHandle('bad-project');
-    const dmDir = root.addDirectory('.devmanager');
-    dmDir.addFile('state.json', 'not valid json {{{');
-
-    const result = await readState(asFSHandle(root));
+  it('returns null when api throws error', async () => {
+    mockedApi.readState.mockRejectedValue(new Error('Not found'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const result = await readState();
     expect(result).toBeNull();
+    consoleSpy.mockRestore();
   });
 });
 
 describe('readProgressFiles', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('reads valid progress files', async () => {
-    const root = new MockDirectoryHandle('project');
-    const dmDir = root.addDirectory('.devmanager');
-    const progDir = dmDir.addDirectory('progress');
-    progDir.addFile('1.json', JSON.stringify({ status: 'in-progress', progress: '50%' }));
-    progDir.addFile('2.json', JSON.stringify({ status: 'done', completedAt: '2025-01-01' }));
+    mockedApi.readProgress.mockResolvedValue({
+      '1': { status: 'in-progress', progress: '50%' },
+      '2': { status: 'done', completedAt: '2025-01-01' },
+    });
 
-    const result = await readProgressFiles(asFSHandle(root));
-    expect(result[1]).toBeDefined();
-    expect(result[1].status).toBe('in-progress');
-    expect(result[1].progress).toBe('50%');
-    expect(result[2]).toBeDefined();
-    expect(result[2].status).toBe('done');
+    const result = await readProgressFiles();
+    expect(result['1']).toBeDefined();
+    expect(result['1'].status).toBe('in-progress');
+    expect(result['1'].progress).toBe('50%');
+    expect(result['2']).toBeDefined();
+    expect(result['2'].status).toBe('done');
   });
 
-  it('skips files with invalid JSON', async () => {
-    const root = new MockDirectoryHandle('project');
-    const dmDir = root.addDirectory('.devmanager');
-    const progDir = dmDir.addDirectory('progress');
-    progDir.addFile('1.json', JSON.stringify({ status: 'in-progress', progress: '50%' }));
-    progDir.addFile('2.json', 'not json!!!');
-
+  it('returns empty object when api throws', async () => {
+    mockedApi.readProgress.mockRejectedValue(new Error('No progress dir'));
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const result = await readProgressFiles(asFSHandle(root));
-    expect(result[1]).toBeDefined();
-    expect(result[2]).toBeUndefined();
-    consoleSpy.mockRestore();
-  });
-
-  it('returns empty object when no progress directory exists', async () => {
-    const root = new MockDirectoryHandle('project');
-    // No .devmanager dir at all
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const result = await readProgressFiles(asFSHandle(root));
+    const result = await readProgressFiles();
     expect(result).toEqual({});
     consoleSpy.mockRestore();
   });
 });
 
 describe('deleteProgressFile', () => {
-  it('removes the specified progress file', async () => {
-    const root = new MockDirectoryHandle('project');
-    const dmDir = root.addDirectory('.devmanager');
-    const progDir = dmDir.addDirectory('progress');
-    progDir.addFile('5.json', JSON.stringify({ status: 'done' }));
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    await deleteProgressFile(asFSHandle(root), 5);
-
-    // Verify file is gone by trying to read progress files
-    const result = await readProgressFiles(asFSHandle(root));
-    expect(result[5]).toBeUndefined();
+  it('calls api to delete specified progress file', async () => {
+    mockedApi.deleteProgress.mockResolvedValue({ ok: true as const });
+    await deleteProgressFile(5);
+    expect(mockedApi.deleteProgress).toHaveBeenCalledWith(5);
   });
 });
 
 describe('snapshotState', () => {
-  it('reads state.json and writes to backups directory', async () => {
-    const root = new MockDirectoryHandle('project');
-    const dmDir = root.addDirectory('.devmanager');
-    const stateContent = JSON.stringify({ project: 'test', tasks: [], queue: [], taskNotes: {}, activity: [] });
-    dmDir.addFile('state.json', stateContent);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    const filename = await snapshotState(asFSHandle(root));
+  it('returns filename from api', async () => {
+    mockedApi.snapshotState.mockResolvedValue({ filename: 'state-123456.json' });
+    const filename = await snapshotState();
     expect(filename).not.toBeNull();
     expect(filename).toMatch(/^state-\d+\.json$/);
   });
 
-  it('returns null when state.json does not exist', async () => {
-    const root = new MockDirectoryHandle('project');
+  it('returns null when api throws', async () => {
+    mockedApi.snapshotState.mockRejectedValue(new Error('No state'));
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const filename = await snapshotState(asFSHandle(root));
+    const filename = await snapshotState();
     expect(filename).toBeNull();
     consoleSpy.mockRestore();
   });

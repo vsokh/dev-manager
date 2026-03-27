@@ -24,9 +24,10 @@ const defaultProps = () => ({
   onPauseTask: vi.fn(),
   onUpdateTask: vi.fn(),
   onBatchUpdateTasks: vi.fn(),
-  launchedId: null,
-  projectPath: '',
-  onSetPath: vi.fn(),
+  launchedIds: new Set<number>(),
+  onRetryFailed: vi.fn(),
+  launchMode: 'background' as const,
+  onSetLaunchMode: vi.fn(),
 });
 
 describe('CommandQueue', () => {
@@ -35,15 +36,15 @@ describe('CommandQueue', () => {
     expect(screen.getByText(/Queue tasks from the detail panel/)).toBeDefined();
   });
 
-  it('renders "Set project path to enable launch" when no projectPath', () => {
+  it('renders empty state message for empty queue', () => {
     render(<CommandQueue {...defaultProps()} />);
-    expect(screen.getByText('Set project path to enable launch')).toBeDefined();
+    expect(screen.getByText(/Queue tasks from the detail panel/)).toBeDefined();
   });
 
   it('renders queue items with task names', () => {
     const tasks = [makeTask(1), makeTask(2)];
     const queue = [makeQueueItem(1, 'Login feature'), makeQueueItem(2, 'Signup flow')];
-    render(<CommandQueue {...defaultProps()} queue={queue} tasks={tasks} projectPath="/my/project" />);
+    render(<CommandQueue {...defaultProps()} queue={queue} tasks={tasks} />);
     expect(screen.getByText('Login feature')).toBeDefined();
     expect(screen.getByText('Signup flow')).toBeDefined();
   });
@@ -51,19 +52,19 @@ describe('CommandQueue', () => {
   it('renders "Unqueue all" button when queue has items', () => {
     const tasks = [makeTask(1)];
     const queue = [makeQueueItem(1)];
-    render(<CommandQueue {...defaultProps()} queue={queue} tasks={tasks} projectPath="/my/project" />);
+    render(<CommandQueue {...defaultProps()} queue={queue} tasks={tasks} />);
     expect(screen.getByText('Unqueue all')).toBeDefined();
   });
 
-  it('renders project path when set', () => {
-    render(<CommandQueue {...defaultProps()} projectPath="/home/user/project" />);
-    expect(screen.getByText('/home/user/project')).toBeDefined();
+  it('renders empty state for empty queue without path', () => {
+    render(<CommandQueue {...defaultProps()} />);
+    expect(screen.getByText(/Queue tasks from the detail panel/)).toBeDefined();
   });
 
   it('shows "Launch task" buttons for non-manual tasks', () => {
     const tasks = [makeTask(1), makeTask(2)];
     const queue = [makeQueueItem(1), makeQueueItem(2)];
-    render(<CommandQueue {...defaultProps()} queue={queue} tasks={tasks} projectPath="/my/project" />);
+    render(<CommandQueue {...defaultProps()} queue={queue} tasks={tasks} />);
     const launchButtons = screen.getAllByRole('button', { name: 'Launch task' });
     expect(launchButtons.length).toBeGreaterThanOrEqual(2);
   });
@@ -71,7 +72,7 @@ describe('CommandQueue', () => {
   it('shows "YOU" badge for manual tasks', () => {
     const tasks = [makeTask(1, { manual: true })];
     const queue = [makeQueueItem(1, 'Manual work')];
-    render(<CommandQueue {...defaultProps()} queue={queue} tasks={tasks} projectPath="/my/project" />);
+    render(<CommandQueue {...defaultProps()} queue={queue} tasks={tasks} />);
     expect(screen.getByText('YOU')).toBeDefined();
   });
 
@@ -80,7 +81,7 @@ describe('CommandQueue', () => {
       const props = defaultProps();
       const tasks = [makeTask(1)];
       const queue = [makeQueueItem(1)];
-      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} />);
       const unqueueBtn = screen.getByText('Unqueue all');
       fireEvent.click(unqueueBtn);
       expect(props.onClear).toHaveBeenCalledTimes(1);
@@ -90,7 +91,7 @@ describe('CommandQueue', () => {
       const props = defaultProps();
       const tasks = [makeTask(1)];
       const queue = [makeQueueItem(1, 'My task')];
-      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} />);
       const launchBtn = screen.getByRole('button', { name: 'Launch task' });
       fireEvent.click(launchBtn);
       expect(props.onLaunch).toHaveBeenCalledTimes(1);
@@ -100,7 +101,7 @@ describe('CommandQueue', () => {
       const props = defaultProps();
       const tasks = [makeTask(1)];
       const queue = [makeQueueItem(1, 'My task')];
-      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} />);
       const removeBtn = screen.getByRole('button', { name: 'Remove from queue' });
       fireEvent.click(removeBtn);
       expect(props.onRemove).toHaveBeenCalledTimes(1);
@@ -110,7 +111,7 @@ describe('CommandQueue', () => {
       const props = defaultProps();
       const tasks = [makeTask(1, { autoApprove: false })];
       const queue = [makeQueueItem(1, 'My task')];
-      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} />);
       // The auto-approve button shows ✓ character
       const approveBtn = screen.getByTitle('Click to auto-approve');
       fireEvent.click(approveBtn);
@@ -121,7 +122,7 @@ describe('CommandQueue', () => {
       const props = defaultProps();
       const tasks = [makeTask(1), makeTask(2)];
       const queue = [makeQueueItem(1, 'Task 1'), makeQueueItem(2, 'Task 2')];
-      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} />);
       // The button text is "✓ Auto-approve all" (QUEUE_APPROVE_ALL)
       const approveAllBtn = screen.getByText(/Auto-approve all/);
       fireEvent.click(approveAllBtn);
@@ -136,7 +137,7 @@ describe('CommandQueue', () => {
       const props = defaultProps();
       const tasks = [makeTask(1, { autoApprove: true })];
       const queue = [makeQueueItem(1, 'Task 1')];
-      render(<CommandQueue {...props} queue={queue} tasks={tasks} projectPath="/my/project" />);
+      render(<CommandQueue {...props} queue={queue} tasks={tasks} />);
       expect(screen.getByText('Unapprove all')).toBeDefined();
     });
   });

@@ -35,13 +35,16 @@ export async function readState(): Promise<{ data: StateData; lastModified: numb
   }
 }
 
-export async function writeState(data: StateData): Promise<boolean> {
+export async function writeState(data: StateData, lastModified?: number): Promise<{ ok: boolean; conflict?: boolean; data?: StateData; lastModified?: number }> {
   try {
-    await api.writeState(data);
-    return true;
+    const result = await api.writeState(data, lastModified);
+    if ('conflict' in result) {
+      return { ok: false, conflict: true, data: result.data, lastModified: result.lastModified };
+    }
+    return { ok: true, lastModified: result.lastModified };
   } catch (err) {
     console.error('writeState failed:', err);
-    return false;
+    return { ok: false };
   }
 }
 

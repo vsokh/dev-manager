@@ -6,8 +6,6 @@ afterEach(cleanup);
 
 const defaultProps = () => ({
   onConnect: vi.fn(),
-  onReconnect: vi.fn(),
-  lastProjectName: '',
   status: 'disconnected',
 });
 
@@ -22,14 +20,9 @@ describe('ProjectPicker', () => {
     expect(screen.getByRole('button', { name: 'Open project' })).toBeDefined();
   });
 
-  it('shows "Last opened: {name}" button when lastProjectName is set', () => {
-    render(<ProjectPicker {...defaultProps()} lastProjectName="my-app" />);
-    expect(screen.getByText('Last opened: my-app')).toBeDefined();
-  });
-
-  it('does NOT show last project button when lastProjectName is empty', () => {
-    render(<ProjectPicker {...defaultProps()} lastProjectName="" />);
-    expect(screen.queryByText(/Last opened/)).toBeNull();
+  it('renders connect button when disconnected', () => {
+    render(<ProjectPicker {...defaultProps()} />);
+    expect(screen.getByRole('button', { name: 'Open project' })).toBeDefined();
   });
 
   it('shows error message when status is "error"', () => {
@@ -52,12 +45,12 @@ describe('ProjectPicker', () => {
       expect(props.onConnect).toHaveBeenCalledTimes(1);
     });
 
-    it('clicking "Last opened: {name}" button calls onReconnect', () => {
+    it('clicking "Open project" calls onConnect', () => {
       const props = defaultProps();
-      render(<ProjectPicker {...props} lastProjectName="my-app" />);
-      const reconnectBtn = screen.getByText('Last opened: my-app');
-      fireEvent.click(reconnectBtn);
-      expect(props.onReconnect).toHaveBeenCalledTimes(1);
+      render(<ProjectPicker {...props} />);
+      const connectBtn = screen.getByRole('button', { name: 'Open project' });
+      fireEvent.click(connectBtn);
+      expect(props.onConnect).toHaveBeenCalledTimes(1);
     });
   });
 });

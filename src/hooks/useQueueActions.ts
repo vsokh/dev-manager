@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { api } from '../api.ts';
 import { sortByDependencies } from '../utils/sortByDependencies.ts';
+import { computePhases } from '../utils/computePhases.ts';
 import { createActivityList } from '../utils/activityUtils.ts';
 import { getUnqueuedTasks } from '../utils/taskFilters.ts';
-import type { StateData, Task, QueueItem } from '../types';
+import type { StateData, Task, TaskStatus, QueueItem } from '../types';
 
 interface UseQueueActionsParams {
   data: StateData | null;
@@ -18,8 +19,15 @@ interface LaunchPhaseItem {
   taskName: string;
 }
 
+export type LaunchMode = 'background' | 'sequential' | 'terminal';
+
 export function useQueueActions({ data, save, snapshotBeforeAction, onError }: UseQueueActionsParams) {
   const [launchedIds, setLaunchedIds] = useState<Set<number>>(new Set());
+  const [launchMode, setLaunchMode] = useState<LaunchMode>('background');
+
+  // Keep a ref to latest data so async handlers can re-verify against fresh state
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   const tasks: Task[] = data?.tasks || [];
   const queue: QueueItem[] = data?.queue || [];
@@ -81,7 +89,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     updateData({ queue: [] });
   };
 
-  const setTaskProgress = (taskId: number, progress: string, status: string = 'in-progress') => {
+  const setTaskProgress = (taskId: number, progress: string, status: TaskStatus = 'in-progress') => {
     if (!data) return;
     const tasks = (data.tasks || []).map(t =>
       t.id === taskId ? { ...t, status, progress, startedAt: t.startedAt || new Date().toISOString() } : t
@@ -89,29 +97,77 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     save({ ...data, tasks });
   };
 
-  const handleLaunchTask = async (itemKey: number, cmd: string, _taskName: string) => {
+  const handleLaunchTask = async (itemKey: number, cmd: string, taskName: string) => {
     try {
-      setTaskProgress(itemKey, 'Launching...');
-      await api.launch(itemKey, cmd);
+      if (launchMode === 'terminal') {
+        await api.launchTerminal(itemKey, cmd, undefined, taskName);
+      } else {
+        setTaskProgress(itemKey, 'Launching...');
+        await api.launch(itemKey, cmd);
+      }
     } catch (err) {
       console.error('Failed to launch task:', err);
-      setTaskProgress(itemKey, undefined as any, 'pending');
+      if (launchMode !== 'terminal') setTaskProgress(itemKey, undefined as any, 'pending');
       onError('Failed to launch task');
     }
   };
 
-  const handleLaunchPhase = async (items: LaunchPhaseItem[]) => {
+  const waitForProcess = async (pid: number, timeout = 600000): Promise<boolean> => {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      await new Promise(r => setTimeout(r, 3000));
+      try {
+        const procs = await api.listProcesses();
+        if (!procs.some(p => p.pid === pid)) return true;
+      } catch { /* ignore polling errors */ }
+    }
+    return false; // timed out
+  };
+
+  const handleLaunchPhase = async (items: LaunchPhaseItem[], phaseIndex?: number) => {
     try {
-      // Batch-set all tasks to 'Launching...' in one save
-      if (data) {
-        const launchingIds = new Set(items.map(i => i.key));
-        const tasks = (data.tasks || []).map(t =>
-          launchingIds.has(t.id) ? { ...t, status: 'in-progress' as const, progress: 'Launching...', startedAt: t.startedAt || new Date().toISOString() } : t
-        );
-        save({ ...data, tasks });
+      // Re-verify phase membership against latest data to prevent launching
+      // tasks that moved to a different phase between render and click
+      let verified = items;
+      const fresh = dataRef.current;
+      if (fresh && phaseIndex != null) {
+        const phases = computePhases(fresh.queue || [], fresh.tasks || []);
+        if (phases && phases[phaseIndex]) {
+          const phaseTaskIds = new Set(phases[phaseIndex].map(q => q.task));
+          verified = items.filter(i => phaseTaskIds.has(i.key));
+        }
       }
-      for (const item of items) {
-        await api.launch(item.key, item.cmd);
+      if (verified.length === 0) return;
+
+      if (launchMode === 'sequential') {
+        // Sequential: launch one at a time, wait for each to finish
+        for (const item of verified) {
+          const freshNow = dataRef.current;
+          if (freshNow) {
+            const tasks = (freshNow.tasks || []).map(t =>
+              t.id === item.key ? { ...t, status: 'in-progress' as const, progress: 'Launching...', startedAt: t.startedAt || new Date().toISOString() } : t
+            );
+            save({ ...freshNow, tasks });
+          }
+          const { pid } = await api.launch(item.key, item.cmd);
+          await waitForProcess(pid);
+        }
+      } else {
+        // Parallel: batch-set all tasks to 'Launching...' then launch all
+        if (fresh) {
+          const launchingIds = new Set(verified.map(i => i.key));
+          const tasks = (fresh.tasks || []).map(t =>
+            launchingIds.has(t.id) ? { ...t, status: 'in-progress' as const, progress: 'Launching...', startedAt: t.startedAt || new Date().toISOString() } : t
+          );
+          save({ ...fresh, tasks });
+        }
+        for (const item of verified) {
+          if (launchMode === 'terminal') {
+            await api.launchTerminal(item.key, item.cmd, undefined, item.taskName);
+          } else {
+            await api.launch(item.key, item.cmd);
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to launch phase:', err);
@@ -141,8 +197,30 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     }
   };
 
+  const handleRetryFailed = async (items: LaunchPhaseItem[], phaseIndex?: number) => {
+    // Filter to only errored tasks
+    const fresh = dataRef.current;
+    if (!fresh) return;
+    const taskMap = new Map((fresh.tasks || []).map(t => [t.id, t]));
+    const errored = items.filter(i => {
+      const task = taskMap.get(i.key);
+      if (!task || task.status !== 'in-progress') return false;
+      const p = (task.progress || '').toLowerCase();
+      return /exited with code|error|failed|limit|blocked/i.test(p);
+    });
+    if (errored.length === 0) return;
+    // Reset errored tasks to pending first, then launch
+    const resetTasks = (fresh.tasks || []).map(t =>
+      errored.some(e => e.key === t.id) ? { ...t, status: 'pending' as const, progress: undefined } : t
+    );
+    save({ ...fresh, tasks: resetTasks });
+    await handleLaunchPhase(errored, phaseIndex);
+  };
+
   return {
     launchedIds,
+    launchMode,
+    setLaunchMode,
     arranging,
     setArranging,
     handleQueue,
@@ -152,6 +230,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
     handleClearQueue,
     handleLaunchTask,
     handleLaunchPhase,
+    handleRetryFailed,
     handleLaunchTerminal,
     handleArrange,
   };

@@ -21,6 +21,7 @@ const defaultProps = () => ({
   onPauseTask: vi.fn(),
   onCancelTask: vi.fn(),
   onRenameGroup: vi.fn(),
+  onDeleteGroup: vi.fn(),
   epics: [] as Epic[],
   onUpdateEpics: vi.fn(),
   glowTaskId: null,

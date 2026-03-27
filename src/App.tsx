@@ -22,6 +22,7 @@ import { FloatingScratchpad } from './components/FloatingScratchpad.tsx';
 import { useQuality } from './hooks/useQuality.ts';
 import { useProcessOutput } from './hooks/useProcessOutput.ts';
 import { APP_NAME, TAB_BOARD, TAB_QUALITY } from './constants/strings.ts';
+import { TASK_ID_CODEHEALTH, TASK_ID_AUTOFIX } from './components/quality/LaunchButtons.tsx';
 
 export function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -146,7 +147,7 @@ export function App() {
 
           {productTab === 'quality' && (
             <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 120px)' }}>
-              <QualityPanel latest={quality.latest} history={quality.history} loading={quality.loading} error={quality.error} onRetry={quality.retry} />
+              <QualityPanel latest={quality.latest} history={quality.history} loading={quality.loading} error={quality.error} onRetry={quality.retry} healthcheckOutput={processOutput.outputs[TASK_ID_CODEHEALTH]} autofixOutput={processOutput.outputs[TASK_ID_AUTOFIX]} onClearOutput={processOutput.clearOutput} />
             </div>
           )}
         </div>
@@ -173,7 +174,6 @@ export function App() {
                     onUpdateEpics={taskActions.handleUpdateEpics}
                     queue={queue}
                     glowTaskId={glowTaskId}
-                    skillsConfig={skillsConfig}
                   />
                 </div>
               </div>
@@ -204,7 +204,6 @@ export function App() {
                   onUpdateNotes={taskActions.handleUpdateNotes}
                   onAddAttachment={taskActions.handleAddAttachment}
                   onDeleteAttachment={taskActions.handleDeleteAttachment}
-                  availableSkills={availableSkills}
                   defaultEngine={data.defaultEngine}
                 />
               </div>
@@ -213,7 +212,7 @@ export function App() {
             <div className="dm-grid-bottom">
               <div className="panel">
                 <SectionHeader title="Queue" count={queue.length > 0 ? queue.length : null} />
-                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchTerminal={queueActions.handleLaunchTerminal} onLaunchPhase={queueActions.handleLaunchPhase} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedIds={queueActions.launchedIds} defaultEngine={data.defaultEngine} processOutputs={processOutput.outputs} onClearOutput={processOutput.clearOutput} />
+                <CommandQueue queue={queue} tasks={tasks} onLaunch={queueActions.handleLaunchTask} onLaunchTerminal={queueActions.handleLaunchTerminal} onLaunchPhase={queueActions.handleLaunchPhase} onRetryFailed={queueActions.handleRetryFailed} onRemove={queueActions.handleRemoveFromQueue} onClear={queueActions.handleClearQueue} onQueueAll={queueActions.handleQueueAll} onPauseTask={pauseTask} onUpdateTask={taskActions.handleUpdateTask} onBatchUpdateTasks={taskActions.handleBatchUpdateTasks} launchedIds={queueActions.launchedIds} launchMode={queueActions.launchMode} onSetLaunchMode={queueActions.setLaunchMode} defaultEngine={data.defaultEngine} processOutputs={processOutput.outputs} onClearOutput={processOutput.clearOutput} />
               </div>
 
               <div className="panel">

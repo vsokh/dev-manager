@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import type { QualityReport, QualityHistoryEntry } from '../types';
+import type { TaskOutput } from '../hooks/useProcessOutput.ts';
 import { gradeClass } from './quality/shared';
 import { Pill } from './quality/Tooltip';
 import { HealthcheckButton, AutofixButton } from './quality/LaunchButtons';
@@ -18,9 +19,12 @@ interface QualityPanelProps {
   loading: boolean;
   error?: boolean;
   onRetry?: () => void;
+  healthcheckOutput?: TaskOutput;
+  autofixOutput?: TaskOutput;
+  onClearOutput?: (taskId: number) => void;
 }
 
-export function QualityPanel({ latest, history, loading, error, onRetry }: QualityPanelProps) {
+export function QualityPanel({ latest, history, loading, error, onRetry, healthcheckOutput, autofixOutput, onClearOutput }: QualityPanelProps) {
   const prev = useMemo(() => history.length > 1 ? history[history.length - 2] : null, [history]);
 
   if (loading) {
@@ -55,8 +59,8 @@ export function QualityPanel({ latest, history, loading, error, onRetry }: Quali
           {QUALITY_NO_DATA}
         </div>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-          <HealthcheckButton />
-          <AutofixButton />
+          <HealthcheckButton processOutput={healthcheckOutput} onClearOutput={onClearOutput} />
+          <AutofixButton processOutput={autofixOutput} onClearOutput={onClearOutput} />
         </div>
       </div>
     );
@@ -98,8 +102,8 @@ export function QualityPanel({ latest, history, loading, error, onRetry }: Quali
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-          <HealthcheckButton />
-          <AutofixButton />
+          <HealthcheckButton processOutput={healthcheckOutput} onClearOutput={onClearOutput} />
+          <AutofixButton processOutput={autofixOutput} onClearOutput={onClearOutput} />
         </div>
       </div>
 

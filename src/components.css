@@ -701,7 +701,8 @@
 .healthcheck-btn--launched {
   background: var(--dm-success-light);
   color: var(--dm-success);
-  border: none;
+  border: 1.5px solid transparent;
+  cursor: pointer;
 }
 
 .autofix-btn {
@@ -720,6 +721,20 @@
 .autofix-btn--launched {
   background: var(--dm-success-light);
   color: var(--dm-success);
+  cursor: pointer;
+}
+
+/* System launch pulse — sweep animation for bg-running buttons */
+.system-launch-pulse {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.25) 50%, transparent 100%);
+  animation: system-pulse-sweep 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes system-pulse-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* Tooltip */

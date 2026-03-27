@@ -9,7 +9,7 @@ vi.mock('../fs.ts', () => ({
   verifyHandle: vi.fn().mockResolvedValue(false),
   requestAccess: vi.fn().mockResolvedValue(false),
   readState: vi.fn().mockResolvedValue(null),
-  writeState: vi.fn().mockResolvedValue(true),
+  writeState: vi.fn().mockResolvedValue({ ok: true, lastModified: Date.now() }),
   createDefaultState: vi.fn((name: string) => ({
     project: name,
     tasks: [],

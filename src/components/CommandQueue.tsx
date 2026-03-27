@@ -5,6 +5,7 @@ import {
   QUEUE_UNQUEUE_ALL, QUEUE_EMPTY,
 } from '../constants/strings.ts';
 import type { Task, QueueItem } from '../types';
+import type { LaunchMode } from '../hooks/useQueueActions.ts';
 import type { TaskOutput } from '../hooks/useProcessOutput.ts';
 import { itemKey, cmdForItem, getRowClass, getItemStatus, isAllAutoApproved } from './queue/queueItemUtils.ts';
 import { QueueItemContent } from './queue/QueueItemContent.tsx';
@@ -17,7 +18,8 @@ interface CommandQueueProps {
   tasks: Task[];
   onLaunch: (key: number, cmd: string, taskName: string) => void;
   onLaunchTerminal?: (key: number, cmd: string, taskName: string) => void;
-  onLaunchPhase: (items: { key: number; cmd: string; taskName: string }[]) => void;
+  onLaunchPhase: (items: { key: number; cmd: string; taskName: string }[], phaseIndex?: number) => void;
+  onRetryFailed: (items: { key: number; cmd: string; taskName: string }[], phaseIndex?: number) => void;
   onRemove: (key: number) => void;
   onClear: () => void;
   onQueueAll: () => void;
@@ -25,12 +27,14 @@ interface CommandQueueProps {
   onUpdateTask: (id: number, updates: Partial<Task>) => void;
   onBatchUpdateTasks: (updates: Array<{ id: number; updates: Partial<Task> }>) => void;
   launchedIds: Set<number>;
+  launchMode: LaunchMode;
+  onSetLaunchMode: (mode: LaunchMode) => void;
   defaultEngine?: string;
   processOutputs?: Record<number, TaskOutput>;
   onClearOutput?: (taskId: number) => void;
 }
 
-export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunchPhase, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedIds, defaultEngine, processOutputs, onClearOutput }: CommandQueueProps) {
+export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunchPhase, onRetryFailed, onRemove, onClear, onQueueAll: _onQueueAll, onPauseTask, onUpdateTask, onBatchUpdateTasks, launchedIds, launchMode, onSetLaunchMode, defaultEngine, processOutputs, onClearOutput }: CommandQueueProps) {
   const taskMap = useMemo(() => new Map((tasks || []).map(t => [t.id, t])), [tasks]);
   const phases = useMemo(() => computePhases(queue, tasks), [queue, tasks]);
 
@@ -96,7 +100,34 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
 
   return (
     <div>
-      <PipelineLegend queue={queue} taskMap={taskMap} />
+      {queue.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '6px 12px 2px',
+        }}>
+          <PipelineLegend queue={queue} taskMap={taskMap} />
+          <div style={{
+            display: 'inline-flex', borderRadius: 'var(--dm-radius-sm)',
+            border: '1px solid var(--dm-border)', overflow: 'hidden', flexShrink: 0,
+          }}>
+            {(['background', 'sequential', 'terminal'] as LaunchMode[]).map(mode => {
+              const label = mode === 'background' ? 'Parallel' : mode === 'sequential' ? 'Sequential' : 'Terminal';
+              return (
+                <button
+                  key={mode}
+                  onClick={() => onSetLaunchMode(mode)}
+                  style={{
+                    padding: '2px 8px', fontSize: '10px', border: 'none', cursor: 'pointer',
+                    background: launchMode === mode ? 'var(--dm-accent)' : 'transparent',
+                    color: launchMode === mode ? '#fff' : 'var(--dm-text-muted)',
+                    fontWeight: launchMode === mode ? 600 : 400,
+                  }}
+                >{label}</button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {queue.length === 0 ? (
         <div className="empty-state-sm" style={{
           padding: '20px 16px', lineHeight: 1.6,
@@ -110,7 +141,9 @@ export function CommandQueue({ queue, tasks, onLaunch, onLaunchTerminal, onLaunc
           taskMap={taskMap}
           launchedIds={launchedIds}
           onLaunch={onLaunch}
+          onLaunchTerminal={onLaunchTerminal}
           onLaunchPhase={onLaunchPhase}
+          onRetryFailed={onRetryFailed}
           onRemove={onRemove}
           onPauseTask={onPauseTask}
           onUpdateTask={onUpdateTask}

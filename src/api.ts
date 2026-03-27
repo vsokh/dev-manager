@@ -55,7 +55,21 @@ export function connectWebSocket(
 export const api = {
   // State
   readState: () => get<{ data: StateData; lastModified: number }>('/api/state'),
-  writeState: (data: StateData) => put<{ ok: true }>('/api/state', data),
+  writeState: async (data: StateData, lastModified?: number): Promise<{ ok: true; lastModified: number } | { conflict: true; data: StateData; lastModified: number }> => {
+    const body = lastModified ? { ...data, _lastModified: lastModified } : data;
+    const res = await fetch(BASE_URL + '/api/state', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.status === 409) {
+      const conflict = await res.json();
+      return { conflict: true, data: conflict.data, lastModified: conflict.lastModified };
+    }
+    if (!res.ok) throw new Error(`PUT /api/state: ${res.status}`);
+    const result = await res.json();
+    return { ok: true, lastModified: result.lastModified };
+  },
 
   // Progress
   readProgress: () => get<Record<string, ProgressEntry>>('/api/progress'),
