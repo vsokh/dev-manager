@@ -102,12 +102,6 @@ export function mergeProgressIntoState(
         if (!tasks[idx].startedAt) {
           enriched.startedAt = new Date().toISOString();
         }
-        // Remove from queue when task starts (replaces task-start.cjs queue removal)
-        const queueBefore = queue.length;
-        queue = queue.filter(q => q.task !== id);
-        if (queue.length !== queueBefore) {
-          needsWrite = true;
-        }
       }
       tasks[idx] = { ...tasks[idx], ...enriched } as Task;
       hasChanges = true;
