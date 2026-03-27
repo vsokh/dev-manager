@@ -112,6 +112,7 @@ input, textarea { color: var(--dm-text); }
 .gap-16 { gap: 16px; }
 .gap-20 { gap: 20px; }
 .gap-24 { gap: 24px; }
+.gap-32 { gap: 32px; }
 
 /* Padding */
 .p-4 { padding: 4px; }
@@ -164,6 +165,7 @@ input, textarea { color: var(--dm-text); }
 .text-18 { font-size: 18px; }
 .text-20 { font-size: 20px; }
 .text-24 { font-size: 24px; }
+.text-28 { font-size: 28px; }
 .font-400 { font-weight: 400; }
 .font-500 { font-weight: 500; }
 .font-600 { font-weight: 600; }

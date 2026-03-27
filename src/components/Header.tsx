@@ -75,31 +75,28 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
   const currentEngine = getEngine(defaultEngine);
 
   return (
-    <header className="dm-header header" style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+    <header className="dm-header header flex-between" style={{
       position: 'sticky',
       top: 0,
       zIndex: 10,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
+      <div className="flex-center gap-12 relative">
         {onSwitchProject && (
           <button
             onClick={() => setShowPicker(!showPicker)}
-            className="btn-ghost"
+            className="btn-ghost text-14"
             title="Switch project"
-            style={{ fontSize: '14px', padding: '2px 6px', borderRadius: '4px' }}
+            style={{ padding: '2px 6px', borderRadius: '4px' }}
           >{showPicker ? '×' : '⇄'}</button>
         )}
-        <span style={{ fontWeight: 700, fontSize: '18px', color: 'var(--dm-text)' }}>{projectName}</span>
-        <div className={`dot-sync ${status === 'error' ? 'dot-sync--error' : 'dot-sync--ok'}`} style={{ flexShrink: 0 }} title={status === 'error' ? HEADER_SYNC_ERROR : HEADER_CONNECTED} />
-        <span className="text-light" style={{ fontSize: '14px' }}>/</span>
-        <span className="text-muted" style={{ fontWeight: 500, fontSize: '16px' }}>{APP_NAME}</span>
+        <span className="font-700 text-18" style={{ color: 'var(--dm-text)' }}>{projectName}</span>
+        <div className={`dot-sync ${status === 'error' ? 'dot-sync--error' : 'dot-sync--ok'} shrink-0`} title={status === 'error' ? HEADER_SYNC_ERROR : HEADER_CONNECTED} />
+        <span className="text-light text-14">/</span>
+        <span className="text-muted font-500 text-16">{APP_NAME}</span>
 
         {showPicker && onSwitchProject && (
-          <div style={{
-            position: 'absolute', top: '100%', left: 0, marginTop: '8px',
+          <div className="absolute mt-8" style={{
+            top: '100%', left: 0,
             background: 'var(--dm-surface)', border: '1px solid var(--dm-border)',
             borderRadius: 'var(--dm-radius)', boxShadow: 'var(--dm-shadow-md)',
             padding: '4px 0', minWidth: '280px', zIndex: 100,
@@ -111,16 +108,15 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
                   if (!p.active) onSwitchProject(p.path);
                   setShowPicker(false);
                 }}
-                className="btn-ghost"
+                className="btn-ghost block w-full text-left text-14"
                 style={{
-                  display: 'block', width: '100%', textAlign: 'left',
-                  padding: '8px 16px', fontSize: '14px', borderRadius: 0,
+                  padding: '8px 16px', borderRadius: 0,
                   fontWeight: p.active ? 700 : 400,
                   color: p.active ? 'var(--dm-accent)' : 'var(--dm-text)',
                 }}
               >
                 {p.name}
-                {p.active && <span style={{ fontSize: '11px', marginLeft: '8px', opacity: 0.5 }}>current</span>}
+                {p.active && <span className="text-11 ml-8" style={{ opacity: 0.5 }}>current</span>}
               </button>
             ))}
             <div style={{
@@ -135,10 +131,10 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
                     if (result.path && onSwitchProject) onSwitchProject(result.path);
                   } catch { /* user cancelled or error */ }
                 }}
-                className="btn-ghost"
+                className="btn-ghost w-full text-13 font-600"
                 style={{
-                  width: '100%', fontSize: '13px', padding: '6px 12px',
-                  fontWeight: 600, color: 'var(--dm-accent)',
+                  padding: '6px 12px',
+                  color: 'var(--dm-accent)',
                   border: '1px solid var(--dm-accent)', borderRadius: '4px',
                 }}
               >Open folder...</button>
@@ -146,23 +142,23 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="flex-center gap-12">
         {status === 'synced' ? (
-          <span className="text-accent" style={{ fontSize: '12px', fontWeight: 500 }}>
+          <span className="text-accent text-12 font-500">
             {HEADER_SYNCED}
           </span>
         ) : status === 'error' ? (
-          <span className="text-danger" style={{ fontSize: '11px' }}>{HEADER_SYNC_ERROR}</span>
+          <span className="text-danger text-11">{HEADER_SYNC_ERROR}</span>
         ) : null}
         {unpushed > 0 && (
-          <div style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          <div className="relative">
+            <div className="flex-center gap-2">
               <button
                 onClick={() => setShowPushDetails(!showPushDetails)}
-                className="btn-ghost"
+                className="btn-ghost text-12 font-600"
                 style={{
-                  fontSize: '12px', padding: '3px 8px',
-                  fontWeight: 600, borderRadius: '4px 0 0 4px',
+                  padding: '3px 8px',
+                  borderRadius: '4px 0 0 4px',
                   color: 'var(--dm-success)',
                   border: '1px solid var(--dm-success)',
                   borderRight: 'none',
@@ -171,10 +167,10 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
               <button
                 onClick={handlePush}
                 disabled={pushing}
-                className="btn-ghost"
+                className="btn-ghost text-12 font-600"
                 style={{
-                  fontSize: '12px', padding: '3px 10px',
-                  fontWeight: 600, borderRadius: '0 4px 4px 0',
+                  padding: '3px 10px',
+                  borderRadius: '0 4px 4px 0',
                   color: '#fff',
                   background: 'var(--dm-success)',
                   border: '1px solid var(--dm-success)',
@@ -183,24 +179,23 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
               >{pushing ? 'Pushing...' : 'Push'}</button>
             </div>
             {showPushDetails && commits.length > 0 && (
-              <div style={{
-                position: 'absolute', top: '100%', right: 0, marginTop: '6px',
+              <div className="absolute overflow-y-auto" style={{
+                top: '100%', right: 0, marginTop: '6px',
                 background: 'var(--dm-surface)', border: '1px solid var(--dm-border)',
                 borderRadius: 'var(--dm-radius)', boxShadow: 'var(--dm-shadow-md)',
                 padding: '8px 0', minWidth: '320px', maxWidth: '450px', zIndex: 100,
-                maxHeight: '300px', overflowY: 'auto',
+                maxHeight: '300px',
               }}>
-                <div style={{ padding: '4px 12px 8px', fontSize: '11px', color: 'var(--dm-text-muted)', fontWeight: 600 }}>
+                <div className="text-11 font-600" style={{ padding: '4px 12px 8px', color: 'var(--dm-text-muted)' }}>
                   Unpushed commits
                 </div>
                 {commits.map(c => (
-                  <div key={c.hash} style={{
-                    padding: '4px 12px', fontSize: '12px',
-                    display: 'flex', gap: '8px', alignItems: 'baseline',
+                  <div key={c.hash} className="flex gap-8 text-12" style={{
+                    padding: '4px 12px', alignItems: 'baseline',
                   }}>
-                    <span style={{
-                      fontFamily: 'monospace', fontSize: '10px',
-                      color: 'var(--dm-amber)', flexShrink: 0,
+                    <span className="text-10 shrink-0" style={{
+                      fontFamily: 'monospace',
+                      color: 'var(--dm-amber)',
                     }}>{c.hash}</span>
                     <span style={{ color: 'var(--dm-text)', lineHeight: 1.4 }}>{c.message}</span>
                   </div>
@@ -210,7 +205,7 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
           </div>
         )}
         {pushResult && (
-          <span style={{ fontSize: '11px', fontWeight: 500, color: pushResult === 'Pushed!' ? 'var(--dm-success)' : 'var(--dm-danger)' }}>
+          <span className="text-11 font-500" style={{ color: pushResult === 'Pushed!' ? 'var(--dm-success)' : 'var(--dm-danger)' }}>
             {pushResult}
           </span>
         )}
@@ -219,15 +214,15 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
             onClick={onOpenSkills}
             aria-label="Skill categories"
             title="Configure skill categories"
-            className="btn-ghost"
-            style={{ fontSize: '14px', padding: '4px 6px' }}
+            className="btn-ghost text-14"
+            style={{ padding: '4px 6px' }}
           >&#9881;</button>
         )}
         {onSetDefaultEngine ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div className="flex-center gap-4">
             <span
+              className="text-14"
               style={{
-                fontSize: '14px',
                 lineHeight: 1,
                 color: currentEngine.color,
               }}
@@ -238,16 +233,12 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
               title={HEADER_ENGINE_TITLE}
               value={currentEngine.id}
               onChange={(e) => onSetDefaultEngine(e.target.value)}
-              className="select-field"
+              className="select-field text-11 font-600 border-none cursor-pointer"
               style={{
-                fontSize: '11px',
-                fontWeight: 600,
                 padding: '2px 18px 2px 4px',
                 borderRadius: '4px',
                 background: 'transparent',
                 color: currentEngine.color,
-                border: 'none',
-                cursor: 'pointer',
               }}
             >
               {ENGINES.map(eng => (
@@ -262,8 +253,8 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
           onClick={toggleTheme}
           aria-label={HEADER_TOGGLE_THEME_ARIA}
           title={dark ? HEADER_LIGHT_MODE : HEADER_DARK_MODE}
-          className="btn-theme-toggle"
-          style={{ fontSize: '16px', padding: '4px', lineHeight: 1 }}
+          className="btn-theme-toggle text-16 p-4"
+          style={{ lineHeight: 1 }}
         >{dark ? '☀' : '☽'}</button>
       </div>
     </header>
