@@ -61,30 +61,30 @@ export function OutputViewer({ taskId, taskName: _taskName, output, onClear }: O
       {/* Toggle bar */}
       <button
         onClick={() => setExpanded(!expanded)}
+        className="flex-center gap-6 w-full border-none cursor-pointer text-11 text-left"
         style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          width: '100%', padding: '4px 12px',
-          background: 'none', border: 'none', cursor: 'pointer',
-          fontFamily: 'var(--dm-font)', fontSize: '11px',
-          color: 'var(--dm-text-muted)', textAlign: 'left',
+          padding: '4px 12px',
+          background: 'none',
+          fontFamily: 'var(--dm-font)',
+          color: 'var(--dm-text-muted)',
         }}
       >
-        <span style={{
-          fontSize: '9px', transition: 'transform 0.15s',
+        <span className="text-9" style={{
+          transition: 'transform 0.15s',
           transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
           display: 'inline-block',
         }}>{'\u25B6'}</span>
-        <span style={{
+        <span className="shrink-0" style={{
           width: '6px', height: '6px', borderRadius: '50%',
-          background: statusDot, flexShrink: 0,
+          background: statusDot,
         }} />
-        <span style={{ fontWeight: 500 }}>Output</span>
+        <span className="font-500">Output</span>
         {hasOutput && (
           <span style={{ opacity: 0.5 }}>({lines.length} lines)</span>
         )}
         {statusText && (
-          <span style={{
-            fontSize: '10px', fontStyle: 'italic',
+          <span className="text-10" style={{
+            fontStyle: 'italic',
             color: isRunning ? 'var(--dm-success)' : exitCode === 0 ? 'var(--dm-text-light)' : 'var(--dm-danger)',
           }}>{statusText}</span>
         )}
@@ -92,38 +92,35 @@ export function OutputViewer({ taskId, taskName: _taskName, output, onClear }: O
 
       {/* Output content */}
       {expanded && (
-        <div style={{ padding: '0 12px 8px' }}>
+        <div className="px-12 pb-8">
           {!hasOutput ? (
-            <div style={{
-              fontSize: '11px', color: 'var(--dm-text-light)',
-              fontStyle: 'italic', padding: '8px 0',
+            <div className="text-11 py-8" style={{
+              color: 'var(--dm-text-light)',
+              fontStyle: 'italic',
             }}>
               {OUTPUT_NO_OUTPUT}
             </div>
           ) : (
             <>
-              <div style={{
-                display: 'flex', justifyContent: 'flex-end', marginBottom: '4px',
+              <div className="flex mb-4" style={{
+                justifyContent: 'flex-end',
               }}>
                 <button
                   onClick={(e) => { e.stopPropagation(); onClear(taskId); }}
-                  className="btn btn-secondary btn-xs"
-                  style={{ padding: '2px 8px', fontSize: '10px' }}
+                  className="btn btn-secondary btn-xs text-10"
+                  style={{ padding: '2px 8px' }}
                 >{OUTPUT_CLEAR}</button>
               </div>
               <div
                 ref={scrollRef}
                 onScroll={handleScroll}
-                className="output-viewer-scroll"
+                className="output-viewer-scroll overflow-y-auto p-8 text-11 leading-normal"
                 style={{
-                  maxHeight: '200px', overflowY: 'auto',
+                  maxHeight: '200px',
                   background: 'var(--dm-bg)',
                   border: '1px solid var(--dm-border)',
                   borderRadius: 'var(--dm-radius-sm)',
-                  padding: '8px',
                   fontFamily: 'monospace',
-                  fontSize: '11px',
-                  lineHeight: 1.5,
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-all',
                 }}
@@ -136,10 +133,8 @@ export function OutputViewer({ taskId, taskName: _taskName, output, onClear }: O
                     }}
                   >
                     {line.stream === 'stderr' && (
-                      <span style={{
-                        fontSize: '9px', fontWeight: 600,
+                      <span className="text-9 font-600 mr-4" style={{
                         color: 'var(--dm-danger)', opacity: 0.7,
-                        marginRight: '4px',
                       }}>{OUTPUT_STDERR_LABEL}</span>
                     )}
                     {line.text}

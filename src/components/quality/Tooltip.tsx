@@ -22,12 +22,11 @@ export function Tooltip({ text, children, style: wrapStyle }: { text: string; ch
         {children}
       </span>
       {show && (
-        <div className="tooltip-popup" style={{
-          position: 'fixed', left: pos.x, top: pos.y,
+        <div className="tooltip-popup fixed text-12 leading-normal" style={{
+          left: pos.x, top: pos.y,
           transform: 'translateX(-50%)',
           zIndex: 1000,
           maxWidth: 300, padding: '8px 12px',
-          fontSize: 12, lineHeight: 1.5,
         }}>
           {text}
         </div>
@@ -37,21 +36,21 @@ export function Tooltip({ text, children, style: wrapStyle }: { text: string; ch
 }
 
 export function TrendArrow({ trend }: { trend: string }) {
-  if (trend === 'up') return <span className="text-success" style={{ fontSize: 14 }}>&#9650;</span>;
-  if (trend === 'down') return <span className="text-danger" style={{ fontSize: 14 }}>&#9660;</span>;
-  return <span className="text-light" style={{ fontSize: 14 }}>&#8212;</span>;
+  if (trend === 'up') return <span className="text-success text-14">&#9650;</span>;
+  if (trend === 'down') return <span className="text-danger text-14">&#9660;</span>;
+  return <span className="text-light text-14">&#8212;</span>;
 }
 
 export function Pill({ ok, warn, children }: { ok?: boolean; warn?: boolean; children: React.ReactNode }) {
   const bg = ok ? 'var(--dm-success-light)' : warn ? 'var(--dm-amber-light)' : 'var(--dm-danger-light)';
   const dot = ok ? 'var(--dm-success)' : warn ? 'var(--dm-amber)' : 'var(--dm-danger)';
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '4px 10px', borderRadius: 16, fontSize: 12, fontWeight: 500,
+    <span className="inline-flex items-center text-12 font-500" style={{
+      gap: 5,
+      padding: '4px 10px', borderRadius: 16,
       background: bg,
     }}>
-      <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flexShrink: 0 }} />
+      <span className="shrink-0" style={{ width: 7, height: 7, borderRadius: '50%', background: dot }} />
       {children}
     </span>
   );

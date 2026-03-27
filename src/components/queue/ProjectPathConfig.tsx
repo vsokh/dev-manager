@@ -22,7 +22,7 @@ export function ProjectPathConfig({ projectPath, onSetPath, showBorder }: Projec
 
   if (editingPath) {
     return (
-      <div style={{ padding: '8px 12px', borderTop: '1px solid var(--dm-border)', display: 'flex', gap: '6px' }}>
+      <div className="flex gap-6" style={{ padding: '8px 12px', borderTop: '1px solid var(--dm-border)' }}>
         <input
           type="text"
           value={pathInput}
@@ -30,9 +30,9 @@ export function ProjectPathConfig({ projectPath, onSetPath, showBorder }: Projec
           onKeyDown={(e) => e.key === 'Enter' && handleSavePath()}
           placeholder={QUEUE_PATH_PLACEHOLDER}
           autoFocus
-          className="mono"
+          className="mono flex-1 text-12"
           style={{
-            flex: 1, padding: '6px 8px', fontSize: '12px',
+            padding: '6px 8px',
             border: '1px solid var(--dm-border)', borderRadius: 'var(--dm-radius-sm)',
             background: 'var(--dm-bg)', color: 'var(--dm-text)',
           }}
@@ -48,21 +48,17 @@ export function ProjectPathConfig({ projectPath, onSetPath, showBorder }: Projec
   }
 
   return (
-    <div style={{
-      padding: '4px 12px 6px', display: 'flex', alignItems: 'center', gap: '6px',
-      fontSize: '11px', borderTop: showBorder ? '1px solid var(--dm-border)' : 'none',
+    <div className="flex-center gap-6 text-11" style={{
+      padding: '4px 12px 6px',
+      borderTop: showBorder ? '1px solid var(--dm-border)' : 'none',
     }}>
       {projectPath ? (
         <>
-          <span className="queue-path" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, opacity: 0.7 }}>{projectPath}</span>
-          <button onClick={() => { setPathInput(projectPath); setEditingPath(true); }} className="btn-link text-light" style={{
-            fontSize: '11px', flexShrink: 0,
-          }}>{QUEUE_EDIT}</button>
+          <span className="queue-path truncate flex-1" style={{ opacity: 0.7 }}>{projectPath}</span>
+          <button onClick={() => { setPathInput(projectPath); setEditingPath(true); }} className="btn-link text-light text-11 shrink-0">{QUEUE_EDIT}</button>
         </>
       ) : (
-        <button onClick={() => setEditingPath(true)} className="btn-link text-amber" style={{
-          fontSize: '11px',
-        }}>{QUEUE_SET_PATH}</button>
+        <button onClick={() => setEditingPath(true)} className="btn-link text-amber text-11">{QUEUE_SET_PATH}</button>
       )}
     </div>
   );

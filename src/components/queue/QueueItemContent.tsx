@@ -39,12 +39,12 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
     <>
       {isManual ? (
         variant === 'phase' ? (
-          <span title={QUEUE_MANUAL_YOU} style={{
-            padding: '4px 8px', fontSize: '12px', flexShrink: 0, lineHeight: 1,
+          <span className="text-12 shrink-0" title={QUEUE_MANUAL_YOU} style={{
+            padding: '4px 8px', lineHeight: 1,
           }}>&#9997;</span>
         ) : (
-          <span className="manual-badge" title={QUEUE_MANUAL_TITLE} style={{
-            padding: '3px 6px', flexShrink: 0,
+          <span className="manual-badge shrink-0" title={QUEUE_MANUAL_TITLE} style={{
+            padding: '3px 6px',
           }}>YOU</span>
         )
       ) : (
@@ -53,16 +53,14 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
             onClick={() => onLaunch(key, cmdForItem(item), item.taskName)}
             aria-label={QUEUE_LAUNCH_ARIA}
             title={isError ? `Retry (${engine.label})` : isPaused ? QUEUE_LAUNCH_RESUME : `Background (${engine.label})`}
-            className={`btn-launch${isActive && !isLaunched ? ' task-card-in-progress' : ''}`}
+            className={`btn-launch flex-center text-12 shrink-0${isActive && !isLaunched ? ' task-card-in-progress' : ''}`}
             style={{
               padding: '4px 8px', background: btn.bg,
-              fontSize: '12px', flexShrink: 0,
-              display: 'flex', alignItems: 'center', gap: '3px',
+              gap: '3px',
             }}
           >
             {btn.icon}
-            <span style={{
-              fontSize: '9px',
+            <span className="text-9" style={{
               lineHeight: 1,
               opacity: 0.9,
             }}>{engine.icon}</span>
@@ -71,9 +69,9 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
             <button
               onClick={() => onLaunchTerminal(key, cmdForItem(item), item.taskName)}
               title={`Open in terminal (${engine.label})`}
-              className="btn-ghost"
+              className="btn-ghost text-11 shrink-0"
               style={{
-                padding: '3px 5px', fontSize: '11px', flexShrink: 0,
+                padding: '3px 5px',
                 fontFamily: 'monospace', lineHeight: 1,
                 color: 'var(--dm-text-muted)',
               }}
@@ -81,16 +79,17 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
           )}
         </>
       )}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          <span style={{ fontWeight: 500, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{item.taskName}</span>
+      <div className="flex-1" style={{ minWidth: 0 }}>
+        <div className="flex-center gap-2">
+          <span className="font-500 text-13 truncate flex-1">{item.taskName}</span>
           {!isManual && (
             <button
               onClick={() => onUpdateTask(item.task, { autoApprove: !task?.autoApprove || undefined })}
               title={task?.autoApprove ? QUEUE_AUTO_APPROVED : QUEUE_CLICK_APPROVE}
+              className="border-none cursor-pointer text-11 shrink-0"
               style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '11px', padding: '0 2px', flexShrink: 0,
+                background: 'none',
+                padding: '0 2px',
                 opacity: task?.autoApprove ? 1 : 0.3,
                 color: task?.autoApprove ? 'var(--dm-success)' : 'var(--dm-text-light)',
               }}
@@ -98,17 +97,17 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
           )}
         </div>
         {isError && task?.progress ? (
-          <span style={{
-            fontSize: '10px', display: 'block', marginTop: '1px',
+          <span className="text-10 block" style={{
+            marginTop: '1px',
             color: 'var(--dm-danger)',
           }}>{task.progress}</span>
         ) : isActive && task?.progress ? (
-          <span aria-live="polite" className={`progress-text-shimmer ${progressColorClass}`} style={{
-            fontSize: '10px', display: 'block', marginTop: '1px',
+          <span aria-live="polite" className={`progress-text-shimmer ${progressColorClass} text-10 block`} style={{
+            marginTop: '1px',
           }}>{task.progress}</span>
         ) : isPaused ? (
-          <span className="text-paused" style={{
-            fontSize: '10px', display: 'block', marginTop: '1px',
+          <span className="text-paused text-10 block" style={{
+            marginTop: '1px',
           }}>{task?.lastProgress || QUEUE_PAUSED_DEFAULT}</span>
         ) : null}
       </div>
@@ -117,16 +116,16 @@ export function QueueItemContent({ item, task, launchedIds, onLaunch, onLaunchTe
           onClick={() => onPauseTask(item.task)}
           aria-label={QUEUE_PAUSE_ARIA}
           title={QUEUE_PAUSE_TITLE}
-          className="btn-queue-pause"
-          style={{ padding: '2px 6px', fontSize: '12px', lineHeight: 1, flexShrink: 0 }}
+          className="btn-queue-pause text-12 shrink-0"
+          style={{ padding: '2px 6px', lineHeight: 1 }}
         >&#9646;&#9646;</button>
       ) : null}
       <button
         onClick={() => onRemove(key)}
         aria-label={QUEUE_REMOVE_ARIA}
         title={QUEUE_REMOVE_TITLE}
-        className="btn-queue-remove"
-        style={{ padding: '2px 6px', fontSize: '14px', lineHeight: 1 }}
+        className="btn-queue-remove text-14"
+        style={{ padding: '2px 6px', lineHeight: 1 }}
       >x</button>
     </>
   );

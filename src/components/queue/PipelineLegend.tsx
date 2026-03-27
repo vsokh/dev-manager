@@ -27,10 +27,8 @@ export function PipelineLegend({ queue, taskMap }: PipelineLegendProps) {
   });
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center',
-      padding: '8px 12px', marginBottom: '4px',
-      fontSize: '10px',
+    <div className="flex-center mb-4 text-10" style={{
+      padding: '8px 12px',
     }}>
       {PIPELINE_STAGES.map((stage, i) => {
         const count = counts[stage.id] || 0;
@@ -40,7 +38,7 @@ export function PipelineLegend({ queue, taskMap }: PipelineLegendProps) {
         return (
           <React.Fragment key={stage.id}>
             {i > 0 && (
-              <svg width="16" height="10" viewBox="0 0 16 10" style={{ flexShrink: 0, margin: '0 1px' }}>
+              <svg width="16" height="10" viewBox="0 0 16 10" className="shrink-0" style={{ margin: '0 1px' }}>
                 <path
                   d="M0 5 L12 5 M9 2 L13 5 L9 8"
                   fill="none"
@@ -52,8 +50,8 @@ export function PipelineLegend({ queue, taskMap }: PipelineLegendProps) {
                 />
               </svg>
             )}
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: '3px',
+            <span className="inline-flex items-center whitespace-nowrap" style={{
+              gap: '3px',
               padding: '2px 8px',
               borderRadius: '10px',
               background: isActive ? stage.bg : 'transparent',
@@ -61,16 +59,13 @@ export function PipelineLegend({ queue, taskMap }: PipelineLegendProps) {
               fontWeight: isActive ? 700 : 400,
               opacity: isActive ? 1 : isPast ? 0.6 : 0.35,
               transition: 'all 0.3s',
-              whiteSpace: 'nowrap',
             }}>
               {stage.label}
               {count > 1 && (
-                <span style={{
-                  fontSize: '9px',
+                <span className="text-9 font-700" style={{
                   background: 'rgba(255,255,255,0.25)',
                   borderRadius: '6px',
                   padding: '0 4px',
-                  fontWeight: 700,
                 }}>{count}</span>
               )}
             </span>

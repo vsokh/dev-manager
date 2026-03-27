@@ -36,9 +36,7 @@ export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLau
         <div key={idx}>
           {/* Phase connector line (between phases, not before the first) */}
           {idx > 0 ? (
-            <div style={{
-              display: 'flex', alignItems: 'center', padding: '0 16px',
-            }}>
+            <div className="flex-center px-16">
               <div className="timeline-connector-v" style={{
                 width: '1px', height: '12px',
                 marginLeft: '11px',
@@ -46,9 +44,8 @@ export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLau
             </div>
           ) : null}
           {/* Phase label */}
-          <div className="phase-label" style={{
+          <div className="phase-label flex-center gap-8" style={{
             padding: '4px 12px 2px',
-            display: 'flex', alignItems: 'center', gap: '8px',
           }}>
             <span>Phase {idx + 1}</span>
             {phaseItems.length > 1 ? (
@@ -104,21 +101,21 @@ export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLau
             const hasOutput = processOutputs && (processOutputs[item.task]?.lines.length || processOutputs[item.task]?.running);
             return (
               <div key={itemKey(item)}>
-                <div style={{
-                  display: 'flex', alignItems: 'stretch',
+                <div className="flex" style={{
+                  alignItems: 'stretch',
                   background: rowBg,
                 }}>
                   {/* Tree connector */}
-                  <div style={{
-                    width: '24px', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  <div className="flex-col items-center shrink-0" style={{
+                    width: '24px',
                     paddingLeft: '4px',
                   }}>
                     <div className="timeline-connector-v" style={{
                       width: '1px', flex: isLast ? '0 0 50%' : '1',
                     }} />
-                    <div className="timeline-connector-v" style={{
+                    <div className="timeline-connector-v self-end" style={{
                       width: '8px', height: '1px',
-                      alignSelf: 'flex-end', marginRight: '-4px',
+                      marginRight: '-4px',
                     }} />
                     {!isLast ? (
                       <div className="timeline-connector-v" style={{
@@ -127,9 +124,8 @@ export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLau
                     ) : null}
                   </div>
                   {/* Item content */}
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    padding: '4px 8px 4px 4px', flex: 1, minWidth: 0,
+                  <div className="flex-center gap-6 flex-1" style={{
+                    padding: '4px 8px 4px 4px', minWidth: 0,
                   }}>
                     <QueueItemContent
                       item={item}
@@ -162,7 +158,7 @@ export function PhaseView({ phases, queue, taskMap, launchedIds, onLaunch, onLau
         </div>
       ))}
       {/* Bottom action bar */}
-      <div style={{ padding: '6px 12px', display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+      <div className="flex gap-6" style={{ padding: '6px 12px', justifyContent: 'flex-end' }}>
         <button
           onClick={() => {
             const nonManual = queue.filter(item => !taskMap.get(item.task)?.manual);

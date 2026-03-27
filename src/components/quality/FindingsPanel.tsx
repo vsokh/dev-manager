@@ -8,18 +8,17 @@ export function FindingsPanel({ findings }: { findings: QualityFinding[] }) {
 
   return (
     <div>
-      <div className="label-sm" style={{ marginBottom: 8 }}>{FINDINGS_TITLE}</div>
+      <div className="label-sm mb-8">{FINDINGS_TITLE}</div>
       {findings.map((f, i) => {
         const dotColor = f.severity === 'high' ? 'var(--dm-danger)' : f.severity === 'medium' ? 'var(--dm-amber)' : 'var(--dm-accent)';
         return (
-          <div key={i} className={`finding-card finding-card--${f.severity}`} style={{
-            display: 'flex', gap: 8, padding: '8px 10px',
-            marginBottom: 4, alignItems: 'flex-start', fontSize: 12,
+          <div key={i} className={`finding-card finding-card--${f.severity} flex gap-8 items-start text-12 mb-4`} style={{
+            padding: '8px 10px',
           }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, marginTop: 4, flexShrink: 0 }} />
+            <span className="shrink-0 mt-4" style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor }} />
             <div>
               <div>{f.finding}</div>
-              <div className="text-muted" style={{ fontSize: 10, marginTop: 1 }}>{DIM_LABELS[f.dimension as string] || f.dimension}</div>
+              <div className="text-muted text-10" style={{ marginTop: 1 }}>{DIM_LABELS[f.dimension as string] || f.dimension}</div>
             </div>
           </div>
         );

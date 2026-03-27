@@ -195,36 +195,34 @@ export function TimelineChart({ history, width = 360, height = 200 }: { history:
   }, [hover, history]);
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative' }}
+    <div ref={wrapRef} className="relative"
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHover(null)}
     >
       <canvas ref={canvasRef} role="img" aria-label="Quality score timeline chart" style={{ maxWidth: '100%', cursor: hover ? 'pointer' : 'default' }} />
       {hover && tooltipContent && (
-        <div className="tooltip-popup" style={{
-          position: 'absolute',
+        <div className="tooltip-popup absolute text-11" style={{
           left: hover.x,
           top: hover.y - 8,
           transform: 'translate(-50%, -100%)',
           zIndex: 1000,
           minWidth: 160,
           padding: '6px 0',
-          fontSize: 11, lineHeight: 1,
+          lineHeight: 1,
         }}>
-          <div style={{ padding: '0 8px 5px', borderBottom: '1px solid rgba(255,255,255,0.15)', marginBottom: 4, display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+          <div className="flex justify-between gap-10 mb-4" style={{ padding: '0 8px 5px', borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
             <span style={{ opacity: 0.6 }}>{tooltipContent.commitRef}</span>
-            <span style={{ fontWeight: 600, color: +tooltipContent.overall > 0 ? 'var(--dm-trend-positive)' : +tooltipContent.overall < 0 ? 'var(--dm-trend-negative)' : 'inherit' }}>
+            <span className="font-600" style={{ color: +tooltipContent.overall > 0 ? 'var(--dm-trend-positive)' : +tooltipContent.overall < 0 ? 'var(--dm-trend-negative)' : 'inherit' }}>
               {+tooltipContent.overall > 0 ? '+' : ''}{tooltipContent.overall}
             </span>
           </div>
           {tooltipContent.diffs.length > 0 ? tooltipContent.diffs.map(({ key, delta }) => (
-            <div key={key} style={{
-              display: 'flex', justifyContent: 'space-between',
-              padding: '2px 8px', gap: 10,
+            <div key={key} className="flex justify-between gap-10" style={{
+              padding: '2px 8px',
             }}>
               <span>{DIM_SHORT[key]}</span>
-              <span style={{
-                fontWeight: 600, fontVariantNumeric: 'tabular-nums',
+              <span className="font-600" style={{
+                fontVariantNumeric: 'tabular-nums',
                 color: delta > 0 ? 'var(--dm-trend-positive)' : 'var(--dm-trend-negative)',
               }}>
                 {delta > 0 ? '+' : ''}{delta}

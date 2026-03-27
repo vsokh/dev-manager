@@ -13,7 +13,7 @@ interface ScorecardProps {
 
 export function Scorecard({ latest, prev, history }: ScorecardProps) {
   return (
-    <table className="scorecard-table" style={{ marginBottom: 16 }}>
+    <table className="scorecard-table mb-16">
       <thead>
         <tr>
           {SCORECARD_HEADERS.map((h, i) => (
@@ -30,12 +30,12 @@ export function Scorecard({ latest, prev, history }: ScorecardProps) {
           const trend = trendFromScores(d.score, prevVal);
           return (
             <tr key={key} className="scorecard-td">
-              <td style={{ padding: '7px 8px', fontWeight: 500 }}>
+              <td className="font-500" style={{ padding: '7px 8px' }}>
                 <Tooltip text={DIM_DESCRIPTIONS[key]}>{DIM_LABELS[key]}</Tooltip>
               </td>
               <td style={{ padding: '7px 8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontWeight: 600, width: 18, textAlign: 'right' }}>{d.score}</span>
+                <div className="flex-center gap-6">
+                  <span className="font-600 text-right" style={{ width: 18 }}>{d.score}</span>
                   <div className="progress-bar-track" style={{ width: 60, height: 5 }}>
                     <div className="progress-bar-fill" style={{ width: `${d.score * 10}%`, height: '100%', background: scoreColor(d.score) }} />
                   </div>
@@ -55,7 +55,7 @@ export function Scorecard({ latest, prev, history }: ScorecardProps) {
                   padding: '1px 5px',
                 }}>{d.weight}</span>
               </td>
-              <td className="text-muted" style={{ padding: '7px 8px', fontSize: 12 }}>
+              <td className="text-muted text-12" style={{ padding: '7px 8px' }}>
                 {d.issues > 0 ? `${d.issues} issues` : SCORECARD_CLEAN}
               </td>
               <td style={{ padding: '7px 8px' }}>
