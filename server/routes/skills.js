@@ -150,11 +150,7 @@ export async function handleSkills(method, pathname, req, res, url, ctx) {
   if (method === 'GET' && pathname === '/api/skills-config') {
     const configPath = join(projectPath, '.devmanager', 'skills.json');
     const result = await readJsonOrNull(configPath);
-    if (!result) {
-      jsonResponse(res, 404, { error: 'Skills config not found' });
-    } else {
-      jsonResponse(res, 200, result.data);
-    }
+    jsonResponse(res, 200, result ? result.data : {});
     return true;
   }
 

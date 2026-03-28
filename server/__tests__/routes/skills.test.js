@@ -226,10 +226,12 @@ describe('handleSkills', () => {
       expect(body).toEqual(config);
     });
 
-    it('returns 404 when config does not exist', async () => {
+    it('returns empty object when config does not exist', async () => {
       const res = mockRes();
       await handleSkills('GET', '/api/skills-config', mockReq(), res, mockUrl('/api/skills-config'), mockCtx(tmpDir));
-      expect(res.writeHead).toHaveBeenCalledWith(404, expect.any(Object));
+      expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
+      const body = JSON.parse(res.end.mock.calls[0][0]);
+      expect(body).toEqual({});
     });
   });
 

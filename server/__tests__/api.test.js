@@ -617,13 +617,13 @@ describe('GET /api/skills-config', () => {
     expect(getJsonResponse(res)).toEqual(config);
   });
 
-  it('returns 404 when skills.json does not exist', async () => {
+  it('returns empty object when skills.json does not exist', async () => {
     const req = mockReq('GET', '/api/skills-config');
     const res = mockRes();
     await handleApi(req, res);
 
-    expect(res.writeHead).toHaveBeenCalledWith(404, expect.any(Object));
-    expect(getJsonResponse(res).error).toBe('Skills config not found');
+    expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
+    expect(getJsonResponse(res)).toEqual({});
   });
 });
 
