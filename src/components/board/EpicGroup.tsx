@@ -22,9 +22,8 @@ interface EpicGroupProps {
 }
 
 export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGroup, setEditingGroup, editGroupName, setEditGroupName, queue }: EpicGroupProps) {
-  const { handleRenameGroup: onRenameGroup, handleDeleteGroup: onDeleteGroup, handleQueueGroup: onQueueGroup, selectedTask, handleSelectTask: onSelectTask, glowTaskId } = useActions();
+  const { handleRenameGroup: onRenameGroup, handleDeleteGroup: onDeleteGroup, handleQueueGroup: onQueueGroup, selectedTask, handleSelectTask: onSelectTask, glowTaskId, selectMode, selectedTasks, onToggleTaskSelection } = useActions();
   const [confirmDelete, setConfirmDelete] = useState(false);
-
   return (
     <div style={{ marginBottom: groupName ? '12px' : '0' }}>
       {groupName ? (

@@ -49,10 +49,21 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, tasks }: TaskCardProps) {
-  const { selectedTask, handleSelectTask: onSelectTask, pauseTask: onPauseTask, cancelTask: onCancelTask, glowTaskId } = useActions();
+  const { selectedTask, handleSelectTask: onSelectTask, pauseTask: onPauseTask, cancelTask: onCancelTask, glowTaskId, selectMode, selectedTasks, onToggleTaskSelection } = useActions();
+  const isMultiSelected = selectedTasks?.has(task.id);
+  const onToggleSelection = onToggleTaskSelection;
   const statusCls = getCardClass(task, selectedTask);
   const animCls = (task.status === STATUS.IN_PROGRESS ? 'task-card-in-progress' : '') + (glowTaskId === task.id ? ' task-card-glow' : '');
-  const className = `${statusCls}${animCls ? ' ' + animCls.trim() : ''}` || undefined;
+  const multiCls = isMultiSelected ? ' task-card--multi-selected' : '';
+  const className = `${statusCls}${animCls ? ' ' + animCls.trim() : ''}${multiCls}` || undefined;
+
+  const handleClick = () => {
+    if (selectMode && onToggleSelection) {
+      onToggleSelection(task.id);
+    } else {
+      onSelectTask(task.id);
+    }
+  };
 
   return (
     <div
@@ -61,12 +72,27 @@ export function TaskCard({ task, tasks }: TaskCardProps) {
       role="button"
       tabIndex={0}
       aria-label={task.name}
-      onClick={() => onSelectTask(task.id)}
-      onKeyDown={handleKeyActivate(() => onSelectTask(task.id))}
+      onClick={handleClick}
+      onKeyDown={handleKeyActivate(handleClick)}
       className={className}
       style={{ minWidth: '160px', flex: '1 1 160px', maxWidth: '260px', padding: '12px 16px' }}
     >
       <div className="flex-center font-600 text-13" style={{ gap: '5px' }}>
+        {selectMode && (
+          <div
+            onClick={(e) => { e.stopPropagation(); onToggleSelection?.(task.id); }}
+            style={{
+              width: '18px', height: '18px', borderRadius: '3px',
+              border: '2px solid var(--dm-border)',
+              background: isMultiSelected ? 'var(--dm-accent)' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, cursor: 'pointer',
+              marginRight: '4px',
+            }}
+          >
+            {isMultiSelected && <span style={{ color: '#fff', fontSize: '12px', lineHeight: 1 }}>&#10003;</span>}
+          </div>
+        )}
         <span className="text-11 font-500" style={{ opacity: 0.4 }}>#{task.id}</span>
         {task.manual ? <span className="manual-badge" title={CARD_MANUAL_TITLE} style={{ padding: '1px 5px' }}>YOU</span> : null}
         {task.name}

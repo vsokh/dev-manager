@@ -42,6 +42,13 @@ const mockActions = (): ActionContextValue => ({
   launchMode: 'background' as const,
   setLaunchMode: vi.fn(),
   glowTaskId: null,
+  selectMode: false,
+  selectedTasks: new Set<number>(),
+  onToggleSelectMode: vi.fn(),
+  onToggleTaskSelection: vi.fn(),
+  onBulkDelete: vi.fn(),
+  onBulkStatusChange: vi.fn(),
+  onExitSelectMode: vi.fn(),
   handleRemoveActivity: vi.fn(),
   defaultEngine: undefined,
 });

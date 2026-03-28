@@ -23,7 +23,7 @@ interface TaskBoardProps {
 }
 
 export function TaskBoard({ tasks, epics, queue }: TaskBoardProps) {
-  const { selectedTask, handleSelectTask: onSelectTask, handleAddTask: onAddTask, handleQueueAll: onQueueAll, handleQueueGroup: onQueueGroup, handleArrange: onArrange, arranging, handleRenameGroup: onRenameGroup, handleDeleteGroup: onDeleteGroup, handleUpdateEpics: onUpdateEpics, glowTaskId } = useActions();
+  const { selectedTask, handleSelectTask: onSelectTask, handleAddTask: onAddTask, handleQueueAll: onQueueAll, handleQueueGroup: onQueueGroup, handleArrange: onArrange, arranging, handleRenameGroup: onRenameGroup, handleDeleteGroup: onDeleteGroup, handleUpdateEpics: onUpdateEpics, glowTaskId, selectMode, selectedTasks, onToggleSelectMode, onToggleTaskSelection, onBulkDelete, onBulkStatusChange, onExitSelectMode } = useActions();
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [editGroupName, setEditGroupName] = useState('');
   const [searchText, setSearchText] = useState('');
@@ -75,6 +75,25 @@ export function TaskBoard({ tasks, epics, queue }: TaskBoardProps) {
   const [showNewForm, setShowNewForm] = useState(false);
   const [showBacklog, setShowBacklog] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+
+  // Escape key exits select mode
+  useEffect(() => {
+    if (!selectMode) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onExitSelectMode();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectMode, onExitSelectMode]);
+
+  // Visible task IDs for "select all" toggle
+  const visibleTaskIds = useMemo(() => {
+    const ids: number[] = [];
+    for (const t of filteredPendingTasks) ids.push(t.id);
+    if (showBacklog) for (const t of backlogTasks) ids.push(t.id);
+    if (showCompleted) for (const t of doneTasks) ids.push(t.id);
+    return ids;
+  }, [filteredPendingTasks, backlogTasks, doneTasks, showBacklog, showCompleted]);
 
   // Auto-expand Done/Backlog when a task in that section is selected (e.g. from Activity feed)
   const [prevSelectedTask, setPrevSelectedTask] = useState<number | null>(null);
@@ -248,6 +267,40 @@ export function TaskBoard({ tasks, epics, queue }: TaskBoardProps) {
                 </button>
               );
             })()}
+            <button
+              onClick={onToggleSelectMode}
+              className={`btn ${selectMode ? 'btn-accent' : 'btn-accent-outline'}`}
+              style={{ padding: '5px 14px', fontSize: '12px' }}
+            >
+              {selectMode ? 'Cancel select' : 'Select'}
+            </button>
+            {selectMode && (
+              <button
+                onClick={() => {
+                  const allSelected = visibleTaskIds.every(id => selectedTasks.has(id));
+                  if (allSelected) {
+                    visibleTaskIds.forEach(id => {
+                      selectedTasks.delete(id);
+                    });
+                    // Trigger re-render by creating a new Set with remaining items
+                    const remaining = new Set(selectedTasks);
+                    visibleTaskIds.forEach(id => remaining.delete(id));
+                    // Deselect all visible by toggling each off
+                    visibleTaskIds.forEach(id => {
+                      if (selectedTasks.has(id)) onToggleTaskSelection(id);
+                    });
+                  } else {
+                    visibleTaskIds.forEach(id => {
+                      if (!selectedTasks.has(id)) onToggleTaskSelection(id);
+                    });
+                  }
+                }}
+                className="btn btn-accent-outline"
+                style={{ padding: '5px 14px', fontSize: '12px' }}
+              >
+                {visibleTaskIds.every(id => selectedTasks.has(id)) && visibleTaskIds.length > 0 ? 'Deselect all' : 'Select all visible'}
+              </button>
+            )}
           </div>
         ) : null}
       </div>
@@ -263,6 +316,38 @@ export function TaskBoard({ tasks, epics, queue }: TaskBoardProps) {
         setShowBacklog={setShowBacklog}
         epicColors={epicColors}
       />
+
+      {selectMode && selectedTasks.size > 0 && (
+        <div style={{
+          position: 'sticky', bottom: 0,
+          padding: '10px 16px',
+          background: 'var(--dm-surface)',
+          borderTop: '1px solid var(--dm-border)',
+          display: 'flex', alignItems: 'center', gap: '10px',
+          borderRadius: 'var(--dm-radius-sm)',
+          boxShadow: 'var(--dm-shadow-md)',
+          marginTop: '12px',
+        }}>
+          <span style={{ fontSize: '13px', fontWeight: 600 }}>
+            {selectedTasks.size} selected
+          </span>
+          <select
+            onChange={(e) => { if (e.target.value) { onBulkStatusChange(e.target.value); e.target.value = ''; } }}
+            className="select-field"
+            style={{ padding: '4px 8px', fontSize: '12px' }}
+            defaultValue=""
+          >
+            <option value="" disabled>Move to...</option>
+            <option value="pending">Pending</option>
+            <option value="done">Done</option>
+            <option value="backlog">Backlog</option>
+            <option value="blocked">Blocked</option>
+          </select>
+          <button onClick={onBulkDelete} className="btn btn-danger-outline" style={{ padding: '4px 12px', fontSize: '12px' }}>
+            Delete {selectedTasks.size}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

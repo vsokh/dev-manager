@@ -20,7 +20,7 @@ interface DoneSectionProps {
 }
 
 export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups, showCompleted, setShowCompleted, showBacklog, setShowBacklog, epicColors }: DoneSectionProps) {
-  const { selectedTask, handleSelectTask: onSelectTask, glowTaskId } = useActions();
+  const { selectedTask, handleSelectTask: onSelectTask, glowTaskId, selectMode, selectedTasks, onToggleTaskSelection } = useActions();
   return (
     <>
       {backlogTasks.length > 0 ? (
@@ -51,10 +51,26 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
                   </div>
                   <div className="flex-wrap gap-6">
                     {groupTasks.map(t => (
-                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} aria-label={t.name} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))}
-                        className={`task-card--backlog-compact${selectedTask === t.id ? ' task-card--selected' : ''}${glowTaskId === t.id ? ' task-card-glow' : ''}`}
-                        style={{ padding: '5px 10px' }}
+                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} aria-label={t.name}
+                        onClick={() => selectMode && onToggleTaskSelection ? onToggleTaskSelection(t.id) : onSelectTask(t.id)}
+                        onKeyDown={handleKeyActivate(() => selectMode && onToggleTaskSelection ? onToggleTaskSelection(t.id) : onSelectTask(t.id))}
+                        className={`task-card--backlog-compact${selectedTask === t.id ? ' task-card--selected' : ''}${glowTaskId === t.id ? ' task-card-glow' : ''}${selectedTasks?.has(t.id) ? ' task-card--multi-selected' : ''}`}
+                        style={{ padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
                       >
+                        {selectMode && (
+                          <div
+                            onClick={(e) => { e.stopPropagation(); onToggleTaskSelection?.(t.id); }}
+                            style={{
+                              width: '16px', height: '16px', borderRadius: '3px',
+                              border: '2px solid var(--dm-border)',
+                              background: selectedTasks?.has(t.id) ? 'var(--dm-accent)' : 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0, cursor: 'pointer',
+                            }}
+                          >
+                            {selectedTasks?.has(t.id) && <span style={{ color: '#fff', fontSize: '10px', lineHeight: 1 }}>&#10003;</span>}
+                          </div>
+                        )}
                         <span className="text-backlog-name">{t.name}</span>
                       </div>
                     ))}
@@ -94,10 +110,26 @@ export function DoneSection({ doneTasks, backlogTasks, doneGroups, backlogGroups
                   </div>
                   <div className="flex-wrap gap-6">
                     {groupTasks.map(t => (
-                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} aria-label={t.name} onClick={() => onSelectTask(t.id)} onKeyDown={handleKeyActivate(() => onSelectTask(t.id))}
-                        className={`task-card--done-compact${selectedTask === t.id ? ' task-card--selected' : ''}${glowTaskId === t.id ? ' task-card-glow' : ''}`}
-                        style={{ padding: '5px 10px' }}
+                      <div key={t.id} data-task-id={t.id} role="button" tabIndex={0} aria-label={t.name}
+                        onClick={() => selectMode && onToggleTaskSelection ? onToggleTaskSelection(t.id) : onSelectTask(t.id)}
+                        onKeyDown={handleKeyActivate(() => selectMode && onToggleTaskSelection ? onToggleTaskSelection(t.id) : onSelectTask(t.id))}
+                        className={`task-card--done-compact${selectedTask === t.id ? ' task-card--selected' : ''}${glowTaskId === t.id ? ' task-card-glow' : ''}${selectedTasks?.has(t.id) ? ' task-card--multi-selected' : ''}`}
+                        style={{ padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
                       >
+                        {selectMode && (
+                          <div
+                            onClick={(e) => { e.stopPropagation(); onToggleTaskSelection?.(t.id); }}
+                            style={{
+                              width: '16px', height: '16px', borderRadius: '3px',
+                              border: '2px solid var(--dm-border)',
+                              background: selectedTasks?.has(t.id) ? 'var(--dm-accent)' : 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0, cursor: 'pointer',
+                            }}
+                          >
+                            {selectedTasks?.has(t.id) && <span style={{ color: '#fff', fontSize: '10px', lineHeight: 1 }}>&#10003;</span>}
+                          </div>
+                        )}
                         <span className="text-backlog-name">{t.name}</span>
                         {t.commitRef ? (
                           <span className="commit-ref px-4" style={{ marginLeft: '5px' }}>{t.commitRef}</span>

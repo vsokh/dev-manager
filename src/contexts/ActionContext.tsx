@@ -42,6 +42,15 @@ export interface ActionContextValue {
   handleNavigateToTask: (taskId: number) => void;
   glowTaskId: number | null;
 
+  // Multi-select / bulk actions
+  selectMode: boolean;
+  selectedTasks: Set<number>;
+  onToggleSelectMode: () => void;
+  onToggleTaskSelection: (id: number) => void;
+  onBulkDelete: () => void;
+  onBulkStatusChange: (status: string) => void;
+  onExitSelectMode: () => void;
+
   // Activity
   handleRemoveActivity: (id: string) => void;
 

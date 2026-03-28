@@ -42,6 +42,8 @@ export function App() {
   }, [projectName]);
 
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
 
   const { productTab, setProductTab } = useTabRouting();
   const [showSkillsConfig, setShowSkillsConfig] = useState(false);
@@ -80,6 +82,36 @@ export function App() {
 
   const handleSelectTask = useCallback((id: number | null) => {
     setSelectedTask(prev => prev === id ? null : id);
+  }, []);
+
+  const handleToggleTaskSelection = useCallback((id: number) => {
+    setSelectedTasks(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedTasks.size === 0) return;
+    taskActions.handleBulkDeleteTasks([...selectedTasks]);
+    setSelectedTasks(new Set());
+    setSelectMode(false);
+  }, [selectedTasks, taskActions]);
+
+  const handleBulkStatusChange = useCallback((status: string) => {
+    if (selectedTasks.size === 0) return;
+    taskActions.handleBatchUpdateTasks(
+      [...selectedTasks].map(id => ({ id, updates: { status: status as import('./types').TaskStatus } }))
+    );
+    setSelectedTasks(new Set());
+    setSelectMode(false);
+  }, [selectedTasks, taskActions]);
+
+  const handleExitSelectMode = useCallback(() => {
+    setSelectMode(false);
+    setSelectedTasks(new Set());
   }, []);
 
   const handleRemoveActivity = useCallback((id: string) => {
@@ -144,11 +176,22 @@ export function App() {
     handleSelectTask,
     handleNavigateToTask,
     glowTaskId,
+    // Multi-select / bulk actions
+    selectMode,
+    selectedTasks,
+    onToggleSelectMode: () => {
+      if (selectMode) handleExitSelectMode();
+      else { setSelectMode(true); setSelectedTask(null); }
+    },
+    onToggleTaskSelection: handleToggleTaskSelection,
+    onBulkDelete: handleBulkDelete,
+    onBulkStatusChange: handleBulkStatusChange,
+    onExitSelectMode: handleExitSelectMode,
     // Activity
     handleRemoveActivity,
     // Config
     defaultEngine: data?.defaultEngine,
-  }), [taskActions, queueActions, pauseTask, cancelTask, selectedTask, handleSelectTask, handleNavigateToTask, glowTaskId, handleDeleteTask, handleRemoveActivity, data?.defaultEngine]);
+  }), [taskActions, queueActions, pauseTask, cancelTask, selectedTask, handleSelectTask, handleNavigateToTask, glowTaskId, handleDeleteTask, handleRemoveActivity, data?.defaultEngine, selectMode, selectedTasks, handleToggleTaskSelection, handleBulkDelete, handleBulkStatusChange, handleExitSelectMode]);
 
   if (!connected || !data) {
     return (
