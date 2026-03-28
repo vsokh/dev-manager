@@ -17,6 +17,7 @@ export function Dependencies({ task, tasks }: DependenciesProps) {
   const deps = task.dependsOn || [];
   const selected = otherTasks.filter(t => deps.includes(t.id));
   const available = otherTasks.filter(t => !deps.includes(t.id));
+  const [expanded, setExpanded] = React.useState(deps.length > 0);
 
   const toggleDep = (depId: number) => {
     const next = deps.includes(depId) ? deps.filter(d => d !== depId) : [...deps, depId];
@@ -25,39 +26,48 @@ export function Dependencies({ task, tasks }: DependenciesProps) {
 
   return (
     <div className="mb-16">
-      <div className="label mb-6">
+      <div
+        className="label mb-6"
+        onClick={() => setExpanded(prev => !prev)}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        <span style={{ display: 'inline-block', width: '1em', fontSize: '0.75em' }}>{expanded ? '\u25BE' : '\u25B8'}</span>
         {DEPS_TITLE} {selected.length > 0 ? <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 'normal' }}>({selected.length})</span> : null}
       </div>
-      {selected.length > 0 ? (
-        <div className="flex-wrap gap-4 mb-6">
-          {selected.map(t => (
-            <button
-              key={t.id}
-              onClick={() => toggleDep(t.id)}
-              title={DEPS_REMOVE_TITLE}
-              className="dep-btn--selected"
-              style={{ padding: '3px 10px' }}
-            >
-              {t.name} ×
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {available.length > 0 ? (
-        <div className="flex-wrap gap-4">
-          {available.map(t => (
-            <button
-              key={t.id}
-              onClick={() => toggleDep(t.id)}
-              title={DEPS_ADD_TITLE}
-              className="dep-btn--available"
-              style={{ padding: '3px 10px' }}
-            >
-              + {t.name}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      {expanded && (
+        <>
+          {selected.length > 0 ? (
+            <div className="flex-wrap gap-4 mb-6">
+              {selected.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => toggleDep(t.id)}
+                  title={DEPS_REMOVE_TITLE}
+                  className="dep-btn--selected"
+                  style={{ padding: '3px 10px' }}
+                >
+                  {t.name} ×
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {available.length > 0 ? (
+            <div className="flex-wrap gap-4">
+              {available.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => toggleDep(t.id)}
+                  title={DEPS_ADD_TITLE}
+                  className="dep-btn--available"
+                  style={{ padding: '3px 10px' }}
+                >
+                  + {t.name}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
