@@ -238,3 +238,14 @@ export const RELEASE_NO_DATA = 'No releases yet. Run /release status to assess r
 export const RELEASE_HISTORY_TITLE = 'Release History';
 export const RELEASE_STABILITY_TITLE = 'Stability Breakdown';
 export const RELEASE_CHANGELOG_TITLE = 'Changelog';
+
+// -- Release: Launch Buttons --
+export const LAUNCH_RELEASE_STATUS_CMD = '/release status';
+export const LAUNCH_RELEASE_STATUS = 'Status';
+export const LAUNCH_RELEASE_STATUS_ACTIVE = '\u2713 Checking...';
+export const LAUNCH_RELEASE_CUT_CMD = '/release cut';
+export const LAUNCH_RELEASE_CUT = 'Cut Release';
+export const LAUNCH_RELEASE_CUT_ACTIVE = '\u2713 Releasing...';
+export const LAUNCH_RELEASE_RETRO_CMD = '/release retroactive';
+export const LAUNCH_RELEASE_RETRO = 'Retroactive';
+export const LAUNCH_RELEASE_RETRO_ACTIVE = '\u2713 Classifying...';

@@ -52,11 +52,7 @@ export async function handleRelease(method, pathname, req, res, url, ctx) {
   if (method === 'GET' && pathname === '/api/release/stability') {
     const filePath = join(projectPath, '.devmanager', 'release', 'stability.json');
     const result = await readJsonOrNull(filePath);
-    if (!result) {
-      jsonResponse(res, 404, { error: 'Stability assessment not found' });
-    } else {
-      jsonResponse(res, 200, result.data);
-    }
+    jsonResponse(res, 200, result ? result.data : null);
     return true;
   }
 

@@ -1,46 +1,33 @@
 export const DIM_KEYS = [
-  'typeSafety', 'componentArchitecture', 'errorHandling', 'testing',
-  'cssDesignSystem', 'i18nCompleteness', 'accessibility', 'security',
-  'performance', 'devopsBuildHealth'
+  'typeSafety', 'testQuality', 'errorHandling',
+  'security', 'cleanArchitecture', 'domainLogic'
 ];
 
 export const DIM_LABELS: Record<string, string> = {
   typeSafety: 'Type Safety',
-  componentArchitecture: 'Architecture',
+  testQuality: 'Test Quality',
   errorHandling: 'Error Handling',
-  testing: 'Testing',
-  cssDesignSystem: 'CSS / Design',
-  i18nCompleteness: 'i18n',
-  accessibility: 'Accessibility',
   security: 'Security',
-  performance: 'Performance',
-  devopsBuildHealth: 'DevOps'
+  cleanArchitecture: 'Clean Architecture',
+  domainLogic: 'Domain Logic',
 };
 
 export const DIM_SHORT: Record<string, string> = {
   typeSafety: 'Types',
-  componentArchitecture: 'Arch',
+  testQuality: 'Tests',
   errorHandling: 'Errors',
-  testing: 'Tests',
-  cssDesignSystem: 'CSS',
-  i18nCompleteness: 'i18n',
-  accessibility: 'a11y',
   security: 'Security',
-  performance: 'Perf',
-  devopsBuildHealth: 'DevOps'
+  cleanArchitecture: 'Arch',
+  domainLogic: 'Domain',
 };
 
 export const DIM_DESCRIPTIONS: Record<string, string> = {
-  typeSafety: 'Strict TypeScript usage — no `any` types, typed Supabase rows, proper error narrowing with `unknown`. Measures how much the compiler can catch before runtime.',
-  componentArchitecture: 'Component size and separation of concerns — files under 400 LOC, single responsibility, extracted subcomponents with typed props. God components score low.',
-  errorHandling: 'User-facing feedback for all mutations — no silent catch blocks, toast notifications on success/failure, disabled buttons during pending, ErrorBoundary coverage.',
-  testing: 'Test coverage breadth — unit tests for utils/hooks, render smoke tests for every page, error path coverage, shared test helpers. Measured by test count and scope.',
-  cssDesignSystem: 'Design system discipline — CSS variables over hardcoded hex, minimal inline styles, no unused selectors, consistent token usage across all components.',
-  i18nCompleteness: 'Translation coverage — all UI strings in i18n system with both languages, no hardcoded Cyrillic/English in components, consistent key naming.',
-  accessibility: 'WCAG 2.1 AA compliance — semantic HTML, keyboard navigation, ARIA labels, focus traps in modals, translated screen reader text, no div-onClick without keyboard handler.',
-  security: 'Row Level Security on all tables, no hardcoded secrets, XSS-safe rendering, auth token handling, file upload validation, dependency audit.',
-  performance: 'Bundle size, memoization of expensive computations, code splitting, lazy loading of dev-only code, no unnecessary re-renders in heavy components.',
-  devopsBuildHealth: 'Build reliability — zero type errors, zero lint errors, CI/CD pipeline, automated tests, preview deploys. Measures infrastructure confidence.',
+  typeSafety: 'Can an agent understand data contracts without reading all the code? Measures type escape hatches, untyped external data, catch block typing, return type annotations.',
+  testQuality: 'Can an agent verify its changes are correct? Measures coverage breadth, AAA compliance, error path coverage, behavior vs implementation testing.',
+  errorHandling: 'Are failures visible? Can an agent debug issues? Measures mutation feedback, catch block quality, error boundaries, loading/error states.',
+  security: 'Will an agent introduce vulnerabilities by following existing patterns? Measures input validation, auth patterns, injection vectors, secrets, dependency audit.',
+  cleanArchitecture: 'Can an agent find where to make changes and follow existing structure? Measures function focus, SRP, nesting depth, dependency direction, style containment.',
+  domainLogic: 'Are business rules correct and testable? Measures rule accuracy, edge case handling, rule consistency, derived state, testability.',
 };
 
 /** Maps old/renamed dimension keys to their current equivalents */
@@ -73,6 +60,14 @@ export function scoreColor(s: number) {
   if (s >= 8) return 'var(--dm-success)';
   if (s >= 6) return 'var(--dm-accent)';
   if (s >= 4) return 'var(--dm-amber)';
+  return 'var(--dm-danger)';
+}
+
+/** Score color for 0-100 scale (stability, gates) */
+export function scoreColor100(s: number) {
+  if (s >= 85) return 'var(--dm-success)';
+  if (s >= 70) return 'var(--dm-accent)';
+  if (s >= 50) return 'var(--dm-amber)';
   return 'var(--dm-danger)';
 }
 

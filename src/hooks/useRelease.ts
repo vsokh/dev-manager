@@ -13,9 +13,9 @@ export function useRelease() {
     try {
       setError(false);
       const [relData, stabData, clData] = await Promise.all([
-        api.readReleases().catch(() => []),
-        api.readStability().catch(() => null),
-        api.readChangelog().catch(() => ({ sections: [] })),
+        api.readReleases(),
+        api.readStability(),
+        api.readChangelog(),
       ]);
       setReleases(Array.isArray(relData) ? relData : []);
       setStability(stabData);

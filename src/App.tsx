@@ -245,7 +245,7 @@ export function App() {
 
           {productTab === 'release' && (
             <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
-              <ReleasePanel releases={release.releases} stability={release.stability} changelog={release.changelog} loading={release.loading} error={release.error} onRetry={release.retry} statusOutput={processOutput.outputs[TASK_ID_RELEASE_STATUS]} cutOutput={processOutput.outputs[TASK_ID_RELEASE_CUT]} retroOutput={processOutput.outputs[TASK_ID_RELEASE_RETRO]} onClearOutput={processOutput.clearOutput} />
+              <ReleasePanel releases={release.releases} stability={release.stability} changelog={release.changelog} qualityLatest={quality.latest} loading={release.loading} error={release.error} onRetry={release.retry} onSwitchToQuality={() => setProductTab('quality')} statusOutput={processOutput.outputs[TASK_ID_RELEASE_STATUS]} cutOutput={processOutput.outputs[TASK_ID_RELEASE_CUT]} retroOutput={processOutput.outputs[TASK_ID_RELEASE_RETRO]} onClearOutput={processOutput.clearOutput} />
             </div>
           )}
         </div>

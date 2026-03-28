@@ -148,4 +148,4 @@ export function AutofixButton({ processOutput, onClearOutput }: LaunchButtonProp
   );
 }
 
-export { TASK_ID_CODEHEALTH, TASK_ID_AUTOFIX };
+export { TASK_ID_CODEHEALTH, TASK_ID_AUTOFIX, DualLaunchButton };

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import type { ReleaseEntry, StabilityAssessment, ChangelogSection } from '../types';
+import type { ReleaseEntry, StabilityAssessment, ChangelogSection, QualityReport } from '../types';
 import type { TaskOutput } from '../hooks/useProcessOutput.ts';
-import { Pill } from './quality/Tooltip';
+import { Pill, Tooltip } from './quality/Tooltip';
 import { ReleaseStatusButton, ReleaseCutButton, RetroactiveButton } from './release/LaunchButtons';
+import { scoreColor, scoreColor100, gradeClass } from './quality/shared';
 import {
   RELEASE_LOADING, RELEASE_UNAVAILABLE, RELEASE_RETRY, RELEASE_NO_DATA,
   RELEASE_HISTORY_TITLE, RELEASE_STABILITY_TITLE, RELEASE_CHANGELOG_TITLE,
@@ -12,26 +13,23 @@ interface ReleasePanelProps {
   releases: ReleaseEntry[];
   stability: StabilityAssessment | null;
   changelog: ChangelogSection[];
+  qualityLatest: QualityReport | null;
   loading: boolean;
   error?: boolean;
   onRetry?: () => void;
+  onSwitchToQuality?: () => void;
   statusOutput?: TaskOutput;
   cutOutput?: TaskOutput;
   retroOutput?: TaskOutput;
   onClearOutput?: (taskId: number) => void;
 }
 
-function stabilityColor(level: string) {
+type StabilityLevel = StabilityAssessment['level'];
+
+function stabilityColor(level: StabilityLevel) {
   if (level === 'Stable') return 'var(--dm-success)';
   if (level === 'Release Candidate') return 'var(--dm-accent)';
   if (level === 'Stabilizing') return 'var(--dm-amber)';
-  return 'var(--dm-danger)';
-}
-
-function scoreColor(score: number) {
-  if (score >= 85) return 'var(--dm-success)';
-  if (score >= 70) return 'var(--dm-accent)';
-  if (score >= 50) return 'var(--dm-amber)';
   return 'var(--dm-danger)';
 }
 
@@ -53,6 +51,15 @@ const TYPE_COLORS: Record<string, string> = {
   docs: 'var(--dm-text-muted)',
   chore: 'var(--dm-text-muted)',
 };
+
+const STABILITY_COMPONENTS: Array<{ key: string; label: string; weight: number; description: string }> = [
+  { key: 'buildTest', label: 'Build / Test', weight: 0.30, description: 'Does the project build and do tests pass? Build pass = 50pts, plus passing test ratio, minus lint errors.' },
+  { key: 'codehealth', label: 'Codehealth', weight: 0.20, description: 'Overall code quality from /codehealth scan. Click to view details.' },
+  { key: 'fixRatio', label: 'Fix Ratio', weight: 0.20, description: 'What percentage of the last 20 commits are bug fixes? Fewer fixes = more stable. \u226420% = 100, >60% = 20.' },
+  { key: 'backlog', label: 'Backlog', weight: 0.15, description: 'Open issues in the codehealth backlog. Penalizes high-severity (\u221220) and medium (\u22125) items.' },
+  { key: 'regression', label: 'Regressions', weight: 0.10, description: 'High-severity open issues indicating broken functionality. 0 = 100, 1 = 60, 2 = 30, 3+ = 0.' },
+  { key: 'fixDecay', label: 'Fix Decay', weight: 0.05, description: 'Commits since the last bug fix. More distance = more stable. 10+ = 100, 0 = 20.' },
+];
 
 function BreakdownBar({ breakdown }: { breakdown: Record<string, number> }) {
   const total = Object.values(breakdown).reduce((a, b) => a + b, 0);
@@ -141,7 +148,7 @@ function GateRow({ name, result }: { name: string; result: 'pass' | 'warn' | 'fa
   );
 }
 
-export function ReleasePanel({ releases, stability, changelog, loading, error, onRetry, statusOutput, cutOutput, retroOutput, onClearOutput }: ReleasePanelProps) {
+export function ReleasePanel({ releases, stability, changelog, qualityLatest, loading, error, onRetry, onSwitchToQuality, statusOutput, cutOutput, retroOutput, onClearOutput }: ReleasePanelProps) {
   if (loading) {
     return <div className="text-muted p-24 text-13">{RELEASE_LOADING}</div>;
   }
@@ -179,7 +186,6 @@ export function ReleasePanel({ releases, stability, changelog, loading, error, o
   return (
     <div style={{ padding: '0 16px 16px' }}>
 
-      {/* Header: version + stability */}
       <div className="flex-center flex-wrap mb-12" style={{ gap: 14 }}>
         <div className="flex-center justify-center text-20 font-700 shrink-0" style={{
           height: 52, padding: '0 16px', borderRadius: 26,
@@ -199,11 +205,35 @@ export function ReleasePanel({ releases, stability, changelog, loading, error, o
               {stability.commitsSinceRelease != null && (
                 <span className="text-muted"> &middot; {stability.commitsSinceRelease} commits since release</span>
               )}
-              {stability.commitRef && (
-                <span className="text-muted"> &middot; <code className="text-10">{stability.commitRef}</code></span>
-              )}
             </div>
           </div>
+        )}
+
+        {qualityLatest && onSwitchToQuality && (
+          <button
+            onClick={onSwitchToQuality}
+            title="View quality details"
+            className="flex-center"
+            style={{
+              gap: 6, padding: '6px 12px', borderRadius: 'var(--dm-radius-sm)',
+              background: 'var(--dm-bg)', border: '1px solid var(--dm-border)',
+              cursor: 'pointer', fontFamily: 'inherit', color: 'inherit',
+              transition: 'border-color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--dm-accent)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--dm-border)')}
+          >
+            <span className="font-700 text-16" style={{ color: gradeClass(qualityLatest.grade) }}>
+              {qualityLatest.grade}
+            </span>
+            <span className="text-12">
+              <span className="font-600" style={{ color: scoreColor(qualityLatest.overallScore) }}>
+                {qualityLatest.overallScore.toFixed(1)}
+              </span>
+              <span className="text-muted">/10</span>
+            </span>
+            <span className="text-10 text-muted">&rarr;</span>
+          </button>
         )}
 
         <div className="flex gap-6" style={{ marginLeft: 'auto' }}>
@@ -213,7 +243,6 @@ export function ReleasePanel({ releases, stability, changelog, loading, error, o
         </div>
       </div>
 
-      {/* Gate pills */}
       {stability?.gateResults && (
         <div className="flex flex-wrap gap-6 mb-16">
           {Object.entries(stability.gateResults).map(([name, result]) => (
@@ -222,47 +251,50 @@ export function ReleasePanel({ releases, stability, changelog, loading, error, o
         </div>
       )}
 
-      {/* Stability components breakdown */}
       {stability?.components && (
         <div className="mb-16">
           <div className="label-sm mb-8">{RELEASE_STABILITY_TITLE}</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-            {([
-              ['Build / Test', stability.components.buildTest, 0.30],
-              ['Codehealth', stability.components.codehealth, 0.20],
-              ['Fix Ratio', stability.components.fixRatio, 0.20],
-              ['Backlog', stability.components.backlog, 0.15],
-              ['Regressions', stability.components.regression, 0.10],
-              ['Fix Decay', stability.components.fixDecay, 0.05],
-            ] as [string, number, number][]).map(([label, value, weight]) => (
-              <div key={label} style={{
-                padding: '10px 12px', borderRadius: 'var(--dm-radius-sm)',
-                background: 'var(--dm-bg)',
-              }}>
-                <div className="flex-center justify-between mb-4">
-                  <span className="text-12 font-500">{label}</span>
-                  <span className="text-10 text-muted">{Math.round(weight * 100)}%</span>
+            {STABILITY_COMPONENTS.map(({ key, label, weight, description }) => {
+              const value = (stability.components as Record<string, number>)[key] ?? 0;
+              const isCodehealth = key === 'codehealth';
+              return (
+                <div
+                  key={key}
+                  style={{
+                    padding: '10px 12px', borderRadius: 'var(--dm-radius-sm)',
+                    background: 'var(--dm-bg)',
+                    cursor: isCodehealth && onSwitchToQuality ? 'pointer' : undefined,
+                    transition: 'border-color 0.2s',
+                    border: isCodehealth && onSwitchToQuality ? '1px solid transparent' : undefined,
+                  }}
+                  onMouseEnter={isCodehealth && onSwitchToQuality ? e => (e.currentTarget.style.borderColor = 'var(--dm-accent)') : undefined}
+                  onMouseLeave={isCodehealth && onSwitchToQuality ? e => (e.currentTarget.style.borderColor = 'transparent') : undefined}
+                  onClick={isCodehealth && onSwitchToQuality ? onSwitchToQuality : undefined}
+                >
+                  <div className="flex-center justify-between mb-4">
+                    <Tooltip text={description}>
+                      <span className="text-12 font-500">{label}{isCodehealth && onSwitchToQuality ? ' \u2192' : ''}</span>
+                    </Tooltip>
+                    <span className="text-10 text-muted">{Math.round(weight * 100)}%</span>
+                  </div>
+                  <div style={{ height: 4, borderRadius: 2, background: 'var(--dm-border)', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', width: `${value}%`, borderRadius: 2,
+                      background: scoreColor100(value),
+                      transition: 'width 0.3s ease',
+                    }} />
+                  </div>
+                  <div className="text-11 font-600 mt-4" style={{ color: scoreColor100(value) }}>
+                    {Math.round(value)}
+                  </div>
                 </div>
-                <div style={{
-                  height: 4, borderRadius: 2, background: 'var(--dm-border)',
-                  overflow: 'hidden',
-                }}>
-                  <div style={{
-                    height: '100%', width: `${value}%`, borderRadius: 2,
-                    background: scoreColor(value),
-                    transition: 'width 0.3s ease',
-                  }} />
-                </div>
-                <div className="text-11 font-600 mt-4" style={{ color: scoreColor(value) }}>
-                  {Math.round(value)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Release history with breakdown bars */}
       {releases.length > 0 && (
         <div className="mb-16">
           <div className="label-sm mb-8">{RELEASE_HISTORY_TITLE}</div>
@@ -280,7 +312,7 @@ export function ReleasePanel({ releases, stability, changelog, loading, error, o
                   <span className="text-11 text-muted">{rel.date}</span>
                   <span className="text-11 text-muted">{rel.commitCount} commits</span>
                   {rel.stabilityScore > 0 && (
-                    <span className="text-11 font-500" style={{ color: scoreColor(rel.stabilityScore) }}>
+                    <span className="text-11 font-500" style={{ color: scoreColor100(rel.stabilityScore) }}>
                       {rel.stabilityScore}
                     </span>
                   )}
@@ -293,7 +325,6 @@ export function ReleasePanel({ releases, stability, changelog, loading, error, o
         </div>
       )}
 
-      {/* Changelog */}
       {changelog.length > 0 && (
         <div>
           <div className="label-sm mb-8">{RELEASE_CHANGELOG_TITLE}</div>
