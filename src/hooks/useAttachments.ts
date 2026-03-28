@@ -1,5 +1,5 @@
 import type { Task } from '../types';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { api } from '../api.ts';
 
 /**
@@ -9,22 +9,17 @@ import { api } from '../api.ts';
 export function useAttachments(task: Task | null, onAddAttachment: (taskId: number, file: File) => void) {
   const [pastedFeedback, setPastedFeedback] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const dragCounter = useRef(0);
 
   // Build thumbnail URLs when task/attachments change
   // These are now simple HTTP URLs, no blob URL management needed
-  useEffect(() => {
-    if (!task?.attachments?.length) {
-      setThumbUrls({});
-      return;
-    }
+  const thumbUrls = useMemo(() => {
+    if (!task?.attachments?.length) return {};
     const urls: Record<string, string> = {};
     for (const att of task.attachments) {
       urls[att.id] = api.getAttachmentUrl(task.id, att.filename);
     }
-    setThumbUrls(urls);
-    // No cleanup needed — these are regular URLs, not blob URLs
+    return urls;
   }, [task]);
 
   const handleImageFile = useCallback((file: File | null) => {

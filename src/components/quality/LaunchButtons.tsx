@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   LAUNCH_HEALTHCHECK_CMD, LAUNCH_HEALTHCHECK, LAUNCH_HEALTHCHECK_ACTIVE,
   LAUNCH_AUTOFIX_CMD, LAUNCH_AUTOFIX, LAUNCH_AUTOFIX_ACTIVE,
@@ -35,19 +35,12 @@ function DualLaunchButton({
   const [launching, setLaunching] = useState(false);
   const [flashing, setFlashing] = useState(false);
   const pidRef = useRef<number | null>(null);
+  const launchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const running = !!processOutput?.running;
-  const busy = running || launching;
+  // Once real output arrives, launching is irrelevant for busy calculation
+  const busy = running || (launching && !running);
   const hasOutput = (processOutput?.lines.length ?? 0) > 0 || running;
-
-  // Clear launching state once real output arrives
-  useEffect(() => { if (running) setLaunching(false); }, [running]);
-  // Safety timeout: clear launching if server never responds
-  useEffect(() => {
-    if (!launching) return;
-    const t = setTimeout(() => setLaunching(false), 10000);
-    return () => clearTimeout(t);
-  }, [launching]);
 
   const handleTerminal = async () => {
     if (busy) return;
@@ -60,14 +53,22 @@ function DualLaunchButton({
     }
   };
 
+  const clearLaunchTimer = () => {
+    if (launchTimerRef.current) { clearTimeout(launchTimerRef.current); launchTimerRef.current = null; }
+  };
+
   const handleBg = async () => {
     if (busy) return;
     try {
       setLaunching(true);
+      // Safety timeout: clear launching if server never responds
+      clearLaunchTimer();
+      launchTimerRef.current = setTimeout(() => setLaunching(false), 10000);
       const res = await api.launch(taskId, command);
       pidRef.current = res.pid;
     } catch (err) {
       console.error(`Failed to launch ${terminalTitle}:`, err);
+      clearLaunchTimer();
       setLaunching(false);
     }
   };
@@ -76,6 +77,7 @@ function DualLaunchButton({
     const pid = pidRef.current || processOutput?.pid;
     if (pid) { try { await api.killProcess(pid); } catch { /* ok */ } }
     pidRef.current = null;
+    clearLaunchTimer();
     setLaunching(false);
     onClearOutput?.(taskId);
   };

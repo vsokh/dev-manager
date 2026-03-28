@@ -57,7 +57,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         connectToServerRef.current?.();
       }
     };
-  });
+  }, [handleSyncMessage]);
 
   const connectToServer = useCallback(async () => {
     setStatus('connecting');

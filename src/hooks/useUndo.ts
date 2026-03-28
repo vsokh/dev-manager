@@ -8,7 +8,7 @@ interface UseUndoParams {
   showError: (msg: string) => void;
 }
 
-export function useUndo({ data, save, showError }: UseUndoParams) {
+export function useUndo({ data, save, showError: _showError }: UseUndoParams) {
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -19,7 +19,7 @@ export function useUndo({ data, save, showError }: UseUndoParams) {
     if (undoTimer.current) clearTimeout(undoTimer.current);
     setUndoEntry({ data: structuredClone(data) as StateData, label, timestamp: Date.now() });
     undoTimer.current = setTimeout(() => setUndoEntry(null), 8000);
-  }, [data, showError]);
+  }, [data]);
 
   const handleUndo = useCallback(() => {
     if (!undoEntry) return;

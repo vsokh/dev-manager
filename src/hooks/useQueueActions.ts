@@ -22,12 +22,12 @@ interface LaunchPhaseItem {
 export type LaunchMode = 'background' | 'sequential' | 'terminal';
 
 export function useQueueActions({ data, save, snapshotBeforeAction, onError }: UseQueueActionsParams) {
-  const [launchedIds, setLaunchedIds] = useState<Set<number>>(new Set());
+  const [launchedIds] = useState<Set<number>>(new Set());
   const [launchMode, setLaunchMode] = useState<LaunchMode>('background');
 
   // Keep a ref to latest data so async handlers can re-verify against fresh state
   const dataRef = useRef(data);
-  useEffect(() => { dataRef.current = data; });
+  useEffect(() => { dataRef.current = data; }, [data]);
 
   const tasks: Task[] = data?.tasks || [];
   const queue: QueueItem[] = data?.queue || [];

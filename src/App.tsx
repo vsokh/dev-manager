@@ -35,7 +35,7 @@ export function App() {
   }, []);
 
   const project = useProject({ onError: showError });
-  const { connected, status, projectName, data, save, connect, disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject, showTemplatePicker, connectWithTemplate, cancelTemplatePicker } = project;
+  const { connected, status, projectName, data, save, connect, disconnect: _disconnect, pauseTask, cancelTask, skillsConfig, saveSkills, availableSkills, projects, switchProject, showTemplatePicker, connectWithTemplate, cancelTemplatePicker } = project;
 
   useEffect(() => {
     document.title = projectName || APP_NAME;
@@ -65,24 +65,25 @@ export function App() {
     if (!queueActions.arranging || !data?.activity) return;
     const hasArrangeActivity = data.activity.some(a => a.id?.includes('_arrange') && Date.now() - a.time < 60000);
     if (hasArrangeActivity) queueActions.setArranging(false);
-  }, [data?.activity, queueActions.arranging]);
+  }, [data?.activity, queueActions]);
 
   const tasks = data?.tasks || [];
   const epics = data?.epics || [];
   const queue = data?.queue || [];
   const taskNotes = data?.taskNotes || {};
-  const activity = data?.activity || [];
+  const activity = useMemo(() => data?.activity || [], [data?.activity]);
 
   const handleDeleteTask = useCallback((id: number) => {
     taskActions.handleDeleteTask(id);
     setSelectedTask(null);
-  }, [taskActions.handleDeleteTask]);
+  }, [taskActions]);
 
   const handleSelectTask = useCallback((id: number | null) => {
     setSelectedTask(prev => prev === id ? null : id);
   }, []);
 
   const handleRemoveActivity = useCallback((id: string) => {
+    if (!data) return;
     snapshotBeforeAction('Activity removed');
     const newActivity = activity.filter(a => a.id !== id);
     if (data) save({ ...data, activity: newActivity });

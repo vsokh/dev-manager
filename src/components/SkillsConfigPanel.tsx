@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import type { SkillsConfig, SkillInfo, EpicMapping } from '../types';
 import {
@@ -42,33 +42,34 @@ function rowsToConfig(rows: EpicRow[]): SkillsConfig {
 }
 
 function InfoBadge({ info, active, onClick }: { info: SkillInfo; active: boolean; onClick?: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({ display: 'none' });
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null);
   const badgeRef = React.useRef<HTMLSpanElement>(null);
   const isAgent = info.type === 'agent';
+
+  const handleMouseEnter = () => {
+    if (!badgeRef.current) { setTooltipStyle(null); return; }
+    const rect = badgeRef.current.getBoundingClientRect();
+    setTooltipStyle({
+      position: 'fixed',
+      left: Math.min(rect.left, window.innerWidth - 530),
+      top: rect.bottom + 6,
+      zIndex: 200, minWidth: '350px', maxWidth: '520px',
+      padding: '6px 10px', fontSize: '11px', lineHeight: 1.4,
+      background: 'var(--dm-surface)', color: 'var(--dm-text)',
+      border: '1px solid var(--dm-border)', borderRadius: '6px',
+      boxShadow: 'var(--dm-shadow-lg)',
+      pointerEvents: 'none' as const,
+    });
+  };
+
+  const handleMouseLeave = () => { setTooltipStyle(null); };
 
   return (
     <span
       ref={badgeRef}
       style={{ display: 'inline-block', cursor: onClick ? 'pointer' : 'default' }}
-      onMouseEnter={() => {
-        setHovered(true);
-        if (badgeRef.current) {
-          const rect = badgeRef.current.getBoundingClientRect();
-          setTooltipStyle({
-            position: 'fixed',
-            left: Math.min(rect.left, window.innerWidth - 530),
-            top: rect.bottom + 6,
-            zIndex: 200, minWidth: '350px', maxWidth: '520px',
-            padding: '6px 10px', fontSize: '11px', lineHeight: 1.4,
-            background: 'var(--dm-surface)', color: 'var(--dm-text)',
-            border: '1px solid var(--dm-border)', borderRadius: '6px',
-            boxShadow: 'var(--dm-shadow-lg)',
-            pointerEvents: 'none' as const,
-          });
-        }
-      }}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onClick={onClick}
     >
       <span
@@ -80,7 +81,7 @@ function InfoBadge({ info, active, onClick }: { info: SkillInfo; active: boolean
           outlineOffset: '1px',
         }}
       >{info.name}</span>
-      {hovered && info.description ? ReactDOM.createPortal(
+      {tooltipStyle && info.description ? ReactDOM.createPortal(
         <div style={tooltipStyle}>{info.description}</div>,
         document.body,
       ) : null}
@@ -91,17 +92,10 @@ function InfoBadge({ info, active, onClick }: { info: SkillInfo; active: boolean
 export function SkillsConfigPanel({ config, availableSkills, epicNames, onSave, onClose }: SkillsConfigPanelProps) {
   const [rows, setRows] = useState<EpicRow[]>(() => configToRows(config));
   const [addingEpic, setAddingEpic] = useState('');
-  const [selectedEpicIdx, setSelectedEpicIdx] = useState<number | null>(null);
-
-  // Only sync from external config on mount — local edits drive state
-  const initialized = React.useRef(false);
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-    const next = configToRows(config);
-    setRows(next);
-    if (next.length === 1) setSelectedEpicIdx(0);
-  }, [config]);
+  const [selectedEpicIdx, setSelectedEpicIdx] = useState<number | null>(() => {
+    const initial = configToRows(config);
+    return initial.length === 1 ? 0 : null;
+  });
 
   const mappedEpics = new Set(rows.map(r => r.epic));
   const unmappedEpics = epicNames.filter(e => !mappedEpics.has(e));
