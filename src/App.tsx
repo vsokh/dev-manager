@@ -67,23 +67,11 @@ export function App() {
     if (hasArrangeActivity) queueActions.setArranging(false);
   }, [data?.activity, queueActions.arranging]);
 
-  if (!connected || !data) {
-    return (
-      <ProjectPicker
-        onConnect={connect}
-        status={status}
-        showTemplatePicker={showTemplatePicker}
-        onSelectTemplate={connectWithTemplate}
-        onCancelTemplate={cancelTemplatePicker}
-      />
-    );
-  }
-
-  const tasks = data.tasks || [];
-  const epics = data.epics || [];
-  const queue = data.queue || [];
-  const taskNotes = data.taskNotes || {};
-  const activity = data.activity || [];
+  const tasks = data?.tasks || [];
+  const epics = data?.epics || [];
+  const queue = data?.queue || [];
+  const taskNotes = data?.taskNotes || {};
+  const activity = data?.activity || [];
 
   const handleDeleteTask = useCallback((id: number) => {
     taskActions.handleDeleteTask(id);
@@ -97,7 +85,7 @@ export function App() {
   const handleRemoveActivity = useCallback((id: string) => {
     snapshotBeforeAction('Activity removed');
     const newActivity = activity.filter(a => a.id !== id);
-    save({ ...data, activity: newActivity });
+    if (data) save({ ...data, activity: newActivity });
   }, [activity, data, save, snapshotBeforeAction]);
 
   const handleNavigateToTask = useCallback((taskId: number) => {
@@ -158,8 +146,20 @@ export function App() {
     // Activity
     handleRemoveActivity,
     // Config
-    defaultEngine: data.defaultEngine,
+    defaultEngine: data?.defaultEngine,
   }), [taskActions, queueActions, pauseTask, cancelTask, selectedTask, handleSelectTask, handleNavigateToTask, glowTaskId, handleDeleteTask, handleRemoveActivity, data?.defaultEngine]);
+
+  if (!connected || !data) {
+    return (
+      <ProjectPicker
+        onConnect={connect}
+        status={status}
+        showTemplatePicker={showTemplatePicker}
+        onSelectTemplate={connectWithTemplate}
+        onCancelTemplate={cancelTemplatePicker}
+      />
+    );
+  }
 
   const selectedTaskData = tasks.find(t => t.id === selectedTask) || null;
 

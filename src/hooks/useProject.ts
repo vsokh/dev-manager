@@ -46,16 +46,18 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
   });
 
   // Now that setStatus is available, define the real handler
-  handleWsMessageRef.current = (msg: WebSocketMessage) => {
-    if (handleSyncMessage(msg)) return;
-    if (msg.type === 'quality') {
-      // Quality updates are handled by useQuality hook
-    }
-    if (msg.type === 'project-switched') {
-      // Server switched to a different project — reconnect
-      connectToServerRef.current?.();
-    }
-  };
+  useEffect(() => {
+    handleWsMessageRef.current = (msg: WebSocketMessage) => {
+      if (handleSyncMessage(msg)) return;
+      if (msg.type === 'quality') {
+        // Quality updates are handled by useQuality hook
+      }
+      if (msg.type === 'project-switched') {
+        // Server switched to a different project — reconnect
+        connectToServerRef.current?.();
+      }
+    };
+  });
 
   const connectToServer = useCallback(async () => {
     setStatus('connecting');
