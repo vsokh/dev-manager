@@ -65,6 +65,26 @@ export function ReleaseCutButton({ processOutput, onClearOutput }: LaunchButtonP
     if (launchTimerRef.current) { clearTimeout(launchTimerRef.current); launchTimerRef.current = null; }
   };
 
+  const handleBg = async () => {
+    if (busy) return;
+    try {
+      setLaunching(true);
+      clearLaunchTimer();
+      launchTimerRef.current = setTimeout(() => setLaunching(false), 10000);
+      const res = await api.launch(TASK_ID_RELEASE_CUT, command);
+      pidRef.current = res.pid;
+    } catch (err) {
+      console.error('Failed to launch Release Cut:', err);
+      clearLaunchTimer();
+      setLaunching(false);
+    }
+  };
+
+  const handleBumpSelect = (type: BumpType) => {
+    setBumpType(type);
+    setMenuOpen(false);
+  };
+
   const handleTerminal = async () => {
     if (busy) return;
     try {
@@ -73,24 +93,6 @@ export function ReleaseCutButton({ processOutput, onClearOutput }: LaunchButtonP
       setTimeout(() => setFlashing(false), 1500);
     } catch (err) {
       console.error('Failed to open Release Cut terminal:', err);
-    }
-  };
-
-  const handleBg = async (type: BumpType) => {
-    if (busy) return;
-    setBumpType(type);
-    setMenuOpen(false);
-    const cmd = `${LAUNCH_RELEASE_CUT_CMD} ${type}`;
-    try {
-      setLaunching(true);
-      clearLaunchTimer();
-      launchTimerRef.current = setTimeout(() => setLaunching(false), 10000);
-      const res = await api.launch(TASK_ID_RELEASE_CUT, cmd);
-      pidRef.current = res.pid;
-    } catch (err) {
-      console.error('Failed to launch Release Cut:', err);
-      clearLaunchTimer();
-      setLaunching(false);
     }
   };
 
@@ -110,12 +112,12 @@ export function ReleaseCutButton({ processOutput, onClearOutput }: LaunchButtonP
       <div ref={menuRef} className="release-cut-wrapper">
         <div className="release-cut-group">
           <button
-            onClick={busy ? handleStop : handleTerminal}
-            title={busy ? 'Click to stop' : `Open in terminal: ${command}`}
+            onClick={busy ? handleStop : handleBg}
+            title={busy ? 'Click to stop' : `Cut release (${bumpType})`}
             className={`${cls} release-cut-main`}
           >
             {busy && <span className="system-launch-pulse" />}
-            {busy ? LAUNCH_RELEASE_CUT_ACTIVE : flashing ? 'Opened' : LAUNCH_RELEASE_CUT}
+            {busy ? LAUNCH_RELEASE_CUT_ACTIVE : LAUNCH_RELEASE_CUT}
           </button>
           <button
             onClick={() => { if (!busy) setMenuOpen(!menuOpen); }}
@@ -123,7 +125,6 @@ export function ReleaseCutButton({ processOutput, onClearOutput }: LaunchButtonP
             title={busy ? 'Running...' : `Version bump: ${bumpType}`}
             className={`${cls} release-cut-arrow`}
           >
-            {busy && <span className="system-launch-pulse" />}
             {'\u25BC'}
           </button>
         </div>
@@ -133,7 +134,7 @@ export function ReleaseCutButton({ processOutput, onClearOutput }: LaunchButtonP
             {BUMP_OPTIONS.map(({ type, label, hint }) => (
               <button
                 key={type}
-                onClick={() => handleBg(type)}
+                onClick={() => handleBumpSelect(type)}
                 className={`release-cut-option ${type === bumpType ? 'release-cut-option--active' : ''}`}
               >
                 <span className="release-cut-check">
@@ -145,6 +146,15 @@ export function ReleaseCutButton({ processOutput, onClearOutput }: LaunchButtonP
             ))}
           </div>
         )}
+
+        <button
+          onClick={handleTerminal}
+          disabled={busy}
+          title={busy ? 'Running...' : 'Open in terminal'}
+          className={`launch-terminal-icon ${busy ? 'launch-terminal-icon--disabled' : ''}`}
+        >
+          {flashing ? '\u2713' : '>_'}
+        </button>
       </div>
       {hasOutput && onClearOutput && (
         <div className="mt-6">

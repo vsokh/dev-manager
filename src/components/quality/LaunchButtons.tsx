@@ -38,20 +38,8 @@ function DualLaunchButton({
   const launchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const running = !!processOutput?.running;
-  // Once real output arrives, launching is irrelevant for busy calculation
   const busy = running || (launching && !running);
   const hasOutput = (processOutput?.lines.length ?? 0) > 0 || running;
-
-  const handleTerminal = async () => {
-    if (busy) return;
-    try {
-      await api.launchTerminal(taskId, command, undefined, terminalTitle);
-      setFlashing(true);
-      setTimeout(() => setFlashing(false), 1500);
-    } catch (err) {
-      console.error(`Failed to open ${terminalTitle} terminal:`, err);
-    }
-  };
 
   const clearLaunchTimer = () => {
     if (launchTimerRef.current) { clearTimeout(launchTimerRef.current); launchTimerRef.current = null; }
@@ -61,7 +49,6 @@ function DualLaunchButton({
     if (busy) return;
     try {
       setLaunching(true);
-      // Safety timeout: clear launching if server never responds
       clearLaunchTimer();
       launchTimerRef.current = setTimeout(() => setLaunching(false), 10000);
       const res = await api.launch(taskId, command);
@@ -70,6 +57,17 @@ function DualLaunchButton({
       console.error(`Failed to launch ${terminalTitle}:`, err);
       clearLaunchTimer();
       setLaunching(false);
+    }
+  };
+
+  const handleTerminal = async () => {
+    if (busy) return;
+    try {
+      await api.launchTerminal(taskId, command, undefined, terminalTitle);
+      setFlashing(true);
+      setTimeout(() => setFlashing(false), 1500);
+    } catch (err) {
+      console.error(`Failed to open ${terminalTitle} terminal:`, err);
     }
   };
 
@@ -86,39 +84,26 @@ function DualLaunchButton({
 
   return (
     <div>
-      <div style={{ display: 'inline-flex', borderRadius: 'var(--dm-radius-sm)', overflow: 'hidden' }}>
-        {/* Main: open terminal (or stop if busy) */}
+      <div className="launch-group">
         <button
-          onClick={busy ? handleStop : handleTerminal}
-          title={busy ? 'Click to stop' : 'Open in terminal'}
+          onClick={busy ? handleStop : handleBg}
+          title={busy ? 'Click to stop' : label}
           className={cls}
-          style={{
-            padding: '6px 12px', position: 'relative', overflow: 'hidden',
-            borderRadius: 0, borderTopLeftRadius: 'var(--dm-radius-sm)', borderBottomLeftRadius: 'var(--dm-radius-sm)',
-          }}
         >
           {busy && <span className="system-launch-pulse" />}
-          {busy ? activeLabel : flashing ? 'Opened' : label}
+          {busy ? activeLabel : label}
         </button>
-        {/* Small arrow: run in background */}
         <button
-          onClick={handleBg}
+          onClick={handleTerminal}
           disabled={busy}
-          title={busy ? 'Running...' : 'Run in background'}
-          className={cls}
-          style={{
-            padding: '6px 6px', position: 'relative', overflow: 'hidden',
-            borderRadius: 0, borderTopRightRadius: 'var(--dm-radius-sm)', borderBottomRightRadius: 'var(--dm-radius-sm)',
-            marginLeft: 1, fontSize: 10, lineHeight: 1,
-          }}
+          title={busy ? 'Running...' : 'Open in terminal'}
+          className={`launch-terminal-icon ${busy ? 'launch-terminal-icon--disabled' : ''}`}
         >
-          {busy && <span className="system-launch-pulse" />}
-          {'\u25BC'}
+          {flashing ? '\u2713' : '>_'}
         </button>
       </div>
-      {/* Live output when running in background */}
       {hasOutput && onClearOutput && (
-        <div style={{ marginTop: 6 }}>
+        <div className="mt-6">
           <OutputViewer taskId={taskId} taskName={terminalTitle} output={processOutput} onClear={onClearOutput} />
         </div>
       )}
