@@ -1,4 +1,5 @@
-export type TaskStatus = 'pending' | 'in-progress' | 'done' | 'blocked' | 'paused' | 'backlog';
+export const TASK_STATUSES = ['pending', 'in-progress', 'done', 'blocked', 'paused', 'backlog'] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
 
 export interface Attachment {
   id: string;

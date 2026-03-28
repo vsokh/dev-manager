@@ -1,3 +1,5 @@
+import { TASK_STATUSES } from '../types';
+
 interface ValidationResult {
   valid: boolean;
   errors: string[];
@@ -30,8 +32,7 @@ export function validateState(data: unknown): ValidationResult {
         });
       }
       if (t.status !== undefined) {
-        const validStatuses = ['pending', 'in-progress', 'done', 'blocked', 'paused', 'backlog'];
-        if (!validStatuses.includes(t.status as string)) errors.push(`tasks[${i}].status "${t.status}" is not valid`);
+        if (!(TASK_STATUSES as readonly string[]).includes(t.status as string)) errors.push(`tasks[${i}].status "${t.status}" is not valid`);
       }
     });
   }

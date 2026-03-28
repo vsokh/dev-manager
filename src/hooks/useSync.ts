@@ -47,10 +47,16 @@ export function mergeProgressIntoState(
         activity.unshift(arrangeActivity);
         // Apply task updates from arrange (dependsOn, group changes)
         if (rawProg.taskUpdates) {
+          const existingIds = new Set(tasks.map(t => t.id));
           for (const [tid, updates] of Object.entries(rawProg.taskUpdates)) {
             const tIdx = tasks.findIndex(t => t.id === Number(tid));
             if (tIdx !== -1) {
-              tasks[tIdx] = { ...tasks[tIdx], ...updates } as Task;
+              const filtered = { ...updates };
+              if (filtered.dependsOn) {
+                filtered.dependsOn = filtered.dependsOn.filter(id => existingIds.has(id));
+                if (filtered.dependsOn.length === 0) delete filtered.dependsOn;
+              }
+              tasks[tIdx] = { ...tasks[tIdx], ...filtered } as Task;
             }
           }
         }

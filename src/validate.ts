@@ -1,6 +1,5 @@
 import type { StateData, Task, QueueItem, Activity, Epic, Feature, ProgressEntry, QualityReport, QualityHistoryEntry } from './types';
-
-const VALID_TASK_STATUSES = ['pending', 'in-progress', 'done', 'blocked', 'paused', 'backlog'] as const;
+import { TASK_STATUSES } from './types';
 const VALID_PROGRESS_STATUSES = ['in-progress', 'done', 'paused'] as const;
 
 export function validateState(data: unknown): StateData | null {
@@ -14,7 +13,7 @@ export function validateState(data: unknown): StateData | null {
         typeof (t as Record<string, unknown>).id === 'number' && isFinite((t as Record<string, unknown>).id as number) &&
         typeof (t as Record<string, unknown>).name === 'string' &&
         typeof (t as Record<string, unknown>).status === 'string' &&
-        (VALID_TASK_STATUSES as readonly string[]).includes((t as Record<string, unknown>).status as string)
+        (TASK_STATUSES as readonly string[]).includes((t as Record<string, unknown>).status as string)
       ).map(t => {
         if ('dependsOn' in t) {
           if (Array.isArray(t.dependsOn)) {
@@ -35,6 +34,11 @@ export function validateState(data: unknown): StateData | null {
       )
     : [];
 
+  // Referential integrity: queue items must reference existing task IDs
+  const taskIds = new Set(tasks.map(t => t.id));
+
+  const validQueue = queue.filter(q => taskIds.has(q.task));
+
   const activity: Activity[] = Array.isArray(d.activity) ? d.activity as Activity[] : [];
 
   const taskNotes: Record<string, string> = (d.taskNotes && typeof d.taskNotes === 'object' && !Array.isArray(d.taskNotes))
@@ -50,7 +54,7 @@ export function validateState(data: unknown): StateData | null {
     _v: typeof d._v === 'number' ? d._v : undefined,
     project: typeof d.project === 'string' ? d.project : '',
     tasks,
-    queue,
+    queue: validQueue,
     activity,
     taskNotes,
     epics,
