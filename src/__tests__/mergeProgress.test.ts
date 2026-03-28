@@ -225,6 +225,48 @@ describe('mergeProgressIntoState', () => {
     });
   });
 
+  describe('invalid progress validation', () => {
+    it('skips progress entries with invalid status', () => {
+      const state = makeState({ tasks: [makeTask(1)] });
+      const progress: Record<string, ProgressEntry> = {
+        '1': { status: 'bogus' as ProgressEntry['status'], progress: 'bad data' },
+      };
+      const result = mergeProgressIntoState(state, progress);
+      expect(result.data.tasks[0].status).toBe('pending');
+      expect(result.staleProgressIds).toContain('1');
+    });
+
+    it('skips progress entries with missing status', () => {
+      const state = makeState({ tasks: [makeTask(1)] });
+      const progress: Record<string, ProgressEntry> = {
+        '1': { progress: 'no status field' } as unknown as ProgressEntry,
+      };
+      const result = mergeProgressIntoState(state, progress);
+      expect(result.data.tasks[0].status).toBe('pending');
+      expect(result.staleProgressIds).toContain('1');
+    });
+
+    it('skips non-object progress entries', () => {
+      const state = makeState({ tasks: [makeTask(1)] });
+      const progress: Record<string, ProgressEntry> = {
+        '1': 'not an object' as unknown as ProgressEntry,
+      };
+      const result = mergeProgressIntoState(state, progress);
+      expect(result.data.tasks[0].status).toBe('pending');
+      expect(result.staleProgressIds).toContain('1');
+    });
+
+    it('allows valid progress entries through', () => {
+      const state = makeState({ tasks: [makeTask(1)] });
+      const progress: Record<string, ProgressEntry> = {
+        '1': { status: 'in-progress', progress: 'Working' },
+      };
+      const result = mergeProgressIntoState(state, progress);
+      expect(result.data.tasks[0].status).toBe('in-progress');
+      expect(result.staleProgressIds).not.toContain('1');
+    });
+  });
+
   describe('activity truncation', () => {
     it('truncates activity to 20 entries', () => {
       const activity = Array.from({ length: 25 }, (_, i) => ({

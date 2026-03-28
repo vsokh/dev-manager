@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validateState } from '../utils/validateState.ts';
+import { validateState as sanitizeState } from '../validate.ts';
 
 describe('validateState', () => {
   it('valid minimal state passes', () => {
@@ -110,5 +111,54 @@ describe('validateState', () => {
       activity: [{ id: 'act_1', time: 123, label: 'test' }],
     });
     expect(result2.valid).toBe(true);
+  });
+});
+
+describe('sanitizeState (src/validate.ts)', () => {
+  it('filters out tasks with invalid status', () => {
+    const result = sanitizeState({
+      project: 'test',
+      tasks: [
+        { id: 1, name: 'Valid', status: 'pending' },
+        { id: 2, name: 'Bad Status', status: 'invalid-status' },
+        { id: 3, name: 'Done', status: 'done' },
+      ],
+      queue: [],
+      taskNotes: {},
+      activity: [],
+    });
+    expect(result).not.toBeNull();
+    expect(result!.tasks).toHaveLength(2);
+    expect(result!.tasks.map(t => t.id)).toEqual([1, 3]);
+  });
+
+  it('filters out tasks with missing status', () => {
+    const result = sanitizeState({
+      project: 'test',
+      tasks: [
+        { id: 1, name: 'No Status' },
+        { id: 2, name: 'Has Status', status: 'backlog' },
+      ],
+      queue: [],
+      taskNotes: {},
+      activity: [],
+    });
+    expect(result).not.toBeNull();
+    expect(result!.tasks).toHaveLength(1);
+    expect(result!.tasks[0].id).toBe(2);
+  });
+
+  it('keeps tasks with all valid statuses', () => {
+    const statuses = ['pending', 'in-progress', 'done', 'blocked', 'paused', 'backlog'];
+    const tasks = statuses.map((status, i) => ({ id: i + 1, name: `Task ${i + 1}`, status }));
+    const result = sanitizeState({
+      project: 'test',
+      tasks,
+      queue: [],
+      taskNotes: {},
+      activity: [],
+    });
+    expect(result).not.toBeNull();
+    expect(result!.tasks).toHaveLength(6);
   });
 });

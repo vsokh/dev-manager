@@ -108,7 +108,7 @@ describe('handleState', () => {
 
       const res = mockRes();
       // Send a very old lastModified to trigger conflict
-      const req = mockReq([JSON.stringify({ project: 'new', _lastModified: 1000 })]);
+      const req = mockReq([JSON.stringify({ project: 'new', tasks: [], _lastModified: 1000 })]);
       await handleState('PUT', '/api/state', req, res, mockUrl('/api/state'), mockCtx(tmpDir));
       expect(res.writeHead).toHaveBeenCalledWith(409, expect.any(Object));
       const body = JSON.parse(res.end.mock.calls[0][0]);

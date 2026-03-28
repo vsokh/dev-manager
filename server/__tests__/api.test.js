@@ -302,7 +302,7 @@ describe('PUT /api/state', () => {
   });
 
   it('increments _v version counter', async () => {
-    const stateData = { project: 'test', _v: 5 };
+    const stateData = { project: 'test', tasks: [], _v: 5 };
     const req = mockReq('PUT', '/api/state', stateData);
     const res = mockRes();
     await handleApi(req, res);
@@ -312,7 +312,7 @@ describe('PUT /api/state', () => {
   });
 
   it('sets _v to 1 when not present', async () => {
-    const stateData = { project: 'test' };
+    const stateData = { project: 'test', tasks: [] };
     const req = mockReq('PUT', '/api/state', stateData);
     const res = mockRes();
     await handleApi(req, res);
@@ -322,7 +322,7 @@ describe('PUT /api/state', () => {
   });
 
   it('strips _lastModified field before writing', async () => {
-    const stateData = { project: 'test', _lastModified: 99999 };
+    const stateData = { project: 'test', tasks: [], _lastModified: 99999 };
     const req = mockReq('PUT', '/api/state', stateData);
     const res = mockRes();
     await handleApi(req, res);
@@ -338,7 +338,7 @@ describe('PUT /api/state', () => {
 
     // Send with a very old _lastModified (but truthy) to trigger conflict
     // Note: _lastModified must be truthy for the concurrency check to activate
-    const stateData = { project: 'updated', _lastModified: 1 };
+    const stateData = { project: 'updated', tasks: [], _lastModified: 1 };
     const req = mockReq('PUT', '/api/state', stateData);
     const res = mockRes();
     await handleApi(req, res);
@@ -355,7 +355,7 @@ describe('PUT /api/state', () => {
     await writeFile(join(devmanagerDir, 'state.json'), JSON.stringify({ old: true }));
 
     // Send without _lastModified — no concurrency check
-    const stateData = { project: 'new' };
+    const stateData = { project: 'new', tasks: [] };
     const req = mockReq('PUT', '/api/state', stateData);
     const res = mockRes();
     await handleApi(req, res);

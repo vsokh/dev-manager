@@ -1,5 +1,6 @@
 import type { StateData, Task, QueueItem, Activity, Epic, Feature, ProgressEntry, QualityReport, QualityHistoryEntry } from './types';
 
+const VALID_TASK_STATUSES = ['pending', 'in-progress', 'done', 'blocked', 'paused', 'backlog'] as const;
 const VALID_PROGRESS_STATUSES = ['in-progress', 'done', 'paused'] as const;
 
 export function validateState(data: unknown): StateData | null {
@@ -11,7 +12,9 @@ export function validateState(data: unknown): StateData | null {
     ? (d.tasks as unknown[]).filter((t): t is Task =>
         !!t && typeof t === 'object' && !Array.isArray(t) &&
         typeof (t as Record<string, unknown>).id === 'number' && isFinite((t as Record<string, unknown>).id as number) &&
-        typeof (t as Record<string, unknown>).name === 'string'
+        typeof (t as Record<string, unknown>).name === 'string' &&
+        typeof (t as Record<string, unknown>).status === 'string' &&
+        (VALID_TASK_STATUSES as readonly string[]).includes((t as Record<string, unknown>).status as string)
       ).map(t => {
         if ('dependsOn' in t) {
           if (Array.isArray(t.dependsOn)) {

@@ -1,6 +1,7 @@
 import { readFile, writeFile, readdir, stat, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { jsonResponse, parseJsonBody, ensureDir, matchRoute, readJsonOrNull, handleNotFound, safePath } from '../middleware.js';
+import { validateProgressEntry, validateStateStructure } from '../validate.js';
 
 export async function handleState(method, pathname, req, res, url, ctx) {
   const { projectPath } = ctx;
@@ -93,6 +94,10 @@ Rules:
   // PUT /api/state
   if (method === 'PUT' && pathname === '/api/state') {
     const body = await parseJsonBody(req);
+    if (!validateStateStructure(body)) {
+      jsonResponse(res, 400, { error: 'Invalid state structure: must include tasks array' });
+      return true;
+    }
     const stateDir = join(projectPath, '.devmanager');
     await ensureDir(stateDir);
     const statePath = join(stateDir, 'state.json');
@@ -139,7 +144,13 @@ Rules:
         try {
           const content = await readFile(join(progDir, file), 'utf-8');
           const key = file.replace('.json', '');
-          entries[key] = JSON.parse(content);
+          const parsed = JSON.parse(content);
+          const validated = validateProgressEntry(parsed);
+          if (validated) {
+            entries[key] = validated;
+          } else {
+            console.warn(`[state] Invalid progress file skipped: ${file}`);
+          }
         } catch (err) {
           console.error('Failed to parse progress file:', file, err.message);
         }

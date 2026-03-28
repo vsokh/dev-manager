@@ -5,6 +5,7 @@ import {
   readProgressFiles,
   deleteProgressFile,
 } from '../fs.ts';
+import { validateProgress } from '../validate.ts';
 import type { ConnectionStatus } from './useConnection.ts';
 
 export interface MergeResult {
@@ -33,27 +34,38 @@ export function mergeProgressIntoState(
   const staleProgressIds: (string | number)[] = [];
   let arrangeCompleted = false;
 
-  for (const [taskId, prog] of Object.entries(progressEntries)) {
-    if (taskId === 'arrange' && prog.status === 'done') {
-      const arrangeActivity: Activity = {
-        id: 'act_' + Date.now() + '_arrange',
-        time: Date.now(),
-        label: prog.label || 'Tasks arranged into dependency graph',
-      };
-      if (prog.changes) arrangeActivity.changes = prog.changes;
-      activity.unshift(arrangeActivity);
-      // Apply task updates from arrange (dependsOn, group changes)
-      if (prog.taskUpdates) {
-        for (const [tid, updates] of Object.entries(prog.taskUpdates)) {
-          const tIdx = tasks.findIndex(t => t.id === Number(tid));
-          if (tIdx !== -1) {
-            tasks[tIdx] = { ...tasks[tIdx], ...updates } as Task;
+  for (const [taskId, rawProg] of Object.entries(progressEntries)) {
+    // Special case: arrange has its own shape (taskUpdates, changes, label)
+    if (taskId === 'arrange') {
+      if (rawProg.status === 'done') {
+        const arrangeActivity: Activity = {
+          id: 'act_' + Date.now() + '_arrange',
+          time: Date.now(),
+          label: rawProg.label || 'Tasks arranged into dependency graph',
+        };
+        if (rawProg.changes) arrangeActivity.changes = rawProg.changes;
+        activity.unshift(arrangeActivity);
+        // Apply task updates from arrange (dependsOn, group changes)
+        if (rawProg.taskUpdates) {
+          for (const [tid, updates] of Object.entries(rawProg.taskUpdates)) {
+            const tIdx = tasks.findIndex(t => t.id === Number(tid));
+            if (tIdx !== -1) {
+              tasks[tIdx] = { ...tasks[tIdx], ...updates } as Task;
+            }
           }
         }
+        arrangeCompleted = true;
+        needsWrite = true;
+        hasChanges = true;
       }
-      arrangeCompleted = true;
-      needsWrite = true;
-      hasChanges = true;
+      continue;
+    }
+
+    // Validate progress entry at the boundary
+    const prog = validateProgress(rawProg);
+    if (!prog) {
+      staleProgressIds.push(taskId);
+      console.warn(`[sync] Invalid progress entry for task ${taskId} — skipping`);
       continue;
     }
 

@@ -2,6 +2,7 @@ import { watch } from 'node:fs';
 import { readFile, stat, mkdir, copyFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateProgressEntry } from './validate.js';
 
 const DEBOUNCE_MS = 300;
 
@@ -84,7 +85,17 @@ function watchDirectory(dirPath, type, broadcast) {
         try {
           const content = await readFile(join(dirPath, file), 'utf-8');
           const key = file.replace('.json', '');
-          entries[key] = JSON.parse(content);
+          const parsed = JSON.parse(content);
+          if (type === 'progress') {
+            const validated = validateProgressEntry(parsed);
+            if (!validated) {
+              console.warn(`[watcher] Invalid progress entry skipped: ${file}`);
+              continue;
+            }
+            entries[key] = validated;
+          } else {
+            entries[key] = parsed;
+          }
           if (lastContents.get(file) !== content) {
             changed = true;
             lastContents.set(file, content);
