@@ -28,7 +28,11 @@ export async function handleState(method, pathname, req, res, url, ctx) {
       try {
         const stateContent = await readFile(stateFile, 'utf-8');
         const state = JSON.parse(stateContent);
-        existingEpics = (state.epics || []).map(e => e.name);
+        if (!validateStateStructure(state)) {
+          existingEpics = [];
+        } else {
+          existingEpics = (state.epics || []).map(e => e.name);
+        }
       } catch { /* no state yet */ }
 
       const prompt = `You are a product manager assistant. Split the following user notes into individual actionable tasks for a development team.
@@ -111,6 +115,10 @@ Rules:
           // File on disk is newer — return 409 with current state
           const content = await readFile(statePath, 'utf-8');
           const currentData = JSON.parse(content);
+          if (!validateStateStructure(currentData)) {
+            jsonResponse(res, 500, { error: 'Corrupt state file on disk' });
+            return true;
+          }
           jsonResponse(res, 409, {
             error: 'Conflict: file on disk is newer',
             data: currentData,

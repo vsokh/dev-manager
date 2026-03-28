@@ -46,13 +46,13 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
   return (
     <form onSubmit={handleSubmit} className="card-form p-16 mb-16">
       <input
-        value={title} onInput={(e: React.FormEvent<HTMLInputElement>) => setTitle((e.target as HTMLInputElement).value)}
+        value={title} onInput={(e) => setTitle(e.currentTarget.value)}
         placeholder={FORM_TITLE_PLACEHOLDER} autoFocus
         className="input-card w-full py-6 px-8 text-13 font-600 mb-8"
       />
       <div className="flex gap-8 mb-8">
         <input
-          value={group} onInput={(e: React.FormEvent<HTMLInputElement>) => setGroup((e.target as HTMLInputElement).value)}
+          value={group} onInput={(e) => setGroup(e.currentTarget.value)}
           placeholder={FORM_EPIC_PLACEHOLDER}
           list="group-list"
           className="input-card flex-1 py-6 px-8 text-12"
@@ -64,7 +64,7 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
         ) : null}
       </div>
       <textarea
-        value={description} onInput={(e: React.FormEvent<HTMLTextAreaElement>) => setDescription((e.target as HTMLTextAreaElement).value)}
+        value={description} onInput={(e) => setDescription(e.currentTarget.value)}
         placeholder={FORM_DESC_PLACEHOLDER}
         rows={2}
         className="input-card w-full py-6 px-8 text-13 mb-8"
@@ -86,7 +86,7 @@ export function CardForm({ card, onSave, onCancel, groups }: CardFormProps) {
         </div>
         <input
           value={displaySkills}
-          onInput={(e: React.FormEvent<HTMLInputElement>) => { setManualSkills((e.target as HTMLInputElement).value); setUserEditedSkills(true); }}
+          onInput={(e) => { setManualSkills(e.currentTarget.value); setUserEditedSkills(true); }}
           onFocus={() => { if (!userEditedSkills) { setManualSkills(suggested.join(', ')); setUserEditedSkills(true); } }}
           placeholder={FORM_SKILLS_PLACEHOLDER}
           className="input-card w-full py-6 px-8 text-12"

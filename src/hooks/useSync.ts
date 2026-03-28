@@ -51,12 +51,14 @@ export function mergeProgressIntoState(
           for (const [tid, updates] of Object.entries(rawProg.taskUpdates)) {
             const tIdx = tasks.findIndex(t => t.id === Number(tid));
             if (tIdx !== -1) {
-              const filtered = { ...updates };
-              if (filtered.dependsOn) {
-                filtered.dependsOn = filtered.dependsOn.filter(id => existingIds.has(id));
-                if (filtered.dependsOn.length === 0) delete filtered.dependsOn;
+              const safeUpdates: Partial<Pick<Task, 'dependsOn' | 'group'>> = {};
+              const u = updates as Record<string, unknown>;
+              if (typeof u.group === 'string') safeUpdates.group = u.group;
+              if (Array.isArray(u.dependsOn)) {
+                const validDeps = u.dependsOn.filter((d): d is number => typeof d === 'number' && isFinite(d) && existingIds.has(d));
+                if (validDeps.length > 0) safeUpdates.dependsOn = validDeps;
               }
-              tasks[tIdx] = { ...tasks[tIdx], ...filtered } as Task;
+              tasks[tIdx] = { ...tasks[tIdx], ...safeUpdates };
             }
           }
         }
@@ -112,7 +114,7 @@ export function mergeProgressIntoState(
         staleProgressIds.push(id);
         continue;
       }
-      const enriched: Partial<Task> = {
+      const enriched: { status: Task['status']; progress: string | undefined; startedAt?: string } = {
         status: prog.status || tasks[idx].status,
         progress: prog.progress || tasks[idx].progress,
       };
@@ -121,7 +123,7 @@ export function mergeProgressIntoState(
           enriched.startedAt = new Date().toISOString();
         }
       }
-      tasks[idx] = { ...tasks[idx], ...enriched } as Task;
+      tasks[idx] = { ...tasks[idx], ...enriched };
       hasChanges = true;
     }
   }

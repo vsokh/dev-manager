@@ -38,6 +38,14 @@ async function del<T>(path: string): Promise<T> {
 }
 
 // WebSocket connection
+const VALID_WS_TYPES = ['state', 'progress', 'quality', 'project-switched', 'output', 'exit'] as const;
+
+function isValidWsMessage(data: unknown): data is WebSocketMessage {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+  const msg = data as Record<string, unknown>;
+  return typeof msg.type === 'string' && (VALID_WS_TYPES as readonly string[]).includes(msg.type);
+}
+
 export function connectWebSocket(
   onMessage: (msg: WebSocketMessage) => void,
   onClose?: () => void,
@@ -45,7 +53,14 @@ export function connectWebSocket(
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const ws = new WebSocket(`${protocol}//${location.host}/ws`);
   ws.onmessage = (e) => {
-    try { onMessage(JSON.parse(e.data)); } catch (err) { console.warn('[ws] Failed to parse message:', err); }
+    try {
+      const parsed = JSON.parse(e.data);
+      if (isValidWsMessage(parsed)) {
+        onMessage(parsed);
+      } else {
+        console.warn('[ws] Invalid message type:', parsed?.type);
+      }
+    } catch (err) { console.warn('[ws] Failed to parse message:', err); }
   };
   ws.onclose = () => { onClose?.(); };
   return ws;
