@@ -45,7 +45,7 @@ export function connectWebSocket(
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const ws = new WebSocket(`${protocol}//${location.host}/ws`);
   ws.onmessage = (e) => {
-    try { onMessage(JSON.parse(e.data)); } catch { /* ignore parse errors */ }
+    try { onMessage(JSON.parse(e.data)); } catch (err) { console.warn('[ws] Failed to parse message:', err); }
   };
   ws.onclose = () => { onClose?.(); };
   return ws;

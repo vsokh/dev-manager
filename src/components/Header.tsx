@@ -36,7 +36,7 @@ export function Header({ projectName, status, projects, onSwitchProject, onOpenS
   // Poll for unpushed commits
   useEffect(() => {
     if (status !== 'connected' && status !== 'synced') return;
-    const check = () => { api.gitStatus().then(r => { setUnpushed(r.unpushed || 0); setCommits(r.commits || []); }).catch(() => {}); };
+    const check = () => { api.gitStatus().then(r => { setUnpushed(r.unpushed || 0); setCommits(r.commits || []); }).catch((err) => console.warn('[git-poll] Failed to fetch git status:', err)); };
     check();
     const interval = setInterval(check, 15000);
     return () => clearInterval(interval);

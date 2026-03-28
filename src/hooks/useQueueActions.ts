@@ -114,12 +114,18 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
 
   const waitForProcess = async (pid: number, timeout = 600000): Promise<boolean> => {
     const start = Date.now();
+    let consecutiveFailures = 0;
     while (Date.now() - start < timeout) {
       await new Promise(r => setTimeout(r, 3000));
       try {
         const procs = await api.listProcesses();
+        consecutiveFailures = 0;
         if (!procs.some(p => p.pid === pid)) return true;
-      } catch { /* ignore polling errors */ }
+      } catch (err) {
+        consecutiveFailures++;
+        console.warn('[queue] Process poll failed:', err);
+        if (consecutiveFailures >= 5) return false;
+      }
     }
     return false; // timed out
   };

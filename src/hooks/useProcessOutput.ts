@@ -105,7 +105,8 @@ export function useProcessOutput() {
           },
         );
         wsRef.current = ws;
-      } catch {
+      } catch (err) {
+        console.warn('[process-output] WebSocket connection failed, retrying...', err);
         reconnectTimer = setTimeout(connect, WS_RECONNECT_DELAY);
       }
     }
@@ -137,7 +138,7 @@ export function useProcessOutput() {
         }
         return merged;
       });
-    }).catch(() => { /* server might not support this endpoint yet */ });
+    }).catch((err) => console.warn('[process-output] Failed to load buffered output:', err));
 
     return () => {
       mounted = false;

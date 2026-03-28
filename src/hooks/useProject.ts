@@ -108,7 +108,8 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
   // Auto-connect on mount, retry once on failure
   useEffect(() => {
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
-    connectToServer().catch(() => {
+    connectToServer().catch((err) => {
+      console.warn('[project] Initial connection failed, retrying...', err);
       retryTimer = setTimeout(connectToServer, 2000);
     });
     return () => { if (retryTimer) clearTimeout(retryTimer); };
@@ -143,7 +144,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
       console.error('Switch project failed:', err);
       onError?.(`Failed to open project: ${err instanceof Error ? err.message : 'unknown error'}`);
       // Try reconnecting to the previous project
-      try { await connectToServer(); } catch { setStatus('error'); }
+      try { await connectToServer(); } catch (err) { console.warn('[project] Fallback reconnection failed:', err); setStatus('error'); }
     }
   }, [connectToServer, onError, setConnected, setStatus, setData]);
 
