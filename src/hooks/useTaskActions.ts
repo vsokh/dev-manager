@@ -119,7 +119,7 @@ export function useTaskActions({ data, save, snapshotBeforeAction, onError }: Us
       handleUpdateTask(taskId, { attachments });
     } catch (err) {
       console.error('Failed to save attachment:', err);
-      if (onError) onError('Failed to save screenshot');
+      if (onError) onError(`Failed to save screenshot: ${err instanceof Error ? err.message : err}`);
     }
   };
 
@@ -133,7 +133,7 @@ export function useTaskActions({ data, save, snapshotBeforeAction, onError }: Us
       handleUpdateTask(taskId, { attachments });
     } catch (err) {
       console.error('Failed to delete attachment:', err);
-      if (onError) onError('Failed to delete screenshot');
+      if (onError) onError(`Failed to delete screenshot: ${err instanceof Error ? err.message : err}`);
     }
   };
 

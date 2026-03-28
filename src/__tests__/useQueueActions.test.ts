@@ -224,7 +224,7 @@ describe('useQueueActions', () => {
         await result.current.handleLaunchTask(1, '/orchestrator task 1', 'Fix login');
       });
 
-      expect(onError).toHaveBeenCalledWith('Failed to launch task');
+      expect(onError).toHaveBeenCalledWith('Failed to launch task: connection refused');
     });
   });
 

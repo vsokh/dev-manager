@@ -167,6 +167,11 @@ class ProcessManager {
           }
         } catch (writeErr) {
           console.error(`Failed to write progress for task ${taskId}:`, writeErr.message);
+          try {
+            broadcast({ type: 'error', taskId, message: `Failed to write progress: ${writeErr.message}` });
+          } catch (broadcastErr) {
+            console.error('Broadcast progress-write error:', broadcastErr.message);
+          }
         }
       }
 

@@ -351,7 +351,7 @@ describe('useTaskActions', () => {
         await result.current.handleAddAttachment(1, file);
       });
 
-      expect(onError).toHaveBeenCalledWith('Failed to save screenshot');
+      expect(onError).toHaveBeenCalledWith('Failed to save screenshot: disk full');
     });
   });
 
@@ -419,7 +419,7 @@ describe('useTaskActions', () => {
         await result.current.handleDeleteAttachment(1, 'att_1');
       });
 
-      expect(onError).toHaveBeenCalledWith('Failed to delete screenshot');
+      expect(onError).toHaveBeenCalledWith('Failed to delete screenshot: permission denied');
     });
   });
 });

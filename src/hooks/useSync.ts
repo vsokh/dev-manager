@@ -187,7 +187,7 @@ export function useSync({ setStatus, onError }: UseSyncOptions) {
         if (result.lastModified) lastWriteTimeRef.current = result.lastModified;
         setStatus('connected');
       } else {
-        onError?.('Save failed — changes may not be persisted');
+        onError?.('Save failed — changes may not be persisted. Check network connection');
         setStatus('error');
       }
     }, 500);
@@ -264,12 +264,12 @@ export function useSync({ setStatus, onError }: UseSyncOptions) {
                 }
               } else if (!result.ok) {
                 console.error('[sync] Failed to write merged progress state — keeping progress files for retry');
-                onError?.('Failed to sync task progress');
+                onError?.('Failed to sync task progress: server rejected write');
                 setStatus('error');
               }
             }).catch((err) => {
               console.error('[sync] writeState error — keeping progress files for retry:', err);
-              onError?.('Failed to sync task progress');
+              onError?.(`Failed to sync task progress: ${err instanceof Error ? err.message : err}`);
               setStatus('error');
             });
           }
@@ -310,12 +310,12 @@ export function useSync({ setStatus, onError }: UseSyncOptions) {
           lastWriteTimeRef.current = result.lastModified;
         } else if (!result.ok) {
           console.error('[sync] Failed to write paused task state');
-          onError?.('Failed to save paused state');
+          onError?.('Failed to save paused state: server rejected write');
           setStatus('error');
         }
       }).catch((err) => {
         console.error('[sync] writeState error:', err);
-        onError?.('Failed to save paused state');
+        onError?.(`Failed to save paused state: ${err instanceof Error ? err.message : err}`);
         setStatus('error');
       });
       return updated;
@@ -339,12 +339,12 @@ export function useSync({ setStatus, onError }: UseSyncOptions) {
           lastWriteTimeRef.current = result.lastModified;
         } else if (!result.ok) {
           console.error('[sync] Failed to write cancelled task state');
-          onError?.('Failed to save cancelled state');
+          onError?.('Failed to save cancelled state: server rejected write');
           setStatus('error');
         }
       }).catch((err) => {
         console.error('[sync] writeState error:', err);
-        onError?.('Failed to save cancelled state');
+        onError?.(`Failed to save cancelled state: ${err instanceof Error ? err.message : err}`);
         setStatus('error');
       });
       return updated;

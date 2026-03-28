@@ -37,7 +37,7 @@ export function useTaskLauncher({ data, save, launchMode, onError }: UseTaskLaun
     } catch (err) {
       console.error('Failed to launch task:', err);
       setTaskProgress(itemKey, undefined, 'pending');
-      onError('Failed to launch task');
+      onError(`Failed to launch task: ${err instanceof Error ? err.message : err}`);
     }
   };
 
@@ -46,7 +46,7 @@ export function useTaskLauncher({ data, save, launchMode, onError }: UseTaskLaun
       await api.launchTerminal(itemKey, cmd, undefined, taskName);
     } catch (err) {
       console.error('Failed to launch in terminal:', err);
-      onError('Failed to open terminal');
+      onError(`Failed to open terminal: ${err instanceof Error ? err.message : err}`);
     }
   };
 

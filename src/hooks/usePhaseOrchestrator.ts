@@ -22,10 +22,10 @@ export function usePhaseOrchestrator({ dataRef, save, launchMode, waitForProcess
   const [arranging, setArranging] = useState(false);
 
   const handleLaunchPhase = async (items: LaunchPhaseItem[], phaseIndex?: number) => {
+    let verified = items;
     try {
       // Re-verify phase membership against latest data to prevent launching
       // tasks that moved to a different phase between render and click
-      let verified = items;
       const fresh = dataRef.current;
       if (fresh && phaseIndex != null) {
         const phases = computePhases(fresh.queue || [], fresh.tasks || []);
@@ -76,7 +76,17 @@ export function usePhaseOrchestrator({ dataRef, save, launchMode, waitForProcess
       }
     } catch (err) {
       console.error('Failed to launch phase:', err);
-      onError('Failed to launch phase');
+      const freshNow = dataRef.current;
+      if (freshNow) {
+        const launchingIds = new Set(verified.map(i => i.key));
+        const resetTasks = (freshNow.tasks || []).map(t =>
+          launchingIds.has(t.id) && t.progress === 'Launching...'
+            ? { ...t, status: 'pending' as const, progress: undefined }
+            : t
+        );
+        save({ ...freshNow, tasks: resetTasks });
+      }
+      onError(`Failed to launch phase: ${err instanceof Error ? err.message : err}`);
     }
   };
 
@@ -106,7 +116,7 @@ export function usePhaseOrchestrator({ dataRef, save, launchMode, waitForProcess
       await api.launch(0, '/orchestrator arrange');
     } catch (err) {
       console.error('Failed to launch arrange:', err);
-      onError('Failed to launch arrange');
+      onError(`Failed to launch arrange: ${err instanceof Error ? err.message : err}`);
       setArranging(false);
     }
   };
