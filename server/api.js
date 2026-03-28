@@ -39,7 +39,8 @@ export async function handleApi(req, res) {
     return true;
   } catch (err) {
     console.error(`API error [${method} ${pathname}]:`, err);
-    jsonResponse(res, 500, { error: err.message || 'Internal server error' });
+    const status = err.statusCode || 500;
+    jsonResponse(res, status, { error: err.message || 'Internal server error' });
     return true;
   }
 }

@@ -32,7 +32,7 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
     onMessage: (msg: WebSocketMessage) => handleWsMessageRef.current(msg),
   });
 
-  const { data, setData, projectName, setProjectName, save, handleSyncMessage, pauseTask, cancelTask, flushPendingSave, lastWriteTimeRef } = useSync({ setStatus });
+  const { data, setData, projectName, setProjectName, save, handleSyncMessage, pauseTask, cancelTask, flushPendingSave, lastWriteTimeRef } = useSync({ setStatus, onError });
 
   const { showTemplatePicker, triggerTemplatePicker, connectWithTemplate, cancelTemplatePicker } = useTemplate({
     setStatus,

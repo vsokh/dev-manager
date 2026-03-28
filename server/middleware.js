@@ -27,7 +27,13 @@ function parseBody(req) {
 async function parseJsonBody(req) {
   const buf = await parseBody(req);
   if (buf.length === 0) return {};
-  return JSON.parse(buf.toString('utf-8'));
+  try {
+    return JSON.parse(buf.toString('utf-8'));
+  } catch {
+    const err = new Error('Invalid JSON in request body');
+    err.statusCode = 400;
+    throw err;
+  }
 }
 
 // --- File system helpers ---

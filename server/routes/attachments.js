@@ -43,7 +43,12 @@ export async function handleAttachments(method, pathname, req, res, url, ctx) {
       jsonResponse(res, 400, { error: 'Invalid filename' });
       return true;
     }
-    await writeFile(filePath, buf);
+    try {
+      await writeFile(filePath, buf);
+    } catch (err) {
+      jsonResponse(res, 500, { error: 'Failed to save attachment' });
+      return true;
+    }
     jsonResponse(res, 200, {
       ok: true,
       path: `.devmanager/attachments/${taskId}/${filename}`,

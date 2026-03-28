@@ -131,7 +131,7 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
       }
     } catch (err) {
       console.error('Failed to launch task:', err);
-      if (launchMode !== 'terminal') setTaskProgress(itemKey, undefined, 'pending');
+      setTaskProgress(itemKey, undefined, 'pending');
       onError('Failed to launch task');
     }
   };
@@ -197,7 +197,12 @@ export function useQueueActions({ data, save, snapshotBeforeAction, onError }: U
         }
         for (const item of verified) {
           if (launchMode === 'terminal') {
-            await api.launchTerminal(item.key, item.cmd, undefined, item.taskName);
+            try {
+              await api.launchTerminal(item.key, item.cmd, undefined, item.taskName);
+            } catch (err) {
+              console.error('Failed to launch task in terminal:', err);
+              setTaskProgress(item.key, undefined, 'pending');
+            }
           } else {
             await api.launch(item.key, item.cmd);
           }

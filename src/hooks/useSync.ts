@@ -125,9 +125,10 @@ export function mergeProgressIntoState(
 
 interface UseSyncOptions {
   setStatus: (status: ConnectionStatus) => void;
+  onError?: (msg: string) => void;
 }
 
-export function useSync({ setStatus }: UseSyncOptions) {
+export function useSync({ setStatus, onError }: UseSyncOptions) {
   const [data, setData] = useState<StateData | null>(null);
   const [projectName, setProjectName] = useState('');
 
@@ -166,10 +167,11 @@ export function useSync({ setStatus }: UseSyncOptions) {
         if (result.lastModified) lastWriteTimeRef.current = result.lastModified;
         setStatus('connected');
       } else {
+        onError?.('Save failed — changes may not be persisted');
         setStatus('error');
       }
     }, 500);
-  }, [setStatus]);
+  }, [setStatus, onError]);
 
   // Returns true if the message was handled as a sync message
   const handleSyncMessage = useCallback((msg: WebSocketMessage): boolean => {
@@ -207,10 +209,12 @@ export function useSync({ setStatus }: UseSyncOptions) {
                 lastWriteTimeRef.current = result.lastModified;
               } else if (!result.ok) {
                 console.error('[sync] Failed to write merged progress state');
+                onError?.('Failed to sync task progress');
                 setStatus('error');
               }
             }).catch((err) => {
               console.error('[sync] writeState error:', err);
+              onError?.('Failed to sync task progress');
               setStatus('error');
             });
             // Clean up completed tasks' progress files
@@ -228,7 +232,7 @@ export function useSync({ setStatus }: UseSyncOptions) {
       return true;
     }
     return false;
-  }, [setStatus]);
+  }, [setStatus, onError]);
 
   const pauseTask = useCallback(async (taskId: number) => {
     const progressEntries = await readProgressFiles();
@@ -258,15 +262,17 @@ export function useSync({ setStatus }: UseSyncOptions) {
           lastWriteTimeRef.current = result.lastModified;
         } else if (!result.ok) {
           console.error('[sync] Failed to write paused task state');
+          onError?.('Failed to save paused state');
           setStatus('error');
         }
       }).catch((err) => {
         console.error('[sync] writeState error:', err);
+        onError?.('Failed to save paused state');
         setStatus('error');
       });
       return updated;
     });
-  }, [setStatus]);
+  }, [setStatus, onError]);
 
   const cancelTask = useCallback(async (taskId: number) => {
     try {
@@ -285,15 +291,17 @@ export function useSync({ setStatus }: UseSyncOptions) {
           lastWriteTimeRef.current = result.lastModified;
         } else if (!result.ok) {
           console.error('[sync] Failed to write cancelled task state');
+          onError?.('Failed to save cancelled state');
           setStatus('error');
         }
       }).catch((err) => {
         console.error('[sync] writeState error:', err);
+        onError?.('Failed to save cancelled state');
         setStatus('error');
       });
       return updated;
     });
-  }, [setStatus]);
+  }, [setStatus, onError]);
 
   const flushPendingSave = useCallback(async () => {
     if (saveTimer.current) {
