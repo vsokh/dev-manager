@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { CardForm } from './CardForm.tsx';
-import { EPIC_PALETTE } from '../constants/colors.ts';
-import { hashString } from '../utils/hash.ts';
 import { STATUS } from '../constants/statuses.ts';
+import { autoRegisterEpics } from '../utils/autoRegisterEpics.ts';
 import { StatusFilter } from './board/StatusFilter.tsx';
 import { EpicGroup } from './board/EpicGroup.tsx';
 import { DoneSection } from './board/DoneSection.tsx';
@@ -41,21 +40,11 @@ export function TaskBoard({ tasks, epics, queue }: TaskBoardProps) {
   // Auto-register unregistered groups as epics
   useEffect(() => {
     if (!onUpdateEpics || !epics) return;
-    const registeredNames = new Set(epics.map(e => e.name));
-    const usedIndices = new Set(epics.map(e => (e.color != null ? e.color : hashString(e.name)) % EPIC_PALETTE.length));
-    const newEpics: Epic[] = [];
-    allGroups.forEach(g => {
-      if (!g || registeredNames.has(g)) return;
-      let idx = hashString(g) % EPIC_PALETTE.length;
-      let attempts = 0;
-      while (usedIndices.has(idx) && attempts < EPIC_PALETTE.length) { idx = (idx + 1) % EPIC_PALETTE.length; attempts++; }
-      usedIndices.add(idx);
-      newEpics.push({ name: g, color: idx });
-    });
+    const newEpics = autoRegisterEpics(allGroups, epics);
     if (newEpics.length > 0) {
       onUpdateEpics([...epics, ...newEpics]);
     }
-  }, [allGroups, epics, onUpdateEpics]);  // NOTE: keeps EPIC_PALETTE + hashString for index computation
+  }, [allGroups, epics, onUpdateEpics]);
   // All epic names for autocomplete (from registry, which includes auto-registered ones)
   const epicNames = (epics || []).map(e => e.name);
   const hiddenEpicNames = useMemo(() => {

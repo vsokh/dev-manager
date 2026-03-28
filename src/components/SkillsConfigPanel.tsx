@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import ReactDOM from 'react-dom';
-import type { SkillsConfig, SkillInfo, EpicMapping } from '../types';
+import type { SkillsConfig, SkillInfo } from '../types';
+import { InfoBadge } from './InfoBadge.tsx';
+import { configToRows, rowsToConfig } from '../utils/skillsConfigUtils.ts';
+import type { EpicRow } from '../utils/skillsConfigUtils.ts';
 import {
   SKILLS_TITLE, SKILLS_REMOVE_TITLE, SKILLS_CLOSE,
   SKILLS_LIST_PLACEHOLDER,
@@ -12,81 +14,6 @@ interface SkillsConfigPanelProps {
   epicNames: string[];
   onSave: (config: SkillsConfig) => void;
   onClose: () => void;
-}
-
-interface EpicRow {
-  epic: string;
-  skills: string;
-  agents: string;
-}
-
-function configToRows(config: SkillsConfig | null): EpicRow[] {
-  if (!config) return [];
-  return Object.entries(config.epics).map(([epic, m]) => ({
-    epic,
-    skills: m.skills.join(', '),
-    agents: m.agents.join(', '),
-  }));
-}
-
-function rowsToConfig(rows: EpicRow[]): SkillsConfig {
-  const epics: Record<string, EpicMapping> = {};
-  for (const row of rows) {
-    if (!row.epic) continue;
-    epics[row.epic] = {
-      skills: row.skills.split(',').map(s => s.trim()).filter(Boolean),
-      agents: row.agents.split(',').map(s => s.trim()).filter(Boolean),
-    };
-  }
-  return { epics };
-}
-
-function InfoBadge({ info, active, onClick }: { info: SkillInfo; active: boolean; onClick?: () => void }) {
-  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null);
-  const badgeRef = React.useRef<HTMLSpanElement>(null);
-  const isAgent = info.type === 'agent';
-
-  const handleMouseEnter = () => {
-    if (!badgeRef.current) { setTooltipStyle(null); return; }
-    const rect = badgeRef.current.getBoundingClientRect();
-    setTooltipStyle({
-      position: 'fixed',
-      left: Math.min(rect.left, window.innerWidth - 530),
-      top: rect.bottom + 6,
-      zIndex: 200, minWidth: '350px', maxWidth: '520px',
-      padding: '6px 10px', fontSize: '11px', lineHeight: 1.4,
-      background: 'var(--dm-surface)', color: 'var(--dm-text)',
-      border: '1px solid var(--dm-border)', borderRadius: '6px',
-      boxShadow: 'var(--dm-shadow-lg)',
-      pointerEvents: 'none' as const,
-    });
-  };
-
-  const handleMouseLeave = () => { setTooltipStyle(null); };
-
-  return (
-    <span
-      ref={badgeRef}
-      style={{ display: 'inline-block', cursor: onClick ? 'pointer' : 'default' }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={onClick}
-    >
-      <span
-        className={`badge ${isAgent ? 'badge-amber' : 'badge-accent'} text-10`}
-        style={{
-          cursor: onClick ? 'pointer' : 'default',
-          opacity: active ? 1 : 0.45,
-          outline: active ? `2px solid ${isAgent ? 'var(--dm-amber)' : 'var(--dm-accent)'}` : 'none',
-          outlineOffset: '1px',
-        }}
-      >{info.name}</span>
-      {tooltipStyle && info.description ? ReactDOM.createPortal(
-        <div style={tooltipStyle}>{info.description}</div>,
-        document.body,
-      ) : null}
-    </span>
-  );
 }
 
 export function SkillsConfigPanel({ config, availableSkills, epicNames, onSave, onClose }: SkillsConfigPanelProps) {
