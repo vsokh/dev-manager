@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { jsonResponse, parseJsonBody, matchRoute } from '../middleware.js';
 
 // Allowlist pattern for commands passed to terminal launchers
-const ALLOWED_CMD_RE = /^\/orchestrator\s+(next|arrange|status|task\s+\d+|\d+)$|^Read \.devmanager\//;
+const ALLOWED_CMD_RE = /^\/orchestrator\s+(next|arrange|status|task\s+\d+|\d+)$|^\/codehealth(\s+(scan|quick|diff))?$|^\/autofix$|^Read \.devmanager\//;
 
 export async function handleLaunch(method, pathname, req, res, url, ctx) {
   const { projectPath } = ctx;
