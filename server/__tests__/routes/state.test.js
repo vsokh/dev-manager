@@ -84,7 +84,7 @@ describe('handleState', () => {
   describe('PUT /api/state', () => {
     it('writes state data and returns lastModified', async () => {
       const res = mockRes();
-      const stateData = { project: 'test', tasks: [{ id: 1 }] };
+      const stateData = { project: 'test', tasks: [{ id: 1, name: 'Test task', status: 'pending' }] };
       const req = mockReq([JSON.stringify(stateData)]);
       const result = await handleState('PUT', '/api/state', req, res, mockUrl('/api/state'), mockCtx(tmpDir));
       expect(result).toBe(true);
