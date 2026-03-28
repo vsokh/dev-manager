@@ -686,6 +686,9 @@
 }
 
 .healthcheck-btn {
+  padding: 6px 12px;
+  position: relative;
+  overflow: hidden;
   border-radius: var(--dm-radius-sm);
   font-size: 12px;
   font-weight: 600;
@@ -707,6 +710,9 @@
 
 .autofix-btn {
   border: none;
+  padding: 6px 12px;
+  position: relative;
+  overflow: hidden;
   border-radius: var(--dm-radius-sm);
   font-size: 12px;
   font-weight: 600;
@@ -726,6 +732,9 @@
 
 .release-btn {
   border: none;
+  padding: 6px 12px;
+  position: relative;
+  overflow: hidden;
   border-radius: var(--dm-radius-sm);
   font-size: 12px;
   font-weight: 600;
