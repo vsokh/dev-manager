@@ -13,12 +13,14 @@
  *   4. Rebases branch onto master inside worktree
  *   5. Merges branch into master from project root
  *   6. Cleans up worktree and branch
- *   7. Releases lock (ALWAYS, even on failure)
+ *   7. Writes progress file (.devmanager/progress/{taskId}.json) to mark task done
+ *   8. Releases lock (ALWAYS, even on failure)
  *
  * Success output:
  *   MERGE_OK=yes
  *   COMMIT=abc1234
  *   BRANCH=task-42-google-login
+ *   TASK_DONE=yes
  *
  * Failure output:
  *   MERGE_FAILED=<reason>
@@ -134,7 +136,7 @@ try {
   if (!branchOutput) {
     fail('no_branch', {});
   }
-  const branches = branchOutput.split('\n').map(b => b.replace(/^[\s*+]+/, '').trim()).filter(Boolean);
+  const branches = branchOutput.split('\n').map(b => b.replace(/^[\s*]+/, '').trim()).filter(Boolean);
   if (branches.length === 0) {
     fail('no_branch', {});
   }
@@ -158,47 +160,36 @@ function acquireLock() {
 
   const startTime = Date.now();
 
-  while (true) {
+  while (fs.existsSync(lockFile)) {
+    // Check if lock is stale (older than 10 minutes)
     try {
-      // Atomic create-or-fail (O_CREAT | O_EXCL)
-      const fd = fs.openSync(lockFile, 'wx');
-      fs.writeSync(fd, String(taskId));
-      fs.closeSync(fd);
-      return; // Lock acquired
-    } catch (err) {
-      if (err.code !== 'EEXIST') throw err;
-
-      // Lock exists — check if stale
-      try {
-        const lockStat = fs.statSync(lockFile);
-        const lockAge = Date.now() - lockStat.mtimeMs;
-        if (lockAge > LOCK_STALE_MS) {
-          const lockContent = fs.readFileSync(lockFile, 'utf-8').trim();
-          console.error(`Warning: Stale merge lock (${Math.round(lockAge / 1000)}s old, task ${lockContent}). Taking over.`);
-          // Remove stale lock and retry
-          try { fs.unlinkSync(lockFile); } catch { /* gone already */ }
-          continue;
-        }
-      } catch {
-        // Lock disappeared during stat — retry immediately
-        continue;
+      const lockStat = fs.statSync(lockFile);
+      const lockAge = Date.now() - lockStat.mtimeMs;
+      if (lockAge > LOCK_STALE_MS) {
+        const lockContent = fs.readFileSync(lockFile, 'utf-8').trim();
+        console.error(`Warning: Stale merge lock (${Math.round(lockAge / 1000)}s old, task ${lockContent}). Taking over.`);
+        break; // Take over the stale lock
       }
-
-      // Check timeout
-      if (Date.now() - startTime > LOCK_TIMEOUT_MS) {
-        let lockContent = 'unknown';
-        try { lockContent = fs.readFileSync(lockFile, 'utf-8').trim(); } catch {}
-        console.error(`Error: Merge lock held by task ${lockContent} for over 60s.`);
-        console.log(`MERGE_FAILED=lock_timeout`);
-        console.log(`LOCK_RELEASED=no`);
-        console.log(`WORKTREE=${worktreeRelative}`);
-        console.log(`BRANCH=${branchName}`);
-        process.exit(1);
-      }
-
-      sleep(POLL_INTERVAL_MS);
+    } catch {
+      break; // Lock disappeared during check — proceed
     }
+
+    // Check if we've waited too long
+    if (Date.now() - startTime > LOCK_TIMEOUT_MS) {
+      const lockContent = fs.readFileSync(lockFile, 'utf-8').trim();
+      console.error(`Error: Merge lock held by task ${lockContent} for over 60s.`);
+      console.log(`MERGE_FAILED=lock_timeout`);
+      console.log(`LOCK_RELEASED=no`);
+      console.log(`WORKTREE=${worktreeRelative}`);
+      console.log(`BRANCH=${branchName}`);
+      process.exit(1);
+    }
+
+    sleep(POLL_INTERVAL_MS);
   }
+
+  // Write our lock
+  fs.writeFileSync(lockFile, String(taskId), 'utf-8');
 }
 
 function releaseLock() {
@@ -284,11 +275,30 @@ try {
     }
   }
 
-  // --- 8. Success output ---
+  // --- 8. Write progress file (atomic with merge — no separate task-done call needed) ---
+
+  const progressDir = path.join(devmanagerDir, 'progress');
+  fs.mkdirSync(progressDir, { recursive: true });
+
+  const progressFile = path.join(progressDir, `${taskId}.json`);
+  const progressData = {
+    status: 'done',
+    completedAt: new Date().toISOString().split('T')[0],
+    commitRef: commitHash,
+  };
+
+  try {
+    fs.writeFileSync(progressFile, JSON.stringify(progressData, null, 2), 'utf-8');
+  } catch (err) {
+    console.error(`Warning: Could not write progress file: ${err.message}`);
+  }
+
+  // --- 9. Success output ---
 
   console.log('MERGE_OK=yes');
   console.log(`COMMIT=${commitHash}`);
   console.log(`BRANCH=${branchName}`);
+  console.log('TASK_DONE=yes');
 
 } finally {
   releaseLock();
