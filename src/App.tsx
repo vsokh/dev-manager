@@ -38,6 +38,8 @@ export function App() {
   }, [projectName]);
 
   const [selectedTask, setSelectedTask] = useState<number | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedTasks, setSelectedTasks] = useState<Set<number>>(new Set());
 
   const [productTab, setProductTab] = useState<'board' | 'quality'>('board');
   const [showSkillsConfig, setShowSkillsConfig] = useState(false);
@@ -134,6 +136,36 @@ export function App() {
     setSelectedTask(prev => prev === id ? null : id);
   };
 
+  const handleToggleTaskSelection = (id: number) => {
+    setSelectedTasks(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedTasks.size === 0) return;
+    taskActions.handleBulkDeleteTasks([...selectedTasks]);
+    setSelectedTasks(new Set());
+    setSelectMode(false);
+  };
+
+  const handleBulkStatusChange = (status: string) => {
+    if (selectedTasks.size === 0) return;
+    taskActions.handleBatchUpdateTasks(
+      [...selectedTasks].map(id => ({ id, updates: { status } }))
+    );
+    setSelectedTasks(new Set());
+    setSelectMode(false);
+  };
+
+  const handleExitSelectMode = () => {
+    setSelectMode(false);
+    setSelectedTasks(new Set());
+  };
+
   const handleRemoveActivity = (id: string) => {
     snapshotBeforeAction('Activity removed');
     const newActivity = activity.filter(a => a.id !== id);
@@ -214,7 +246,16 @@ export function App() {
                     onUpdateEpics={taskActions.handleUpdateEpics}
                     queue={queue}
                     glowTaskId={glowTaskId}
-                    skillsConfig={skillsConfig}
+                    selectMode={selectMode}
+                    selectedTasks={selectedTasks}
+                    onToggleSelectMode={() => {
+                      if (selectMode) handleExitSelectMode();
+                      else { setSelectMode(true); setSelectedTask(null); }
+                    }}
+                    onToggleTaskSelection={handleToggleTaskSelection}
+                    onBulkDelete={handleBulkDelete}
+                    onBulkStatusChange={handleBulkStatusChange}
+                    onExitSelectMode={handleExitSelectMode}
                   />
                 </div>
               </div>

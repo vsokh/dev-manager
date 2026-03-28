@@ -83,6 +83,19 @@ export function useTaskActions({ data, save, snapshotBeforeAction, onError }: Us
     updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, activity: newActivity });
   };
 
+  const handleBulkDeleteTasks = (ids: number[]) => {
+    snapshotBeforeAction(ids.length + ' tasks deleted');
+    const idSet = new Set(ids);
+    const newTasks = tasks.filter(t => !idSet.has(t.id)).map(t =>
+      t.dependsOn ? { ...t, dependsOn: t.dependsOn.filter(d => !idSet.has(d)) } : t
+    );
+    const newQueue = queue.filter(q => !idSet.has(q.task));
+    const newTaskNotes = { ...taskNotes };
+    ids.forEach(id => delete newTaskNotes[id]);
+    const newActivity = addActivity(ids.length + ' tasks deleted');
+    updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, activity: newActivity });
+  };
+
   const handleAddAttachment = async (taskId: number, file: File) => {
     try {
       const filename = file.name;
@@ -119,6 +132,7 @@ export function useTaskActions({ data, save, snapshotBeforeAction, onError }: Us
     handleRenameGroup,
     handleUpdateEpics,
     handleDeleteTask,
+    handleBulkDeleteTasks,
     handleAddAttachment,
     handleDeleteAttachment,
   };

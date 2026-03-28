@@ -25,9 +25,12 @@ interface EpicGroupProps {
   onPauseTask: (id: number) => void;
   onCancelTask: (id: number) => void;
   glowTaskId: number | null;
+  selectMode?: boolean;
+  selectedTasks?: Set<number>;
+  onToggleTaskSelection?: (id: number) => void;
 }
 
-export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGroup, setEditingGroup, editGroupName, setEditGroupName, onRenameGroup, onQueueGroup, queue, selectedTask, onSelectTask, onPauseTask, onCancelTask, glowTaskId }: EpicGroupProps) {
+export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGroup, setEditingGroup, editGroupName, setEditGroupName, onRenameGroup, onQueueGroup, queue, selectedTask, onSelectTask, onPauseTask, onCancelTask, glowTaskId, selectMode, selectedTasks, onToggleTaskSelection }: EpicGroupProps) {
   return (
     <div style={{ marginBottom: groupName ? '12px' : '0' }}>
       {groupName ? (
@@ -98,6 +101,9 @@ export function EpicGroup({ groupName, groupTasks, tasks, epicColors, editingGro
             onPauseTask={onPauseTask}
             onCancelTask={onCancelTask}
             glowTaskId={glowTaskId}
+            selectMode={selectMode}
+            isMultiSelected={selectedTasks?.has(task.id)}
+            onToggleSelection={onToggleTaskSelection}
           />
         ))}
       </div>
