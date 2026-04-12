@@ -1,6 +1,6 @@
 // Bridge server API client
 
-import type { StateData, ProgressEntry, SkillInfo, SkillsConfig, QualityReport, QualityHistoryEntry, WebSocketMessage, ReleaseEntry, StabilityAssessment, ChangelogSection } from './types';
+import type { StateData, ProgressEntry, SkillInfo, SkillsConfig, QualityReport, QualityHistoryEntry, WebSocketMessage, ReleaseEntry, StabilityAssessment, ChangelogSection, ErrorsReport, ErrorsHistoryEntry } from './types';
 
 const BASE_URL = ''; // Same origin (vite proxy in dev, served by bridge in prod)
 
@@ -107,6 +107,10 @@ export const api = {
   readReleases: () => get<ReleaseEntry[]>('/api/release/releases'),
   readStability: () => get<StabilityAssessment | null>('/api/release/stability'),
   readChangelog: () => get<{ sections: ChangelogSection[] }>('/api/release/changelog'),
+
+  // Errors
+  readErrorsLatest: () => get<ErrorsReport | null>('/api/errors/latest'),
+  readErrorsHistory: () => get<ErrorsHistoryEntry[]>('/api/errors/history'),
 
   // Attachments
   saveAttachment: async (taskId: number, filename: string, blob: Blob): Promise<string> => {

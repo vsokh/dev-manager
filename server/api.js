@@ -7,6 +7,7 @@ import { handleRelease } from './routes/release.js';
 import { handleAttachments } from './routes/attachments.js';
 import { handleBackups } from './routes/backups.js';
 import { handleLaunch } from './routes/launch.js';
+import { handleErrors } from './routes/errors.js';
 import { jsonResponse } from './middleware.js';
 
 const handlers = [
@@ -16,6 +17,7 @@ const handlers = [
   handleSkills,
   handleQuality,
   handleRelease,
+  handleErrors,
   handleAttachments,
   handleBackups,
   handleLaunch,

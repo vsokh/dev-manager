@@ -106,10 +106,12 @@ export function startWatcher(projectPath, broadcast) {
   const stateFile = join(projectPath, '.devmanager', 'state.json');
   const progressDir = join(projectPath, '.devmanager', 'progress');
   const qualityDir = join(projectPath, '.devmanager', 'quality');
+  const errorsDir = join(projectPath, '.devmanager', 'errors');
 
   return orchestrator.start(projectPath, [
     { path: stateFile, type: 'state', isDir: false },
     { path: progressDir, type: 'progress', isDir: true },
     { path: qualityDir, type: 'quality', isDir: true },
+    { path: errorsDir, type: 'errors', isDir: true },
   ]);
 }

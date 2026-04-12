@@ -134,7 +134,65 @@ export interface ExitMessage {
   error?: string;
 }
 
-export type WebSocketMessage = StateMessage | ProgressMessage | QualityMessage | ProjectSwitchedMessage | OutputMessage | ExitMessage;
+export interface ErrorsMessage {
+  type: 'errors';
+  data: Record<string, unknown>;
+}
+
+export type WebSocketMessage = StateMessage | ProgressMessage | QualityMessage | ErrorsMessage | ProjectSwitchedMessage | OutputMessage | ExitMessage;
+
+// Error tracker types
+export interface ErrorIssue {
+  fingerprint: string;
+  message: string;
+  type: string;
+  level: string;
+  count: number;
+  firstSeen: string;
+  lastSeen: string;
+  trend: 'rising' | 'stable' | 'declining';
+  severity: 'high' | 'medium' | 'low';
+  topFrame: { file: string; function: string; line: number; col: number } | null;
+  breadcrumbSummary: string;
+  affectedRoutes: string[];
+  affectedBrowsers: string[];
+  diagnosis: string | null;
+}
+
+export interface ErrorsSummary {
+  totalEvents: number;
+  uniqueIssues: number;
+  crashFreeRate: number;
+  errorsCount: number;
+  warningsCount: number;
+  infosCount: number;
+}
+
+export interface ErrorsTimelineEntry {
+  date: string;
+  errors: number;
+  warnings: number;
+  infos: number;
+}
+
+export interface ErrorsReport {
+  scannedAt: string;
+  period: string;
+  environment: string;
+  summary: ErrorsSummary;
+  issues: ErrorIssue[];
+  timeline: ErrorsTimelineEntry[];
+  typeBreakdown: Record<string, number>;
+}
+
+export interface ErrorsHistoryEntry {
+  date: string;
+  totalEvents: number;
+  uniqueIssues: number;
+  crashFreeRate: number;
+  errorsCount: number;
+  warningsCount: number;
+}
 
 // Release types
 export interface ReleaseEntry {

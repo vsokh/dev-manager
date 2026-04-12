@@ -1,47 +1,40 @@
 #!/usr/bin/env node
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 
-/**
- * task-start.cjs — Mark a task as in-progress via progress file
- *
- * Usage:
- *   node .devmanager/bin/task-start.cjs <taskId>
- *
- * What it does:
- *   - Writes to .devmanager/progress/{taskId}.json with status: "in-progress"
- *   - The UI automatically merges this and removes the task from the queue
- *   - Does NOT touch state.json (avoids concurrent write races)
- *
- * Exit codes:
- *   0 = success
- *   1 = error (bad args, write failure)
- */
+// src/cli/task-start.ts
+var fs2 = __toESM(require("node:fs"), 1);
+var path2 = __toESM(require("node:path"), 1);
 
-const fs = require('fs');
-const path = require('path');
-
-// --- Argument parsing ---
-
-const args = process.argv.slice(2);
-
-if (args.length === 0) {
-  console.error('Usage: node .devmanager/bin/task-start.cjs <taskId>');
-  process.exit(1);
-}
-
-const taskId = parseInt(args[0], 10);
-if (isNaN(taskId)) {
-  console.error(`Error: Invalid task ID "${args[0]}" — must be a number.`);
-  process.exit(1);
-}
-
-// --- Find .devmanager/ by walking up directories ---
-
+// src/cli/find-devmanager.ts
+var fs = __toESM(require("node:fs"), 1);
+var path = __toESM(require("node:path"), 1);
 function findDevManagerDir(startDir) {
   let dir = path.resolve(startDir);
   const root = path.parse(dir).root;
-
   while (true) {
-    const candidate = path.join(dir, '.devmanager');
+    const candidate = path.join(dir, ".devmanager");
     if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
       return candidate;
     }
@@ -52,30 +45,39 @@ function findDevManagerDir(startDir) {
     dir = parent;
   }
 }
-
-const devmanagerDir = findDevManagerDir(process.cwd());
-if (!devmanagerDir) {
-  console.error('Error: Could not find .devmanager/ in current directory or any parent.');
-  process.exit(1);
+function requireDevManagerDir() {
+  const dir = findDevManagerDir(process.cwd());
+  if (!dir) {
+    console.error("Error: Could not find .devmanager/ in current directory or any parent.");
+    process.exit(1);
+  }
+  return dir;
 }
 
-// --- Write progress file ---
-
-const progressDir = path.join(devmanagerDir, 'progress');
-fs.mkdirSync(progressDir, { recursive: true });
-
-const progressFile = path.join(progressDir, `${taskId}.json`);
-const progressData = {
-  status: 'in-progress',
-  startedAt: new Date().toISOString(),
+// src/cli/task-start.ts
+var args = process.argv.slice(2);
+if (args.length === 0) {
+  console.error("Usage: node .devmanager/bin/task-start.cjs <taskId>");
+  process.exit(1);
+}
+var taskId = parseInt(args[0], 10);
+if (isNaN(taskId)) {
+  console.error(`Error: Invalid task ID "${args[0]}" \u2014 must be a number.`);
+  process.exit(1);
+}
+var devmanagerDir = requireDevManagerDir();
+var progressDir = path2.join(devmanagerDir, "progress");
+fs2.mkdirSync(progressDir, { recursive: true });
+var progressFile = path2.join(progressDir, `${taskId}.json`);
+var progressData = {
+  status: "in-progress",
+  startedAt: (/* @__PURE__ */ new Date()).toISOString()
 };
-
 try {
-  fs.writeFileSync(progressFile, JSON.stringify(progressData, null, 2), 'utf-8');
+  fs2.writeFileSync(progressFile, JSON.stringify(progressData, null, 2), "utf-8");
 } catch (err) {
   console.error(`Error writing ${progressFile}: ${err.message}`);
   process.exit(1);
 }
-
 console.log(`Started: Task ${taskId} marked as in-progress.`);
 console.log(`  progress file: ${progressFile}`);
