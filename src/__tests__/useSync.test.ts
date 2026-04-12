@@ -8,7 +8,8 @@ vi.mock('../fs.ts', () => ({
   deleteProgressFile: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { useSync, mergeProgressIntoState } from '../hooks/useSync.ts';
+import { useSync } from '../hooks/useSync.ts';
+import { mergeProgressIntoState } from '@dev-manager/engine';
 import { writeState, deleteProgressFile } from '../fs.ts';
 import type { StateData, ProgressEntry } from '../types';
 

@@ -3,6 +3,9 @@ import type { StateData, SkillsConfig, SkillInfo, WebSocketMessage } from '../ty
 import { api } from '../api.ts';
 import {
   readState,
+  readProgressFiles,
+  deleteProgressFile,
+  writeState,
   syncSkills,
   discoverSkillsAndAgents,
   readSkillsConfig,
@@ -10,11 +13,12 @@ import {
 } from '../fs.ts';
 import { useConnection } from './useConnection.ts';
 import { useSync } from './useSync.ts';
+import { mergeProgressIntoState } from '@dev-manager/engine';
 import { useTemplate } from './useTemplate.ts';
 import type { ProjectInfo } from './useTemplate.ts';
 export type { ConnectionStatus } from './useConnection.ts';
-export type { MergeResult } from './useSync.ts';
-export { mergeProgressIntoState } from './useSync.ts';
+export type { MergeResult } from '@dev-manager/engine';
+export { mergeProgressIntoState } from '@dev-manager/engine';
 
 export function useProject(opts?: { onError?: (msg: string) => void }) {
   const onError = opts?.onError;
@@ -95,6 +99,28 @@ export function useProject(opts?: { onError?: (msg: string) => void }) {
         const proj = await api.listProjects();
         setProjects(proj);
       } catch { /* server might not support multi-project yet */ }
+
+      // Reconcile any pending progress files (written while browser was away)
+      const progressEntries = await readProgressFiles();
+      if (Object.keys(progressEntries).length > 0) {
+        const mergeResult = mergeProgressIntoState(stateData, progressEntries);
+        if (mergeResult.hasChanges) {
+          stateData = mergeResult.data;
+          if (mergeResult.needsWrite) {
+            const wr = await writeState(mergeResult.data);
+            if (wr.ok && wr.lastModified) lastWriteTimeRef.current = wr.lastModified;
+            for (const id of mergeResult.completedTaskIds) {
+              deleteProgressFile(id).catch(() => {});
+            }
+            if (mergeResult.arrangeCompleted) {
+              deleteProgressFile('arrange').catch(() => {});
+            }
+          }
+          for (const id of mergeResult.staleProgressIds) {
+            deleteProgressFile(id).catch(() => {});
+          }
+        }
+      }
 
       setData(stateData);
       setConnected(true);

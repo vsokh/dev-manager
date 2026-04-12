@@ -1,8 +1,11 @@
 {
   "name": "dev-manager",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.4.0",
   "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "bin": {
     "devmanager": "./bin/devmanager.js"
   },

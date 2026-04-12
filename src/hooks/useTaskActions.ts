@@ -1,7 +1,15 @@
-import { saveAttachment, deleteAttachment } from '../fs.ts';
-import { STATUS } from '../constants/statuses.ts';
-import { createActivityList } from '../utils/activityUtils.ts';
-import type { StateData, Task, Epic, QueueItem, Attachment } from '../types';
+import { saveAttachment, deleteAttachment as deleteAttachmentFile } from '../fs.ts';
+import {
+  addTask as engineAddTask,
+  updateTask as engineUpdateTask,
+  batchUpdateTasks as engineBatchUpdateTasks,
+  updateNotes as engineUpdateNotes,
+  deleteTask as engineDeleteTask,
+  bulkDeleteTasks as engineBulkDeleteTasks,
+  renameGroup as engineRenameGroup,
+  deleteGroup as engineDeleteGroup,
+} from '@dev-manager/engine';
+import type { StateData, Task, Epic, Attachment } from '../types';
 
 interface UseTaskActionsParams {
   data: StateData | null;
@@ -11,102 +19,54 @@ interface UseTaskActionsParams {
 }
 
 export function useTaskActions({ data, save, snapshotBeforeAction, onError }: UseTaskActionsParams) {
-  const tasks: Task[] = data?.tasks || [];
-  const epics: Epic[] = data?.epics || [];
-  const queue: QueueItem[] = data?.queue || [];
-  const taskNotes: Record<string, string> = data?.taskNotes || {};
-
-  const updateData = (partial: Partial<StateData>) => {
-    save({ ...data!, ...partial });
-  };
-
-  const addActivity = (label: string, taskId?: number) =>
-    createActivityList(label, data?.activity || [], taskId);
-
   const handleUpdateTask = (id: number, updates: Partial<Task>) => {
-    const existing = tasks.find(t => t.id === id);
-    const enriched: Partial<Task> = { ...updates };
-    if (updates.status && updates.status !== existing?.status) {
-      const history = [...(existing?.history || [])];
-      if (history.length === 0 && existing?.createdAt) {
-        history.push({ status: STATUS.CREATED, at: existing.createdAt });
-      }
-      history.push({ status: updates.status, at: new Date().toISOString() });
-      enriched.history = history;
-    }
-    const newTasks = tasks.map(t => t.id === id ? { ...t, ...enriched } : t);
-    const newActivity = addActivity((existing?.name || 'Task') + (updates.status ? ' marked ' + updates.status : ' updated'), id);
-    updateData({ tasks: newTasks, activity: newActivity });
+    if (!data) return;
+    save(engineUpdateTask(data, id, updates));
   };
 
   const handleBatchUpdateTasks = (updates: Array<{ id: number; updates: Partial<Task> }>) => {
-    const newTasks = tasks.map(t => {
-      const entry = updates.find(u => u.id === t.id);
-      return entry ? { ...t, ...entry.updates } : t;
-    });
-    updateData({ tasks: newTasks });
+    if (!data) return;
+    save(engineBatchUpdateTasks(data, updates));
   };
 
   const handleUpdateNotes = (id: number, note: string) => {
-    updateData({ taskNotes: { ...taskNotes, [id]: note } });
+    if (!data) return;
+    save(engineUpdateNotes(data, id, note));
   };
 
   const handleAddTask = (taskData: Partial<Task>) => {
-    const maxId = tasks.reduce((max, t) => Math.max(max, typeof t.id === 'number' ? t.id : 0), 0);
-    const newTask = { ...taskData, id: maxId + 1, createdAt: new Date().toISOString() } as Task;
-    const newTasks = [...tasks, newTask];
-    const newActivity = addActivity('"' + newTask.name + '" added', newTask.id);
-    updateData({ tasks: newTasks, activity: newActivity });
+    if (!data) return;
+    save(engineAddTask(data, taskData));
   };
 
   const handleRenameGroup = (oldName: string, newName: string) => {
-    const newTasks = tasks.map(t => t.group === oldName ? { ...t, group: newName } : t);
-    const newEpics = epics.map(e => e.name === oldName ? { ...e, name: newName } : e);
-    updateData({ tasks: newTasks, epics: newEpics });
+    if (!data) return;
+    save(engineRenameGroup(data, oldName, newName));
   };
 
   const handleDeleteGroup = (groupName: string) => {
-    const groupTasks = tasks.filter(t => t.group === groupName);
-    const deletedIds = new Set(groupTasks.map(t => t.id));
+    if (!data) return;
+    const groupTasks = (data.tasks || []).filter(t => t.group === groupName);
     snapshotBeforeAction(`Epic '${groupName}' and ${groupTasks.length} tasks deleted`);
-    const newTasks = tasks.filter(t => t.group !== groupName).map(t =>
-      t.dependsOn ? { ...t, dependsOn: t.dependsOn.filter(d => !deletedIds.has(d)) } : t
-    );
-    const newQueue = queue.filter(q => !deletedIds.has(q.task));
-    const newTaskNotes = { ...taskNotes };
-    deletedIds.forEach(id => { delete newTaskNotes[id]; });
-    const newEpics = epics.filter(e => e.name !== groupName);
-    const newActivity = addActivity(`Epic '${groupName}' deleted with ${groupTasks.length} tasks`);
-    updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, epics: newEpics, activity: newActivity });
+    save(engineDeleteGroup(data, groupName));
   };
 
   const handleUpdateEpics = (newEpics: Epic[]) => {
-    updateData({ epics: newEpics });
+    if (!data) return;
+    save({ ...data, epics: newEpics });
   };
 
   const handleDeleteTask = (id: number) => {
-    const task = tasks.find(t => t.id === id);
+    if (!data) return;
+    const task = (data.tasks || []).find(t => t.id === id);
     snapshotBeforeAction((task?.name || 'Task') + ' deleted');
-    const newTasks = tasks.filter(t => t.id !== id).map(t =>
-      t.dependsOn ? { ...t, dependsOn: t.dependsOn.filter(d => d !== id) } : t
-    );
-    const newQueue = queue.filter(q => q.task !== id);
-    const { [id]: _, ...newTaskNotes } = taskNotes;
-    const newActivity = addActivity((task?.name || 'Task') + ' deleted', id);
-    updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, activity: newActivity });
+    save(engineDeleteTask(data, id));
   };
 
   const handleBulkDeleteTasks = (ids: number[]) => {
+    if (!data) return;
     snapshotBeforeAction(ids.length + ' tasks deleted');
-    const idSet = new Set(ids);
-    const newTasks = tasks.filter(t => !idSet.has(t.id)).map(t =>
-      t.dependsOn ? { ...t, dependsOn: t.dependsOn.filter(d => !idSet.has(d)) } : t
-    );
-    const newQueue = queue.filter(q => !idSet.has(q.task));
-    const newTaskNotes = { ...taskNotes };
-    ids.forEach(id => delete newTaskNotes[id]);
-    const newActivity = addActivity(ids.length + ' tasks deleted');
-    updateData({ tasks: newTasks, queue: newQueue, taskNotes: newTaskNotes, activity: newActivity });
+    save(engineBulkDeleteTasks(data, ids));
   };
 
   const handleAddAttachment = async (taskId: number, file: File) => {
@@ -114,7 +74,7 @@ export function useTaskActions({ data, save, snapshotBeforeAction, onError }: Us
       const filename = file.name;
       const path = await saveAttachment(taskId, filename, file);
       const attachment: Attachment = { id: 'att_' + Date.now(), filename, path };
-      const task = tasks.find(t => t.id === taskId);
+      const task = (data?.tasks || []).find(t => t.id === taskId);
       const attachments = [...(task?.attachments || []), attachment];
       handleUpdateTask(taskId, { attachments });
     } catch (err) {
@@ -126,9 +86,9 @@ export function useTaskActions({ data, save, snapshotBeforeAction, onError }: Us
   const handleDeleteAttachment = async (taskId: number, attachmentId: string) => {
     snapshotBeforeAction('Attachment deleted');
     try {
-      const task = tasks.find(t => t.id === taskId);
+      const task = (data?.tasks || []).find(t => t.id === taskId);
       const att = (task?.attachments || []).find(a => a.id === attachmentId);
-      if (att) await deleteAttachment(taskId, att.filename);
+      if (att) await deleteAttachmentFile(taskId, att.filename);
       const attachments = (task?.attachments || []).filter(a => a.id !== attachmentId);
       handleUpdateTask(taskId, { attachments });
     } catch (err) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeProgressIntoState } from '../hooks/useSync.ts';
+import { mergeProgressIntoState } from '@dev-manager/engine';
 import type { StateData, Task, ProgressEntry } from '../types';
 
 function makeState(overrides: Partial<StateData> = {}): StateData {

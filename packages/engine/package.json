@@ -1,0 +1,25 @@
+{
+  "name": "@dev-manager/engine",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc && node build-cli.mjs",
+    "build:lib": "tsc",
+    "build:cli": "node build-cli.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

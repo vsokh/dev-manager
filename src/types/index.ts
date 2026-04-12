@@ -1,16 +1,11 @@
-export const TASK_STATUSES = ['pending', 'in-progress', 'done', 'blocked', 'paused', 'backlog'] as const;
-export type TaskStatus = (typeof TASK_STATUSES)[number];
+// Core types re-exported from engine
+export type {
+  Task, TaskStatus, QueueItem, ProgressEntry, StateData,
+  Activity, Epic, Feature, Attachment, HistoryEntry,
+} from '@dev-manager/engine';
+export { TASK_STATUSES } from '@dev-manager/engine';
 
-export interface Attachment {
-  id: string;
-  filename: string;
-  path?: string;
-}
-
-export interface HistoryEntry {
-  status: string;
-  at: string;
-}
+// Product-specific types (not in engine)
 
 export interface SkillInfo {
   name: string;
@@ -25,88 +20,6 @@ export interface EpicMapping {
 
 export interface SkillsConfig {
   epics: Record<string, EpicMapping>;
-}
-
-export interface Task {
-  id: number;
-  name: string;
-  fullName?: string;
-  description?: string;
-  status: TaskStatus;
-  group?: string;
-  skills?: string[];
-  manual?: boolean;
-  supervision?: boolean;
-  autoApprove?: boolean;
-  progress?: string;
-  blockedReason?: string;
-  lastProgress?: string;
-  branch?: string;
-  attachments?: Attachment[];
-  dependsOn?: number[];
-  createdAt?: string;
-  startedAt?: string;
-  pausedAt?: string;
-  completedAt?: string;
-  commitRef?: string;
-  history?: HistoryEntry[];
-  engine?: string;
-  summary?: string;
-}
-
-export interface QueueItem {
-  task: number;
-  taskName: string;
-  notes?: string;
-}
-
-export interface Epic {
-  name: string;
-  color?: number;
-  hidden?: boolean;
-}
-
-export interface Activity {
-  id: string;
-  time: number;
-  label: string;
-  taskId?: number;
-  commitRef?: string;
-  filesChanged?: number;
-  changes?: string[];
-}
-
-export interface ProgressEntry {
-  status: 'in-progress' | 'done' | 'paused';
-  progress?: string;
-  completedAt?: string;
-  commitRef?: string;
-  branch?: string;
-  label?: string;
-  filesChanged?: number;
-  changes?: string[];
-  summary?: string;
-  taskUpdates?: Record<string, { dependsOn?: number[]; group?: string }>;
-}
-
-export interface StateData {
-  savedAt?: string;
-  _v?: number;
-  project: string;
-  tasks: Task[];
-  queue: QueueItem[];
-  taskNotes: Record<string, string>;
-  activity: Activity[];
-  epics?: Epic[];
-  features?: Feature[];
-  defaultEngine?: string;
-  scratchpad?: string;
-}
-
-export interface Feature {
-  id: string;
-  name: string;
-  description?: string;
 }
 
 export interface QualityDimension {
@@ -180,7 +93,7 @@ export interface EpicColor {
 }
 
 export interface UndoEntry {
-  data: StateData;
+  data: import('@dev-manager/engine').StateData;
   label: string;
   timestamp: number;
 }
@@ -188,13 +101,13 @@ export interface UndoEntry {
 // WebSocket message types (discriminated union)
 export interface StateMessage {
   type: 'state';
-  data: StateData;
+  data: import('@dev-manager/engine').StateData;
   lastModified: number;
 }
 
 export interface ProgressMessage {
   type: 'progress';
-  data: Record<string, ProgressEntry>;
+  data: Record<string, import('@dev-manager/engine').ProgressEntry>;
 }
 
 export interface QualityMessage {

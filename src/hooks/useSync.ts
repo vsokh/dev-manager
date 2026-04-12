@@ -1,147 +1,17 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { StateData, Activity, Task, WebSocketMessage } from '../types';
+import type { StateData, WebSocketMessage } from '../types';
+import {
+  mergeProgressIntoState,
+  protectDoneTaskRegression,
+  isStaleVersion,
+} from '@dev-manager/engine';
+export type { MergeResult } from '@dev-manager/engine';
 import {
   writeState,
   readProgressFiles,
   deleteProgressFile,
 } from '../fs.ts';
-import { validateProgress } from '../validate.ts';
 import type { ConnectionStatus } from './useConnection.ts';
-
-export interface MergeResult {
-  data: StateData;
-  needsWrite: boolean;
-  hasChanges: boolean;
-  completedTaskIds: number[];
-  arrangeCompleted: boolean;
-  staleProgressIds: (string | number)[];
-}
-
-export function mergeProgressIntoState(
-  stateData: StateData,
-  progressEntries: Record<string | number, import('../types').ProgressEntry>,
-): MergeResult {
-  if (Object.keys(progressEntries).length === 0) {
-    return { data: stateData, needsWrite: false, hasChanges: false, completedTaskIds: [], arrangeCompleted: false, staleProgressIds: [] };
-  }
-
-  const tasks: Task[] = [...(stateData.tasks || [])];
-  const activity: Activity[] = [...(stateData.activity || [])];
-  let queue = [...(stateData.queue || [])];
-  let needsWrite = false;
-  let hasChanges = false;
-  const completedTaskIds: number[] = [];
-  const staleProgressIds: (string | number)[] = [];
-  let arrangeCompleted = false;
-
-  for (const [taskId, rawProg] of Object.entries(progressEntries)) {
-    // Special case: arrange has its own shape (taskUpdates, changes, label)
-    if (taskId === 'arrange') {
-      if (rawProg.status === 'done') {
-        const arrangeActivity: Activity = {
-          id: 'act_' + Date.now() + '_arrange',
-          time: Date.now(),
-          label: rawProg.label || 'Tasks arranged into dependency graph',
-        };
-        if (rawProg.changes) arrangeActivity.changes = rawProg.changes;
-        activity.unshift(arrangeActivity);
-        // Apply task updates from arrange (dependsOn, group changes)
-        if (rawProg.taskUpdates) {
-          const existingIds = new Set(tasks.map(t => t.id));
-          for (const [tid, updates] of Object.entries(rawProg.taskUpdates)) {
-            const tIdx = tasks.findIndex(t => t.id === Number(tid));
-            if (tIdx !== -1) {
-              const safeUpdates: Partial<Pick<Task, 'dependsOn' | 'group'>> = {};
-              const u = updates as Record<string, unknown>;
-              if (typeof u.group === 'string') safeUpdates.group = u.group;
-              if (Array.isArray(u.dependsOn)) {
-                const validDeps = u.dependsOn.filter((d): d is number => typeof d === 'number' && isFinite(d) && existingIds.has(d));
-                if (validDeps.length > 0) safeUpdates.dependsOn = validDeps;
-              }
-              tasks[tIdx] = { ...tasks[tIdx], ...safeUpdates };
-            }
-          }
-        }
-        arrangeCompleted = true;
-        needsWrite = true;
-        hasChanges = true;
-      }
-      continue;
-    }
-
-    // Validate progress entry at the boundary
-    const prog = validateProgress(rawProg);
-    if (!prog) {
-      staleProgressIds.push(taskId);
-      console.warn(`[sync] Invalid progress entry for task ${taskId} — skipping`);
-      continue;
-    }
-
-    const id = Number(taskId);
-    const idx = tasks.findIndex(t => t.id === id);
-    if (idx === -1) {
-      staleProgressIds.push(id);
-      console.warn(`[sync] Progress entry references unknown task ID: ${id}`);
-      continue;
-    }
-
-    if (prog.status === 'done') {
-      tasks[idx] = {
-        ...tasks[idx],
-        status: 'done',
-        completedAt: prog.completedAt || new Date().toISOString(),
-        commitRef: prog.commitRef || tasks[idx].commitRef || undefined,
-        branch: prog.branch || tasks[idx].branch || undefined,
-        summary: prog.summary || tasks[idx].summary || undefined,
-        progress: undefined,
-      };
-      queue = queue.filter(q => q.task !== id);
-      const actEntry: Activity = {
-        id: 'act_' + Date.now() + '_' + id,
-        time: Date.now(),
-        label: (tasks[idx].name || 'Task ' + id) + ' completed',
-        taskId: id,
-      };
-      if (prog.commitRef) actEntry.commitRef = prog.commitRef;
-      if (prog.filesChanged) actEntry.filesChanged = prog.filesChanged;
-      if (prog.summary) actEntry.changes = [prog.summary];
-      activity.unshift(actEntry);
-      completedTaskIds.push(id);
-      needsWrite = true;
-    } else {
-      // Skip stale progress for tasks already marked done
-      if (tasks[idx].status === 'done') {
-        staleProgressIds.push(id);
-        continue;
-      }
-      const enriched: { status: Task['status']; progress: string | undefined; startedAt?: string } = {
-        status: prog.status || tasks[idx].status,
-        progress: prog.progress || tasks[idx].progress,
-      };
-      if (prog.status === 'in-progress') {
-        if (!tasks[idx].startedAt) {
-          enriched.startedAt = new Date().toISOString();
-        }
-      }
-      tasks[idx] = { ...tasks[idx], ...enriched };
-      hasChanges = true;
-    }
-  }
-
-  const truncatedActivity = activity.slice(0, 20);
-  if (activity.length > 20) {
-    console.warn(`[sync] Activity log truncated: ${activity.length} entries → 20 (${activity.length - 20} dropped)`);
-  }
-
-  return {
-    data: { ...stateData, tasks, activity: truncatedActivity, queue },
-    needsWrite,
-    hasChanges: hasChanges || needsWrite,
-    completedTaskIds,
-    arrangeCompleted,
-    staleProgressIds,
-  };
-}
 
 interface UseSyncOptions {
   setStatus: (status: ConnectionStatus) => void;
@@ -169,7 +39,7 @@ export function useSync({ setStatus, onError }: UseSyncOptions) {
         // File on disk is newer — but only adopt if version isn't stale
         const currentV = dataRef.current?._v || 0;
         const conflictV = result.data._v || 0;
-        if (currentV > 0 && conflictV < currentV) {
+        if (isStaleVersion(conflictV, currentV)) {
           // Conflict state is stale (rogue write) — retry our write
           console.warn(`[sync] Conflict state is stale: _v=${conflictV} < current _v=${currentV}, retrying`);
           const retryResult = await writeState(updated);
@@ -201,36 +71,13 @@ export function useSync({ setStatus, onError }: UseSyncOptions) {
         const currentData = dataRef.current;
         const incomingV = msg.data._v || 0;
         const currentV = currentData?._v || 0;
-        if (currentV > 0 && incomingV < currentV) {
+        if (isStaleVersion(incomingV, currentV)) {
           console.warn(`[sync] Rejected stale state: incoming _v=${incomingV} < current _v=${currentV}`);
           return true;
         }
         // Protect done tasks from regression by external state writes
-        // (e.g., orchestrator writing stale state after UI merged "done" from progress files)
         if (currentData) {
-          const doneTasks = new Map(
-            currentData.tasks.filter(t => t.status === 'done' && t.completedAt).map(t => [t.id, t])
-          );
-          if (doneTasks.size > 0) {
-            let patched = false;
-            for (const task of msg.data.tasks) {
-              if (task.status !== 'done' && doneTasks.has(task.id)) {
-                const doneTask = doneTasks.get(task.id)!;
-                task.status = 'done';
-                task.completedAt = doneTask.completedAt;
-                if (doneTask.commitRef) task.commitRef = doneTask.commitRef;
-                if (doneTask.summary) task.summary = doneTask.summary;
-                task.progress = undefined;
-                patched = true;
-              }
-            }
-            if (patched) {
-              msg.data.queue = (msg.data.queue || []).filter(
-                q => !doneTasks.has(q.task)
-              );
-              console.warn('[sync] Prevented done-task regression from external state write');
-            }
-          }
+          msg.data = protectDoneTaskRegression(currentData, msg.data);
         }
         setData(msg.data);
         lastWriteTimeRef.current = msg.lastModified;
@@ -255,7 +102,6 @@ export function useSync({ setStatus, onError }: UseSyncOptions) {
               if (result.ok && result.lastModified) {
                 lastWriteTimeRef.current = result.lastModified;
                 // Only delete progress files AFTER state write succeeds
-                // (prevents losing "done" status if write fails and file is gone)
                 for (const id of mergeResult.completedTaskIds) {
                   deleteProgressFile(id).catch((err) => console.error('[sync] Failed to delete progress file:', err));
                 }

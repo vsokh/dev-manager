@@ -1,7 +1,7 @@
 import { readFile, writeFile, readdir, stat, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { jsonResponse, parseJsonBody, ensureDir, matchRoute, readJsonOrNull, handleNotFound, safePath } from '../middleware.js';
-import { validateProgressEntry, validateStateStructure } from '../validate.js';
+import { validateProgress as validateProgressEntry, validateStateStructure, incrementVersion } from '@dev-manager/engine';
 
 export async function handleState(method, pathname, req, res, url, ctx) {
   const { projectPath } = ctx;
@@ -136,8 +136,8 @@ Rules:
 
     // Strip internal field and increment version counter before writing
     const { _lastModified, ...stateData } = body;
-    stateData._v = (stateData._v || 0) + 1;
-    await writeFile(statePath, JSON.stringify(stateData, null, 2), 'utf-8');
+    const versioned = incrementVersion(stateData);
+    await writeFile(statePath, JSON.stringify(versioned, null, 2), 'utf-8');
     const newStat = await stat(statePath);
     jsonResponse(res, 200, { ok: true, lastModified: newStat.mtimeMs });
     return true;

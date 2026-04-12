@@ -3,33 +3,16 @@ import { hashString } from './hash.ts';
 import { STATUS } from '../constants/statuses.ts';
 import type { Task, QueueItem, Epic, EpicColor } from '../types';
 
-/** Tasks that are not done and not backlog (i.e. active/pending work) */
-export function getActiveTasks(tasks: Task[]): Task[] {
-  return tasks.filter(t => t.status !== STATUS.DONE && t.status !== STATUS.BACKLOG);
-}
+// Pure filter functions re-exported from engine
+export {
+  getActiveTasks,
+  getDoneTasks,
+  getBacklogTasks,
+  getUnqueuedTasks,
+  getAllGroups,
+} from '@dev-manager/engine';
 
-/** Done tasks */
-export function getDoneTasks(tasks: Task[]): Task[] {
-  return tasks.filter(t => t.status === STATUS.DONE);
-}
-
-/** Backlog tasks */
-export function getBacklogTasks(tasks: Task[]): Task[] {
-  return tasks.filter(t => t.status === STATUS.BACKLOG);
-}
-
-/** Pending or paused tasks not already in the queue */
-export function getUnqueuedTasks(tasks: Task[], queue: QueueItem[]): Task[] {
-  return tasks.filter(t =>
-    (t.status === STATUS.PENDING || t.status === STATUS.PAUSED) &&
-    !queue.some(q => q.task === t.id)
-  );
-}
-
-/** Unique group names from tasks */
-export function getAllGroups(tasks: Task[]): string[] {
-  return [...new Set(tasks.map(t => t.group).filter(Boolean))] as string[];
-}
+// UI/color functions stay in product
 
 /** Group tasks into a Map by their `group` field */
 export function groupTasksBy(

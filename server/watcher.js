@@ -2,7 +2,7 @@ import { watch } from 'node:fs';
 import { readFile, stat, mkdir, copyFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateProgressEntry } from './validate.js';
+import { validateProgress as validateProgressEntry, fixInconsistentTasks } from '@dev-manager/engine';
 
 const DEBOUNCE_MS = 300;
 
@@ -31,8 +31,13 @@ function createDebouncedWatcher(filePath, type, broadcast) {
           lastKnownVersion = incomingV;
         }
 
-        // Validate state.json when it changes — fix inconsistent task statuses
-        data = await validateState(filePath, data);
+        // Fix inconsistent task statuses (e.g., completedAt without done status)
+        if (data && Array.isArray(data.tasks)) {
+          const result = fixInconsistentTasks(data.tasks);
+          if (result.fixed) {
+            data = { ...data, tasks: result.tasks };
+          }
+        }
       }
 
       const fileStat = await stat(filePath);
@@ -166,61 +171,27 @@ function retryWatch(path, isDir, type, broadcast, watchers) {
   return retryInterval;
 }
 
-// --- State validation safety net ---
-// Fixes inconsistent task states that the orchestrator LLM may produce
-// (e.g., sets completedAt but forgets status: "done")
-
-export async function validateState(filePath, data) {
-  if (!data || !Array.isArray(data.tasks)) return data;
-
-  let fixed = false;
-
-  for (const task of data.tasks) {
-    // If completedAt is set but status isn't "done" — fix it
-    if (task.completedAt && task.status !== 'done') {
-      console.warn(`[validate] Task ${task.id} ("${task.name}"): has completedAt but status="${task.status}" — fixing to "done"`);
-      task.status = 'done';
-      fixed = true;
-    }
-
-    // If commitRef is set but status isn't "done" — fix it
-    if (task.commitRef && task.status !== 'done') {
-      console.warn(`[validate] Task ${task.id} ("${task.name}"): has commitRef but status="${task.status}" — fixing to "done"`);
-      task.status = 'done';
-      fixed = true;
-    }
-
-    // If status is "done" but no completedAt — set it to today
-    if (task.status === 'done' && !task.completedAt) {
-      const today = new Date().toISOString().split('T')[0];
-      console.warn(`[validate] Task ${task.id} ("${task.name}"): status is "done" but no completedAt — setting to ${today}`);
-      task.completedAt = today;
-      fixed = true;
-    }
-  }
-
-  if (fixed) {
-    // NOTE: Do NOT write corrections back to state.json here.
-    // The watcher must not be a concurrent writer — corrections are
-    // applied in-memory only and broadcast to the UI, which saves
-    // through the server API (the sole authorized writer).
-    console.warn('[validate] Corrections applied in-memory (not written to disk)');
-  }
-
-  return data;
-}
+// validateState removed — now using fixInconsistentTasks from @dev-manager/engine
 
 // Deploy all CLI helper scripts to .devmanager/bin/ in the target project
 const HELPER_SCRIPTS = ['task-done.cjs', 'task-start.cjs', 'queue-next.cjs', 'merge-safe.cjs'];
 
 async function ensureHelperScripts(projectPath) {
+  // Prefer engine-built CLI scripts; fall back to server/ copies
   const serverDir = dirname(fileURLToPath(import.meta.url));
+  const engineCliDir = join(serverDir, '..', 'packages', 'engine', 'dist', 'cli');
   const targetDir = join(projectPath, '.devmanager', 'bin');
 
   let needsMkdir = true;
 
   for (const script of HELPER_SCRIPTS) {
-    const source = join(serverDir, script);
+    // Try engine dist first, then server dir as fallback
+    let source = join(engineCliDir, script);
+    try {
+      await stat(source);
+    } catch {
+      source = join(serverDir, script);
+    }
     const target = join(targetDir, script);
 
     try {

@@ -23,6 +23,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build engine
+        run: npm run build --workspace=@dev-manager/engine
+
+      - name: Test engine
+        run: npm test --workspace=@dev-manager/engine
+
       - name: Lint
         run: npm run lint
 
