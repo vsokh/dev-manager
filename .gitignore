@@ -1,3 +1,21 @@
 node_modules/
 dist/
+
+# Runtime state — per-project, auto-generated
+.devmanager/state.json
+.devmanager/bin/
+.devmanager/notes/
+.devmanager/progress/
+.devmanager/quality/
+.devmanager/errors/
+.devmanager/release/
+.devmanager/backups/
+.devmanager/attachments/
 .devmanager/worktrees/
+.devmanager/specs/
+.devmanager/launch*
+.devmanager/merge.lock
+.devmanager/skills.json
+
+# Claude Code worktrees
+.claude/worktrees/

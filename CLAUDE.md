@@ -2,156 +2,102 @@
 
 ## What is this
 
-Dev Manager is a browser tool that pairs with Claude Code. A manager uses it to create tasks, write instructions, and queue work. Claude Code's orchestrator skill acts as a tech lead — reads the queue, plans the approach, delegates to sub-agents, reviews results, and writes back.
+Dev Manager is a browser-based task orchestrator that pairs with AI agents (Claude Code, Codex, Cursor). A manager creates tasks, sets dependencies, writes instructions, and queues work. AI agents pick up tasks, execute in isolated git worktrees, and report back through progress files.
 
-## Two hats
+## Architecture — Onion
 
-The user wears two hats:
-- **Manager hat** (Dev Manager in browser): creates tasks, writes notes, prioritizes, queues work. Product-level thinking.
-- **Developer hat** (Claude Code in terminal): reviews orchestrator's plans, approves delegation, helps navigate tricky implementation. Technical-level thinking.
+```
+Layer 3: Infrastructure (this repo's server/ and src/)
+  server/*.js          — Node.js HTTP + WebSocket, implements ports
+  src/hooks/*.ts       — React state wrappers
+  server/index.js      — composition root
 
-The orchestrator is the bridge. It reads manager intent and translates it into technical execution.
+Layer 2: Application Services (packages/)
+  packages/agent-runner/     — AI process lifecycle (spawn, stream, buffer, kill)
+  packages/sync-protocol/    — state sync (debounce, version guards, conflict resolution)
+
+Layer 1: Domain (packages/)
+  packages/taskgraph/        — pure state machine (queue sort, task CRUD, progress merge)
+```
+
+Dependencies point inward only. Packages define port interfaces — the server implements them with real I/O.
 
 ## Commands
 
 ```bash
-npm run dev          # start dev server (http://localhost:5173)
-npm run build        # vite build
-npm run preview      # preview production build
+npm run dev          # Vite dev server (http://localhost:5173), proxies API to bridge
+npm run dev:server   # bridge server (http://localhost:4545)
+npm run build        # Vite production build
+npm start ./path     # CLI: start bridge server for a project directory
+
+npm run lint         # ESLint on src/
+npm run test:run     # vitest single run
+npm test             # vitest watch mode
 ```
 
-## Architecture
+Development requires running both `npm run dev` and `npm run dev:server` simultaneously. Vite proxies `/api` and `/ws` to the bridge server.
 
-Vite + React 19 + JSX. No TypeScript. All inline styles with CSS custom properties.
+## Packages
 
-```
-src/
-├── main.jsx                  # Entry point
-├── App.jsx                   # Root component, all state management
-├── styles.css                # CSS variables, reset, utility classes
-├── fs.js                     # File System Access API (read/write state, ensure dirs)
-├── skills.js                 # Skill keyword matching + auto-suggest
-├── orchestrator.js           # ORCHESTRATOR_SKILL_TEMPLATE string
-├── hooks/
-│   └── useProject.js         # Connect/disconnect, auto-save, poll for changes
-└── components/
-    ├── ProjectPicker.jsx     # Landing screen: "Open project" + last project shortcut
-    ├── Header.jsx            # Project name, sync dot, theme toggle, disconnect
-    ├── SectionHeader.jsx     # Reusable panel header bar
-    ├── CardForm.jsx          # New task form with skill auto-suggest
-    ├── TaskBoard.jsx         # Task cards + "Add task" + collapsible shipped features
-    ├── TaskDetail.jsx        # Detail panel: status, name, notes, queue/delete buttons
-    ├── CommandQueue.jsx      # Queue list with per-task launch buttons + path config
-    └── ActivityFeed.jsx      # Recent activity log (newest first)
-```
+### taskgraph (`packages/taskgraph/`)
+Pure functions, zero deps. State in, new state out.
+- Queue: `sortByDependencies`, `computePhases`, `addToQueue`, `removeFromQueue`
+- Tasks: `addTask`, `updateTask`, `deleteTask`, `renameGroup`, `deleteGroup`
+- State: `mergeProgressIntoState`, `protectDoneTaskRegression`, `validateState`, `incrementVersion`
+- CLI scripts: `queue-next`, `task-start`, `task-done`, `merge-safe` (bundled to CJS via esbuild)
 
-### Key files outside src/
+### agent-runner (`packages/agent-runner/`)
+Process lifecycle through injected ports (`SpawnPort`, `BroadcastPort`, `ProgressWriterPort`).
+- `ProcessManager`: spawn, stream output (500-line buffer), kill, fallback progress on crash
+- `buildClaudePrompt`: translates `/orchestrator task N` to full LLM prompts
+- `DEFAULT_ENGINES`: adapters for claude, codex, cursor
 
-| File | Purpose |
-|------|---------|
-| `orchestrator-skill.md` | Readable reference of the orchestrator skill |
-| `claude-launcher.cmd` | Protocol handler: parses URL, launches Windows Terminal + Claude Code |
-| `install-protocol.cmd` | One-time: registers `claudecode://` protocol in Windows Registry |
+### sync-protocol (`packages/sync-protocol/`)
+Bidirectional sync through injected ports (`FileReaderPort`, `FileWriterPort`, `FileWatcherPort`, `StatePersistencePort`, `TimerPort`).
+- `WatcherOrchestrator`: debounce, content dedup, version guards (server-side)
+- `StateWriter`: optimistic locking, conflict detection, version increment (server-side)
+- `SyncEngine`: debounced save, conflict resolution, progress merge (client-side, framework-agnostic)
 
-## How it works
+## Frontend (`src/`)
 
-```
-Manager (Dev Manager)              Tech Lead (Orchestrator)              Developers (Sub-agents)
-       |                                    |                                    |
-  Create tasks                              |                                    |
-  Write notes ──► .devmanager/state.json ──►|                                    |
-  Queue work                                |                                    |
-       |                      ▶ Launch (claudecode:// protocol)                  |
-       |                                    |                                    |
-       |                           1. Read queue + notes                         |
-       |                           2. Explore codebase (Agent)                   |
-       |                           3. Present plan ──► user approves             |
-       |                           4. Delegate ─────────────────────────► implement
-       |                           5. Review result ◄───────────────────── done
-       |                           6. Write back ──► state.json                  |
-       |                                    |                                    |
-  See results ◄── auto-sync (3s poll)       |                                    |
-```
+- `App.tsx` — root component, composes all hooks and panels
+- `api.ts` — HTTP/WebSocket client for bridge server
+- `hooks/` — useProject, useTaskActions, useQueueActions, useSync (thin wrapper around SyncEngine), useErrors, useProcessOutput, useQuality, useRelease
+- `components/` — TaskBoard, TaskDetail, CommandQueue, ActivityFeed, QualityPanel, ErrorsPanel, ReleasePanel
+- `types/index.ts` — re-exports core types from taskgraph + product-only types (Quality, Errors, Release, WebSocket)
+
+## Backend (`server/`)
+
+Node.js HTTP + WebSocket server on port 4545. Thin adapters implementing package ports.
+
+- `index.js` — composition root (wires ports, starts server)
+- `process.js` — implements `SpawnPort` + `ProgressWriterPort` via node:child_process + node:fs
+- `watcher.js` — implements `FileWatcherPort` via node:fs.watch, deploys CLI scripts
+- `routes/state.js` — uses `StateWriter` from sync-protocol for optimistic locking
+- `routes/launch.js` — HTTP interface to `ProcessManager` from agent-runner
+- `routes/` — also: projects, git, skills, quality, errors, release, attachments, backups
 
 ## State file: `.devmanager/state.json`
 
-Single source of truth for the bidirectional sync.
+Single source of truth. Bridge server watches it and pushes changes via WebSocket. Writes use optimistic locking (`_lastModified` + `_v` version counter).
 
-```json
-{
-  "project": "my-project",
-  "tasks": [{ "id": 1, "name": "...", "fullName": "...", "status": "pending|done|blocked" }],
-  "features": [{ "id": "...", "name": "...", "description": "..." }],
-  "queue": [
-    { "task": 1, "taskName": "...", "notes": "..." }
-  ],
-  "taskNotes": { "1": "manager instructions..." },
-  "activity": [{ "id": "act_123", "time": 1234567890, "label": "Google login completed" }]
-}
-```
+## Orchestrator skill
 
-### Specs directory: `.devmanager/specs/`
+Template in `src/orchestrator.ts`. Auto-deployed to `.claude/skills/orchestrator/SKILL.md` on project connect.
 
-When the orchestrator executes a task, it can create a spec file at `.devmanager/specs/{NN}-{slug}.md`. Everything Dev Manager creates stays inside `.devmanager/`.
+The orchestrator reads the queue, explores the codebase, plans, gets user approval, delegates to sub-agents in git worktrees, reviews, and merges back to master.
 
-## Orchestrator skill (tech lead)
+**CRITICAL:** Agents write to `.devmanager/progress/{taskId}.json`, NEVER to `state.json` directly. The UI merges progress files into state automatically.
 
-Template in `src/orchestrator.js`. Auto-installed to `.claude/skills/orchestrator/SKILL.md` on project connect.
+## CI
 
-The orchestrator:
-1. **Reads** the queue and manager notes from `.devmanager/state.json`
-2. **Explores** the codebase with Explore sub-agents to understand context
-3. **Plans** the technical approach and presents it to the user
-4. **Waits** for user approval — NEVER auto-delegates
-5. **Delegates** to implementation sub-agents via the Agent tool
-6. **Reviews** the sub-agent's output (build passed? requirements met?)
-7. **Writes back** results to `.devmanager/state.json` so Dev Manager auto-syncs
-
-## One-click launch (`claudecode://` protocol)
-
-Each queued task has a ▶ button that opens a named terminal tab via custom URL protocol.
-
-### Setup (one-time)
-Run `install-protocol.cmd` — registers `claudecode://` in Windows Registry (`HKCU`). No admin needed.
-
-### URL format
-`claudecode:<path>?<command>?<tab-title>`
-
-### How it works
-1. User sets project path once in the queue panel (stored in localStorage per project)
-2. ▶ button opens `claudecode:<path>?/orchestrator task N?<short title>`
-3. `claude-launcher.cmd` receives the URL, opens a new tab in Windows Terminal with `--suppressApplicationTitle`
-
-## File System Access
-
-Uses the File System Access API (Chrome/Edge). The directory handle is persisted in IndexedDB (`devmanager_fs` database) so the project reconnects automatically on next visit.
-
-Key functions in `src/fs.js`:
-- `ensureDevManagerDir(handle)` — creates `.devmanager/` in project
-- `ensureOrchestratorSkill(handle)` — writes latest orchestrator skill template
-- `writeState(handle, data)` — writes `.devmanager/state.json`
-- `readState(handle)` — reads `.devmanager/state.json` + lastModified timestamp
-
-## Design
-
-Warm neutral palette with dark mode support (`[data-theme="dark"]`):
-- Background: `#f5f0eb` / dark: `#1a1816`
-- Surface: `#fefcf9` / dark: `#242220`
-- Accent (tasks): `#6a8dbe`
-- Amber: `#c4845a`
-- Success (shipped): `#5a9e72`
-
-Layout: 2x2 grid — `[TaskBoard | Detail]` over `[Queue | Activity]`
-Font: Onest (Google Fonts)
+GitHub Actions: lint, typecheck, test (all packages + product), build.
 
 ## Protected files
 
-**Do NOT modify `src/orchestrator.js`** — this is the orchestrator skill template deployed to every project using Dev Manager. Changes to it affect all projects. Only modify when the user explicitly asks to change the orchestrator workflow.
-
-## What NOT to do
-
-- Don't add a server — client-side only via File System Access API
-- Don't embed project-specific data — all state comes from `.devmanager/state.json`
-- Don't show implementation details to the manager (commit hashes, skill names, spec file paths, task IDs)
-- Don't let the orchestrator auto-execute without user approval
-- Don't modify `src/orchestrator.js` unless explicitly asked (see Protected files above)
+Do NOT modify these unless explicitly asked:
+- `src/orchestrator.ts` — skill template deployed to every project
+- `src/codehealth.ts` — code quality scanner template
+- `src/autofix.ts` — auto-fix skill template
+- `src/release.ts` — release management template
+- `src/errortracker.ts` — error tracker skill template (if exists)
