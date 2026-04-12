@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { StateData, WebSocketMessage } from '../types';
 import { SyncEngine } from 'sync-protocol';
 import type { SyncMessage } from 'sync-protocol';
-export type { MergeResult } from 'taskgraph';
 import {
   writeState,
   readProgressFiles,

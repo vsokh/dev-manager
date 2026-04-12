@@ -17,7 +17,6 @@ import { mergeProgressIntoState } from 'taskgraph';
 import { useTemplate } from './useTemplate.ts';
 import type { ProjectInfo } from './useTemplate.ts';
 export type { ConnectionStatus } from './useConnection.ts';
-export type { MergeResult } from 'taskgraph';
 export { mergeProgressIntoState } from 'taskgraph';
 
 export function useProject(opts?: { onError?: (msg: string) => void }) {
