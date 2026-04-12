@@ -132,7 +132,10 @@ The sub-agent prompt **MUST** include:
   `cd .devmanager/worktrees/task-{taskId}`
   This is an isolated git worktree on branch `task-{taskId}-{slug}`.
   Do NOT modify files in the main project root. All edits, builds, and commits happen in the worktree.
-  Commit when done."
+  Commit when done.
+  Commit messages MUST use conventional commit format: `type(scope): description`
+  Types: feat, fix, refactor, test, style, perf, docs, chore, a11y, security
+  Scopes: use the relevant feature area (e.g. auth, events, profile, groups, notifications, design)"
 
 ### 6. Review result
 Write progress: `"Reviewing results..."`
@@ -140,7 +143,7 @@ Write progress: `"Reviewing results..."`
 Check in the **worktree directory**: requirements met? Build passes? Fix or re-delegate.
 **Update notes file** (in main repo) — check off steps, add notes.
 
-### 7. Merge to master (serialized with lock)
+### 7. Merge to master and mark done (serialized with lock)
 Write progress: `"Merging to master..."`
 
 ```bash
@@ -152,7 +155,10 @@ On success, the script prints:
 MERGE_OK=yes
 COMMIT=abc1234
 BRANCH=task-42-google-login
+TASK_DONE=yes
 ```
+
+The script **automatically writes the progress file** (`.devmanager/progress/{taskId}.json`) as part of the merge — no separate `task-done.cjs` call needed. Dev Manager picks up the progress file and marks the task done.
 
 On failure, the script prints the failure type and conflict files:
 ```
@@ -164,15 +170,7 @@ CONFLICT_FILES=src/App.tsx, src/api.ts
 
 The script handles lock acquisition/release automatically (including on failure).
 
-### 8. Report back
-After a successful merge, mark the task as done using the commit hash from merge-safe:
-```bash
-# merge-safe.cjs prints COMMIT=<hash> on success
-node .devmanager/bin/task-done.cjs {taskId} --commit <hash>
-```
-
-Write to `.devmanager/progress/{taskId}.json`: `commitRef`, `completedAt`, `branch` (if merge failed).
-Dev Manager handles the rest.
+After a successful merge, check if the task was the last pending/in-progress task in its group. If so, mention: "All {group} tasks complete. Run `/release status` to check release readiness."
 
 If more in queue: "Next up: {taskName}. Continue?"
 
@@ -219,7 +217,7 @@ The user wears a **manager hat**. Talk to them in product terms:
 
 1. **Manager notes override everything.** If the manager says "skip X, focus on Y" — do that.
 2. **Delegate, don't implement.** Sub-agents write code. You plan, review, and coordinate.
-3. **NEVER manually edit state.json** (except arrange: `dependsOn`/`group` only). Use the CLI helpers: `task-start.cjs`, `task-done.cjs`, `merge-safe.cjs`, `queue-next.cjs`. No manual activity entries, no manual status changes.
+3. **NEVER manually edit state.json** (except arrange: `dependsOn`/`group` only). Use the CLI helpers: `task-start.cjs`, `merge-safe.cjs`, `queue-next.cjs`. No manual activity entries, no manual status changes.
 4. **Wait for approval** before delegating — unless the task has `autoApprove: true`, in which case skip straight to implementation.
 5. **Worktree per task.** Use `git worktree add` — never `git checkout`. Main repo stays on master. Sub-agents work in `.devmanager/worktrees/task-{id}/`.
 6. **Stay in scope.** Only do what the task asks. Don't create new tasks or rearrange things. If you discover something, tell the user.
