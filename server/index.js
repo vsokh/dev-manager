@@ -7,7 +7,7 @@ import { startWatcher } from './watcher.js';
 import { getProcessManager, setBroadcast } from './process.js';
 
 const PORT = parseInt(process.env.PORT || '4545', 10);
-const HOST = '127.0.0.1';
+const HOST = process.env.DM_HOST || '127.0.0.1';
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',

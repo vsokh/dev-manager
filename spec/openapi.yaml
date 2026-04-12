@@ -1,0 +1,1574 @@
+openapi: 3.1.0
+info:
+  title: Dev Manager Bridge API
+  version: 1.0.0
+  description: |
+    HTTP API for the Dev Manager bridge server. Manages task state, agent processes,
+    skills, quality reports, error tracking, releases, backups, and attachments.
+
+    The server binds to `DM_HOST` (default `127.0.0.1`) on `PORT` (default `4545`).
+    Real-time updates are delivered via WebSocket — see `websocket-protocol.md`.
+
+servers:
+  - url: http://127.0.0.1:4545
+    description: Local bridge server (default)
+
+tags:
+  - name: Projects
+    description: Multi-project management
+  - name: State
+    description: Task state read/write with optimistic locking
+  - name: Launch
+    description: Agent process lifecycle
+  - name: Skills
+    description: Skill and agent discovery/deployment
+  - name: Quality
+    description: Code quality reports
+  - name: Errors
+    description: Error tracking reports
+  - name: Release
+    description: Release management
+  - name: Git
+    description: Git operations
+  - name: Attachments
+    description: Task file attachments
+  - name: Backups
+    description: State snapshots
+
+paths:
+  # --- Projects ---
+
+  /api/info:
+    get:
+      tags: [Projects]
+      summary: Get active project info
+      operationId: getInfo
+      responses:
+        "200":
+          description: Current project
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projectPath, projectName]
+                properties:
+                  projectPath:
+                    type: string
+                  projectName:
+                    type: string
+
+  /api/projects:
+    get:
+      tags: [Projects]
+      summary: List registered projects
+      operationId: listProjects
+      responses:
+        "200":
+          description: Project list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectInfo"
+
+  /api/project:
+    put:
+      tags: [Projects]
+      summary: Switch active project
+      operationId: switchProject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [path]
+              properties:
+                path:
+                  type: string
+      responses:
+        "200":
+          description: Switched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                  projectPath:
+                    type: string
+                  projectName:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/browse:
+    get:
+      tags: [Projects]
+      summary: List directories for folder picker
+      operationId: browse
+      parameters:
+        - name: path
+          in: query
+          schema:
+            type: string
+          description: Directory path (defaults to user home)
+      responses:
+        "200":
+          description: Directory listing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [current, dirs]
+                properties:
+                  current:
+                    type: string
+                  parent:
+                    type: string
+                    nullable: true
+                  dirs:
+                    type: array
+                    items:
+                      type: object
+                      required: [name, path, isProject]
+                      properties:
+                        name:
+                          type: string
+                        path:
+                          type: string
+                        isProject:
+                          type: boolean
+        "403":
+          description: Path outside home directory
+
+  /api/browse/native:
+    post:
+      tags: [Projects]
+      summary: Open native OS folder dialog
+      operationId: browseNative
+      responses:
+        "200":
+          description: Selected path or cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    nullable: true
+                  cancelled:
+                    type: boolean
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # --- State ---
+
+  /api/state:
+    get:
+      tags: [State]
+      summary: Read current state
+      operationId: getState
+      responses:
+        "200":
+          description: State with last-modified timestamp
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, lastModified]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/StateData"
+                  lastModified:
+                    type: number
+                    description: File mtime in milliseconds
+        "404":
+          description: No state file exists yet
+    put:
+      tags: [State]
+      summary: Write state (optimistic locking)
+      operationId: putState
+      description: |
+        Writes state.json using optimistic locking. The request must include
+        `_lastModified` (file mtime from the last read). If the file on disk
+        is newer, a 409 Conflict is returned with the current state.
+        The `_v` version counter is auto-incremented on each successful write.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data, _lastModified]
+              properties:
+                data:
+                  $ref: "#/components/schemas/StateData"
+                _lastModified:
+                  type: number
+                _v:
+                  type: integer
+      responses:
+        "200":
+          description: Written successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    const: true
+                  lastModified:
+                    type: number
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Conflict — file on disk is newer
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, data, lastModified]
+                properties:
+                  error:
+                    type: string
+                  data:
+                    $ref: "#/components/schemas/StateData"
+                  lastModified:
+                    type: number
+
+  /api/progress:
+    get:
+      tags: [State]
+      summary: Read all progress files
+      operationId: getProgress
+      responses:
+        "200":
+          description: Map of taskId to progress entry
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/ProgressEntry"
+
+  /api/progress/{taskId}:
+    delete:
+      tags: [State]
+      summary: Delete a progress file
+      operationId: deleteProgress
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/Ok"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Progress file not found
+
+  /api/split-tasks:
+    post:
+      tags: [State]
+      summary: AI-split scratchpad text into tasks
+      operationId: splitTasks
+      description: |
+        Uses Claude CLI to parse freeform text into structured tasks.
+        Limited to 50,000 characters.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                  maxLength: 50000
+      responses:
+        "200":
+          description: Parsed tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tasks]
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      type: object
+                      required: [name, fullName, description, group]
+                      properties:
+                        name:
+                          type: string
+                        fullName:
+                          type: string
+                        description:
+                          type: string
+                        group:
+                          type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # --- Launch ---
+
+  /api/launch:
+    post:
+      tags: [Launch]
+      summary: Launch an agent process
+      operationId: launchProcess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [taskId, command]
+              properties:
+                taskId:
+                  type: integer
+                command:
+                  type: string
+                engine:
+                  type: string
+                  default: claude
+                  enum: [claude, codex, cursor]
+      responses:
+        "200":
+          description: Process launched
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [pid, taskId, command]
+                properties:
+                  pid:
+                    type: integer
+                  taskId:
+                    type: integer
+                  command:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    get:
+      tags: [Launch]
+      summary: List running processes
+      operationId: listProcesses
+      responses:
+        "200":
+          description: Active processes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProcessInfo"
+
+  /api/launch/terminal:
+    post:
+      tags: [Launch]
+      summary: Launch process in a new terminal tab
+      operationId: launchTerminal
+      description: |
+        Opens a new OS terminal window/tab with the specified command.
+        Only whitelisted commands are allowed (orchestrator, codehealth, autofix,
+        error-tracker, release, and Read .devmanager/ commands).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [command]
+              properties:
+                taskId:
+                  type: integer
+                  nullable: true
+                command:
+                  type: string
+                engine:
+                  type: string
+                  default: claude
+                title:
+                  type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/Ok"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/launch/output:
+    get:
+      tags: [Launch]
+      summary: Get buffered output from all processes
+      operationId: getOutput
+      description: |
+        Returns buffered stdout/stderr for all running and recently-finished
+        processes. Useful for clients reconnecting after a disconnect.
+      responses:
+        "200":
+          description: Map of taskId to output lines
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    oneOf:
+                      - $ref: "#/components/schemas/OutputLine"
+                      - $ref: "#/components/schemas/ExitLine"
+
+  /api/launch/{pid}:
+    delete:
+      tags: [Launch]
+      summary: Kill a process by PID
+      operationId: killProcess
+      parameters:
+        - name: pid
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          $ref: "#/components/responses/Ok"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Process not found
+
+  # --- Skills ---
+
+  /api/skills:
+    get:
+      tags: [Skills]
+      summary: Discover skills and agents
+      operationId: listSkills
+      responses:
+        "200":
+          description: Discovered skills/agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SkillInfo"
+
+  /api/skills/deploy:
+    post:
+      tags: [Skills]
+      summary: Deploy a skill file
+      operationId: deploySkill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [skillName, filename, content]
+              properties:
+                skillName:
+                  type: string
+                filename:
+                  type: string
+                content:
+                  type: string
+      responses:
+        "200":
+          description: Deployed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  deployed:
+                    type: boolean
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/agents/deploy:
+    post:
+      tags: [Skills]
+      summary: Deploy an agent file
+      operationId: deployAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agentName, filename, content]
+              properties:
+                agentName:
+                  type: string
+                filename:
+                  type: string
+                content:
+                  type: string
+      responses:
+        "200":
+          description: Deployed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  deployed:
+                    type: boolean
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/skills-config:
+    get:
+      tags: [Skills]
+      summary: Read skills configuration
+      operationId: getSkillsConfig
+      responses:
+        "200":
+          description: Skills config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SkillsConfig"
+    put:
+      tags: [Skills]
+      summary: Write skills configuration
+      operationId: putSkillsConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SkillsConfig"
+      responses:
+        "200":
+          $ref: "#/components/responses/Ok"
+
+  # --- Quality ---
+
+  /api/quality/latest:
+    get:
+      tags: [Quality]
+      summary: Get latest quality report
+      operationId: getQualityLatest
+      responses:
+        "200":
+          description: Quality report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QualityReport"
+        "404":
+          description: No quality report found
+
+  /api/quality/history:
+    get:
+      tags: [Quality]
+      summary: Get quality history
+      operationId: getQualityHistory
+      responses:
+        "200":
+          description: Quality history entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QualityHistoryEntry"
+        "404":
+          description: No quality history found
+
+  # --- Errors ---
+
+  /api/errors/latest:
+    get:
+      tags: [Errors]
+      summary: Get latest errors report
+      operationId: getErrorsLatest
+      responses:
+        "200":
+          description: Errors report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorsReport"
+        "404":
+          description: No errors report found
+
+  /api/errors/history:
+    get:
+      tags: [Errors]
+      summary: Get errors history
+      operationId: getErrorsHistory
+      responses:
+        "200":
+          description: Errors history entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ErrorsHistoryEntry"
+        "404":
+          description: No errors history found
+
+  # --- Release ---
+
+  /api/release/releases:
+    get:
+      tags: [Release]
+      summary: Get list of releases
+      operationId: getReleases
+      responses:
+        "200":
+          description: Release entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReleaseEntry"
+
+  /api/release/stability:
+    get:
+      tags: [Release]
+      summary: Get stability assessment
+      operationId: getStability
+      responses:
+        "200":
+          description: Stability assessment (null if unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StabilityAssessment"
+
+  /api/release/changelog:
+    get:
+      tags: [Release]
+      summary: Get parsed changelog
+      operationId: getChangelog
+      responses:
+        "200":
+          description: Parsed CHANGELOG.md sections
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sections]
+                properties:
+                  sections:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChangelogSection"
+
+  # --- Git ---
+
+  /api/git/status:
+    get:
+      tags: [Git]
+      summary: Check unpushed commits
+      operationId: gitStatus
+      responses:
+        "200":
+          description: Branch status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  branch:
+                    type: string
+                    nullable: true
+                  unpushed:
+                    type: integer
+                  commits:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        hash:
+                          type: string
+                        message:
+                          type: string
+                  error:
+                    type: string
+
+  /api/git/push:
+    post:
+      tags: [Git]
+      summary: Push to origin
+      operationId: gitPush
+      responses:
+        "200":
+          description: Push result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  output:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # --- Attachments ---
+
+  /api/attachments/{taskId}:
+    post:
+      tags: [Attachments]
+      summary: Upload attachment
+      operationId: uploadAttachment
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Filename (allowed extensions: .png, .jpg, .jpeg, .gif, .webp, .svg)
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  path:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/attachments/{taskId}/{filename}:
+    get:
+      tags: [Attachments]
+      summary: Download attachment
+      operationId: getAttachment
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: File content
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Attachment not found
+    delete:
+      tags: [Attachments]
+      summary: Delete attachment
+      operationId: deleteAttachment
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/Ok"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Attachment not found
+
+  # --- Backups ---
+
+  /api/backups:
+    get:
+      tags: [Backups]
+      summary: List available backups
+      operationId: listBackups
+      responses:
+        "200":
+          description: Backup list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [backups]
+                properties:
+                  backups:
+                    type: array
+                    items:
+                      type: object
+                      required: [name, lastModified]
+                      properties:
+                        name:
+                          type: string
+                        lastModified:
+                          type: number
+                          description: Millisecond timestamp
+
+  /api/backups/snapshot:
+    post:
+      tags: [Backups]
+      summary: Create state snapshot
+      operationId: createSnapshot
+      description: Creates a backup of state.json. Auto-prunes to keep only 10 most recent.
+      responses:
+        "200":
+          description: Snapshot created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  filename:
+                    type: string
+        "404":
+          description: No state file to snapshot
+
+  /api/backups/restore:
+    post:
+      tags: [Backups]
+      summary: Restore state from backup
+      operationId: restoreBackup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filename]
+              properties:
+                filename:
+                  type: string
+                  pattern: ^state-.*\.json$
+      responses:
+        "200":
+          $ref: "#/components/responses/Ok"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          description: Backup file not found
+
+components:
+  responses:
+    Ok:
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              ok:
+                type: boolean
+                const: true
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+
+  schemas:
+    # --- Domain types (from taskgraph) ---
+
+    TaskStatus:
+      type: string
+      enum: [pending, in-progress, done, blocked, paused, backlog]
+
+    Attachment:
+      type: object
+      required: [id, filename]
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        path:
+          type: string
+
+    HistoryEntry:
+      type: object
+      required: [status, at]
+      properties:
+        status:
+          type: string
+        at:
+          type: string
+          format: date-time
+
+    Task:
+      type: object
+      required: [id, name, status]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        fullName:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        group:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        manual:
+          type: boolean
+        supervision:
+          type: boolean
+        autoApprove:
+          type: boolean
+        progress:
+          type: string
+        blockedReason:
+          type: string
+        lastProgress:
+          type: string
+        branch:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
+        dependsOn:
+          type: array
+          items:
+            type: integer
+        createdAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        pausedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        commitRef:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/HistoryEntry"
+        engine:
+          type: string
+        summary:
+          type: string
+
+    QueueItem:
+      type: object
+      required: [task, taskName]
+      properties:
+        task:
+          type: integer
+        taskName:
+          type: string
+        notes:
+          type: string
+
+    Epic:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        color:
+          type: integer
+        hidden:
+          type: boolean
+
+    Activity:
+      type: object
+      required: [id, time, label]
+      properties:
+        id:
+          type: string
+        time:
+          type: number
+        label:
+          type: string
+        taskId:
+          type: integer
+        commitRef:
+          type: string
+        filesChanged:
+          type: integer
+        changes:
+          type: array
+          items:
+            type: string
+
+    Feature:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+
+    ProgressEntry:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [in-progress, done, paused]
+        progress:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+        commitRef:
+          type: string
+        branch:
+          type: string
+        label:
+          type: string
+        filesChanged:
+          type: integer
+        changes:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+        taskUpdates:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              dependsOn:
+                type: array
+                items:
+                  type: integer
+              group:
+                type: string
+
+    StateData:
+      type: object
+      required: [project, tasks, queue, taskNotes, activity]
+      properties:
+        savedAt:
+          type: string
+          format: date-time
+        _v:
+          type: integer
+          description: Version counter, auto-incremented on each write
+        project:
+          type: string
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        queue:
+          type: array
+          items:
+            $ref: "#/components/schemas/QueueItem"
+        taskNotes:
+          type: object
+          additionalProperties:
+            type: string
+        activity:
+          type: array
+          items:
+            $ref: "#/components/schemas/Activity"
+        epics:
+          type: array
+          items:
+            $ref: "#/components/schemas/Epic"
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/Feature"
+        defaultEngine:
+          type: string
+        scratchpad:
+          type: string
+
+    # --- Product types ---
+
+    ProjectInfo:
+      type: object
+      required: [path, name, active]
+      properties:
+        path:
+          type: string
+        name:
+          type: string
+        active:
+          type: boolean
+
+    ProcessInfo:
+      type: object
+      required: [pid, taskId, command, startTime]
+      properties:
+        pid:
+          type: integer
+        taskId:
+          type: integer
+        command:
+          type: string
+        startTime:
+          type: number
+
+    OutputLine:
+      type: object
+      required: [type, text]
+      properties:
+        type:
+          type: string
+          const: output
+        text:
+          type: string
+        stream:
+          type: string
+          enum: [stdout, stderr]
+        pid:
+          type: integer
+
+    ExitLine:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: exit
+        code:
+          type: integer
+        error:
+          type: string
+
+    SkillInfo:
+      type: object
+      required: [name, description, type]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [skill, agent]
+
+    SkillsConfig:
+      type: object
+      required: [epics]
+      properties:
+        epics:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              skills:
+                type: array
+                items:
+                  type: string
+              agents:
+                type: array
+                items:
+                  type: string
+
+    QualityDimension:
+      type: object
+      required: [score, grade, weight, confidence, issues]
+      properties:
+        score:
+          type: number
+        grade:
+          type: string
+        weight:
+          type: string
+        confidence:
+          type: string
+        evidence:
+          type: string
+        issues:
+          type: integer
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/QualityFinding"
+        recommendation:
+          type: string
+
+    QualityFinding:
+      type: object
+      required: [severity, finding]
+      properties:
+        id:
+          type: string
+        severity:
+          type: string
+        dimension:
+          type: string
+        file:
+          type: string
+        line:
+          type: integer
+        finding:
+          type: string
+        fix:
+          type: string
+        effort:
+          type: string
+
+    QualityReport:
+      type: object
+      required: [overallScore, grade, dimensions]
+      properties:
+        overallScore:
+          type: number
+        grade:
+          type: string
+        dimensions:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/QualityDimension"
+        baseline:
+          type: object
+          properties:
+            buildPasses:
+              type: boolean
+            lintErrors:
+              type: integer
+            testsPassing:
+              type: boolean
+            testCount:
+              type: integer
+            testCoveragePercent:
+              type: number
+            bundleGzipKB:
+              type: number
+            depVulnerabilities:
+              type: object
+              properties:
+                critical:
+                  type: integer
+                high:
+                  type: integer
+                moderate:
+                  type: integer
+                low:
+                  type: integer
+                total:
+                  type: integer
+        topFindings:
+          type: array
+          items:
+            $ref: "#/components/schemas/QualityFinding"
+        scannedAt:
+          type: string
+          format: date-time
+        filesScanned:
+          type: integer
+        commitRef:
+          type: string
+        date:
+          type: string
+
+    QualityHistoryEntry:
+      type: object
+      required: [date, overallScore]
+      properties:
+        date:
+          type: string
+        overallScore:
+          type: number
+        grade:
+          type: string
+        commitRef:
+          type: string
+        note:
+          type: string
+        dimensions:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: object
+                properties:
+                  score:
+                    type: number
+              - type: number
+
+    ErrorIssue:
+      type: object
+      required: [fingerprint, message, type, level, count, firstSeen, lastSeen, trend, severity]
+      properties:
+        fingerprint:
+          type: string
+        message:
+          type: string
+        type:
+          type: string
+        level:
+          type: string
+        count:
+          type: integer
+        firstSeen:
+          type: string
+          format: date-time
+        lastSeen:
+          type: string
+          format: date-time
+        trend:
+          type: string
+          enum: [rising, stable, declining]
+        severity:
+          type: string
+          enum: [high, medium, low]
+        topFrame:
+          type: object
+          nullable: true
+          properties:
+            file:
+              type: string
+            function:
+              type: string
+            line:
+              type: integer
+            col:
+              type: integer
+        breadcrumbSummary:
+          type: string
+        affectedRoutes:
+          type: array
+          items:
+            type: string
+        affectedBrowsers:
+          type: array
+          items:
+            type: string
+        diagnosis:
+          type: string
+          nullable: true
+
+    ErrorsSummary:
+      type: object
+      required: [totalEvents, uniqueIssues, crashFreeRate, errorsCount, warningsCount, infosCount]
+      properties:
+        totalEvents:
+          type: integer
+        uniqueIssues:
+          type: integer
+        crashFreeRate:
+          type: number
+        errorsCount:
+          type: integer
+        warningsCount:
+          type: integer
+        infosCount:
+          type: integer
+
+    ErrorsTimelineEntry:
+      type: object
+      required: [date, errors, warnings, infos]
+      properties:
+        date:
+          type: string
+        errors:
+          type: integer
+        warnings:
+          type: integer
+        infos:
+          type: integer
+
+    ErrorsReport:
+      type: object
+      required: [scannedAt, period, environment, summary, issues, timeline, typeBreakdown]
+      properties:
+        scannedAt:
+          type: string
+          format: date-time
+        period:
+          type: string
+        environment:
+          type: string
+        summary:
+          $ref: "#/components/schemas/ErrorsSummary"
+        issues:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorIssue"
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorsTimelineEntry"
+        typeBreakdown:
+          type: object
+          additionalProperties:
+            type: integer
+
+    ErrorsHistoryEntry:
+      type: object
+      required: [date, totalEvents, uniqueIssues, crashFreeRate, errorsCount, warningsCount]
+      properties:
+        date:
+          type: string
+        totalEvents:
+          type: integer
+        uniqueIssues:
+          type: integer
+        crashFreeRate:
+          type: number
+        errorsCount:
+          type: integer
+        warningsCount:
+          type: integer
+
+    ReleaseEntry:
+      type: object
+      required: [version, date, commitRef, stabilityScore, commitCount]
+      properties:
+        version:
+          type: string
+        date:
+          type: string
+        commitRef:
+          type: string
+        stabilityScore:
+          type: number
+        commitCount:
+          type: integer
+        description:
+          type: string
+        breakdown:
+          type: object
+          additionalProperties:
+            type: integer
+        gateResults:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [pass, warn, fail]
+
+    StabilityAssessment:
+      type: object
+      required: [score, level, assessedAt]
+      properties:
+        score:
+          type: number
+        level:
+          type: string
+          enum: [Stable, Release Candidate, Stabilizing, Active Development]
+        components:
+          type: object
+          properties:
+            buildTest:
+              type: number
+            codehealth:
+              type: number
+            fixRatio:
+              type: number
+            backlog:
+              type: number
+            regression:
+              type: number
+            fixDecay:
+              type: number
+        gateResults:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [pass, warn, fail]
+        assessedAt:
+          type: string
+          format: date-time
+        commitRef:
+          type: string
+        currentVersion:
+          type: string
+        commitsSinceRelease:
+          type: integer
+
+    ChangelogSection:
+      type: object
+      required: [version, date, groups]
+      properties:
+        version:
+          type: string
+        date:
+          type: string
+        groups:
+          type: array
+          items:
+            type: object
+            required: [name, items]
+            properties:
+              name:
+                type: string
+              items:
+                type: array
+                items:
+                  type: string
