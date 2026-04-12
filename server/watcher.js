@@ -1,191 +1,66 @@
 import { watch } from 'node:fs';
-import { readFile, stat, mkdir, copyFile } from 'node:fs/promises';
+import { readFile, stat, mkdir, copyFile, readdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateProgress as validateProgressEntry, fixInconsistentTasks } from 'taskgraph';
+import { WatcherOrchestrator } from 'sync-protocol';
 
-const DEBOUNCE_MS = 300;
+// --- Adapter: FileReaderPort → node:fs ---
 
-function createDebouncedWatcher(filePath, type, broadcast) {
-  let timeout = null;
-  let lastContent = null;
-  let lastKnownVersion = 0;
+const nodeFileReader = {
+  async readFile(path) { return readFile(path, 'utf-8'); },
+  async stat(path) { return stat(path); },
+  async readdir(path) { return readdir(path); },
+  async exists(path) {
+    try { await stat(path); return true; } catch { return false; }
+  },
+};
 
-  async function onChange() {
+// --- Adapter: FileWatcherPort → node:fs.watch ---
+
+const nodeFileWatcher = {
+  watchFile(path, callback) {
     try {
-      const content = await readFile(filePath, 'utf-8');
-      // Skip if content hasn't changed
-      if (content === lastContent) return;
-      lastContent = content;
-      let data = JSON.parse(content);
-
-      // Reject stale state.json writes (rogue LLM overwrites)
-      if (type === 'state') {
-        const incomingV = data._v || 0;
-        if (incomingV > 0 && incomingV < lastKnownVersion) {
-          console.warn(`[watcher] Rejected stale state.json: _v=${incomingV} < known=${lastKnownVersion}`);
-          lastContent = null; // Reset so next valid write is accepted
-          return;
-        }
-        if (incomingV > lastKnownVersion) {
-          lastKnownVersion = incomingV;
-        }
-
-        // Fix inconsistent task statuses (e.g., completedAt without done status)
-        if (data && Array.isArray(data.tasks)) {
-          const result = fixInconsistentTasks(data.tasks);
-          if (result.fixed) {
-            data = { ...data, tasks: result.tasks };
-          }
-        }
-      }
-
-      const fileStat = await stat(filePath);
-      broadcast({ type, data, lastModified: fileStat.mtimeMs });
+      const watcher = watch(path, { persistent: false }, callback);
+      watcher.on('error', (err) => console.error(`Watcher error (${path}):`, err.message));
+      return watcher;
     } catch (err) {
-      // File may be mid-write or deleted; ignore transient errors
-      if (err.code !== 'ENOENT') {
-        console.error(`Watcher read error (${type}):`, err.message);
-      }
+      if (err.code === 'ENOENT') return null;
+      throw err;
     }
-  }
-
-  function handler() {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(onChange, DEBOUNCE_MS);
-  }
-
-  return handler;
-}
-
-function watchFile(filePath, type, broadcast) {
-  const handler = createDebouncedWatcher(filePath, type, broadcast);
-  try {
-    const watcher = watch(filePath, { persistent: false }, handler);
-    watcher.on('error', (err) => {
-      console.error(`Watcher error (${filePath}):`, err.message);
-    });
-    return watcher;
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return null;
-    }
-    throw err;
-  }
-}
-
-function watchDirectory(dirPath, type, broadcast) {
-  let debounceTimeout = null;
-  let lastContents = new Map();
-
-  async function readAllFiles() {
+  },
+  watchDirectory(path, callback) {
     try {
-      const { readdir } = await import('node:fs/promises');
-      const files = await readdir(dirPath);
-      const entries = {};
-      let changed = false;
-
-      for (const file of files) {
-        if (!file.endsWith('.json')) continue;
-        try {
-          const content = await readFile(join(dirPath, file), 'utf-8');
-          const key = file.replace('.json', '');
-          const parsed = JSON.parse(content);
-          if (type === 'progress') {
-            const validated = validateProgressEntry(parsed);
-            if (!validated) {
-              console.warn(`[watcher] Invalid progress entry skipped: ${file}`);
-              continue;
-            }
-            entries[key] = validated;
-          } else {
-            entries[key] = parsed;
-          }
-          if (lastContents.get(file) !== content) {
-            changed = true;
-            lastContents.set(file, content);
-          }
-        } catch (err) {
-          if (err.code !== 'ENOENT') {
-            console.error(`Watcher parse error (${file}):`, err.message);
-          }
-        }
-      }
-
-      // Detect deletions
-      for (const key of lastContents.keys()) {
-        if (!files.includes(key)) {
-          lastContents.delete(key);
-          changed = true;
-        }
-      }
-
-      if (changed) {
-        broadcast({ type, data: entries });
-      }
+      const watcher = watch(path, { persistent: false, recursive: false }, callback);
+      watcher.on('error', (err) => console.error(`Directory watcher error (${path}):`, err.message));
+      return watcher;
     } catch (err) {
-      if (err.code !== 'ENOENT') {
-        console.error(`Watcher directory read error (${type}):`, err.message);
-      }
+      if (err.code === 'ENOENT') return null;
+      throw err;
     }
-  }
+  },
+};
 
-  function handler() {
-    if (debounceTimeout) clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(readAllFiles, DEBOUNCE_MS);
-  }
+// --- Adapter: TimerPort → global timers ---
 
-  try {
-    const watcher = watch(dirPath, { persistent: false, recursive: false }, handler);
-    watcher.on('error', (err) => {
-      console.error(`Directory watcher error (${dirPath}):`, err.message);
-    });
-    return watcher;
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return null;
-    }
-    throw err;
-  }
-}
+const nodeTimer = {
+  setTimeout: (cb, ms) => setTimeout(cb, ms),
+  clearTimeout: (h) => clearTimeout(h),
+  setInterval: (cb, ms) => setInterval(cb, ms),
+  clearInterval: (h) => clearInterval(h),
+};
 
-function retryWatch(path, isDir, type, broadcast, watchers) {
-  const retryInterval = setInterval(async () => {
-    try {
-      const s = await stat(path);
-      if (isDir ? s.isDirectory() : s.isFile()) {
-        clearInterval(retryInterval);
-        const watcher = isDir
-          ? watchDirectory(path, type, broadcast)
-          : watchFile(path, type, broadcast);
-        if (watcher) {
-          watchers.push(watcher);
-          console.log(`Watcher started: ${path}`);
-        }
-      }
-    } catch {
-      // Still doesn't exist, keep retrying
-    }
-  }, 5000);
+// --- Helper scripts deployment (infrastructure-only, not part of sync protocol) ---
 
-  return retryInterval;
-}
-
-// validateState removed — now using fixInconsistentTasks from taskgraph
-
-// Deploy all CLI helper scripts to .devmanager/bin/ in the target project
 const HELPER_SCRIPTS = ['task-done.cjs', 'task-start.cjs', 'queue-next.cjs', 'merge-safe.cjs'];
 
 async function ensureHelperScripts(projectPath) {
-  // Prefer engine-built CLI scripts; fall back to server/ copies
   const serverDir = dirname(fileURLToPath(import.meta.url));
-  const engineCliDir = join(serverDir, '..', 'packages', 'engine', 'dist', 'cli');
+  const engineCliDir = join(serverDir, '..', 'packages', 'taskgraph', 'dist', 'cli');
   const targetDir = join(projectPath, '.devmanager', 'bin');
 
   let needsMkdir = true;
 
   for (const script of HELPER_SCRIPTS) {
-    // Try engine dist first, then server dir as fallback
     let source = join(engineCliDir, script);
     try {
       await stat(source);
@@ -195,18 +70,13 @@ async function ensureHelperScripts(projectPath) {
     const target = join(targetDir, script);
 
     try {
-      // Check if source exists
       await stat(source);
-
-      // Check if target already matches (by size comparison for speed)
       try {
         const [srcStat, tgtStat] = await Promise.all([stat(source), stat(target)]);
         if (srcStat.size === tgtStat.size && srcStat.mtimeMs <= tgtStat.mtimeMs) {
-          continue; // Already up to date
+          continue;
         }
-      } catch {
-        // Target doesn't exist — need to copy
-      }
+      } catch { /* target doesn't exist */ }
 
       if (needsMkdir) {
         await mkdir(targetDir, { recursive: true });
@@ -221,48 +91,25 @@ async function ensureHelperScripts(projectPath) {
   }
 }
 
-export function startWatcher(projectPath, broadcast) {
-  const watchers = [];
-  const retryIntervals = [];
+// --- Start watcher ---
 
-  // Deploy CLI helper scripts to target project
+export function startWatcher(projectPath, broadcast) {
+  // Deploy CLI helper scripts
   ensureHelperScripts(projectPath);
+
+  // Create orchestrator with real adapters
+  const broadcastPort = { send: (msg) => broadcast(msg) };
+  const orchestrator = new WatcherOrchestrator(
+    nodeFileReader, nodeFileWatcher, broadcastPort, nodeTimer,
+  );
 
   const stateFile = join(projectPath, '.devmanager', 'state.json');
   const progressDir = join(projectPath, '.devmanager', 'progress');
   const qualityDir = join(projectPath, '.devmanager', 'quality');
 
-  // Watch state.json
-  const stateWatcher = watchFile(stateFile, 'state', broadcast);
-  if (stateWatcher) {
-    watchers.push(stateWatcher);
-  } else {
-    retryIntervals.push(retryWatch(stateFile, false, 'state', broadcast, watchers));
-  }
-
-  // Watch progress directory
-  const progressWatcher = watchDirectory(progressDir, 'progress', broadcast);
-  if (progressWatcher) {
-    watchers.push(progressWatcher);
-  } else {
-    retryIntervals.push(retryWatch(progressDir, true, 'progress', broadcast, watchers));
-  }
-
-  // Watch quality directory
-  const qualityWatcher = watchDirectory(qualityDir, 'quality', broadcast);
-  if (qualityWatcher) {
-    watchers.push(qualityWatcher);
-  } else {
-    retryIntervals.push(retryWatch(qualityDir, true, 'quality', broadcast, watchers));
-  }
-
-  // Return cleanup function
-  return () => {
-    for (const w of watchers) {
-      try { w.close(); } catch { /* ignore */ }
-    }
-    for (const interval of retryIntervals) {
-      clearInterval(interval);
-    }
-  };
+  return orchestrator.start(projectPath, [
+    { path: stateFile, type: 'state', isDir: false },
+    { path: progressDir, type: 'progress', isDir: true },
+    { path: qualityDir, type: 'quality', isDir: true },
+  ]);
 }

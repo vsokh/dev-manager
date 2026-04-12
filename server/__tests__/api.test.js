@@ -33,6 +33,7 @@ vi.mock('../process.js', () => ({
     getAllOutput: mockGetAllOutput,
     killProcess: mockKillProcess,
   }),
+  setBroadcast: vi.fn(),
 }));
 
 const mockOpenNativeFolderDialog = vi.fn();
@@ -967,7 +968,7 @@ describe('POST /api/launch', () => {
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
     expect(getJsonResponse(res)).toEqual({ pid: 42 });
     expect(mockLaunchProcess).toHaveBeenCalledWith(
-      tmpDir, 1, '/orchestrator task 1', 'claude', expect.any(Function)
+      tmpDir, 1, '/orchestrator task 1', 'claude'
     );
   });
 
@@ -982,7 +983,7 @@ describe('POST /api/launch', () => {
     await handleApi(req, res);
 
     expect(mockLaunchProcess).toHaveBeenCalledWith(
-      tmpDir, 2, '/orchestrator task 2', 'claude', expect.any(Function)
+      tmpDir, 2, '/orchestrator task 2', 'claude'
     );
   });
 

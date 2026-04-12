@@ -4,7 +4,7 @@ import { resolve, join, extname, basename } from 'node:path';
 import { readFile, stat } from 'node:fs/promises';
 import { handleApi } from './api.js';
 import { startWatcher } from './watcher.js';
-import { getProcessManager } from './process.js';
+import { getProcessManager, setBroadcast } from './process.js';
 
 const PORT = parseInt(process.env.PORT || '4545', 10);
 const HOST = '127.0.0.1';
@@ -67,6 +67,9 @@ export function broadcast(message) {
     }
   }
 }
+
+// Wire broadcast into the process manager (port injection)
+setBroadcast(broadcast);
 
 // --- Server ---
 export function startServer(initialProjectPaths) {

@@ -27,7 +27,6 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
   // POST /api/launch
   if (method === 'POST' && pathname === '/api/launch') {
     const { getProcessManager } = await import('../process.js');
-    const { broadcast } = await import('../index.js');
     const body = await parseJsonBody(req);
     const { taskId, command, engine } = body;
     if (taskId == null || !command) {
@@ -35,7 +34,7 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
       return true;
     }
     const pm = getProcessManager();
-    const result = pm.launchProcess(projectPath, taskId, command, engine || 'claude', broadcast);
+    const result = pm.launchProcess(projectPath, taskId, command, engine || 'claude');
     jsonResponse(res, 200, result);
     return true;
   }

@@ -1,13 +1,34 @@
-import { readFile, writeFile, readdir, stat, unlink } from 'node:fs/promises';
+import { readFile, writeFile, readdir, stat, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { jsonResponse, parseJsonBody, ensureDir, matchRoute, readJsonOrNull, handleNotFound, safePath } from '../middleware.js';
-import { validateProgress as validateProgressEntry, validateStateStructure, incrementVersion } from 'taskgraph';
+import { validateStateStructure } from 'taskgraph';
+import { StateWriter } from 'sync-protocol';
+
+// --- Adapter: FileReaderPort + FileWriterPort → node:fs ---
+
+const nodeFileReader = {
+  async readFile(path) { return readFile(path, 'utf-8'); },
+  async stat(path) { return stat(path); },
+  async readdir(path) { return readdir(path); },
+  async exists(path) {
+    try { await stat(path); return true; } catch { return false; }
+  },
+};
+
+const nodeFileWriter = {
+  async writeFile(path, content) { return writeFile(path, content, 'utf-8'); },
+  async ensureDir(path) { return mkdir(path, { recursive: true }); },
+  async unlink(path) { return unlink(path); },
+};
+
+const stateWriter = new StateWriter(nodeFileReader, nodeFileWriter);
 
 export async function handleState(method, pathname, req, res, url, ctx) {
   const { projectPath } = ctx;
   let params;
 
   // POST /api/split-tasks — use Claude to split scratchpad text into individual tasks
+  // This is product-specific logic, NOT part of sync-protocol
   if (method === 'POST' && pathname === '/api/split-tasks') {
     const body = await parseJsonBody(req);
     const { text } = body;
@@ -22,7 +43,6 @@ export async function handleState(method, pathname, req, res, url, ctx) {
     }
 
     try {
-      // Read current state to understand existing tasks/epics
       const stateFile = join(projectPath, '.devmanager', 'state.json');
       let existingEpics = [];
       try {
@@ -66,7 +86,6 @@ Rules:
         });
       });
 
-      // Parse JSON from Claude's response (handle possible markdown fences)
       let tasks;
       try {
         const cleaned = result.replace(/^```(?:json)?\n?/gm, '').replace(/\n?```$/gm, '').trim();
@@ -83,91 +102,44 @@ Rules:
     return true;
   }
 
-  // GET /api/state
+  // GET /api/state — delegated to StateWriter
   if (method === 'GET' && pathname === '/api/state') {
     const statePath = join(projectPath, '.devmanager', 'state.json');
-    const result = await readJsonOrNull(statePath);
+    const result = await stateWriter.readState(statePath);
     if (!result) {
       jsonResponse(res, 404, { error: 'State file not found' });
-    } else if (!validateStateStructure(result.data)) {
-      jsonResponse(res, 500, { error: 'Corrupt state file: invalid structure' });
     } else {
-      jsonResponse(res, 200, { data: result.data, lastModified: result.stat.mtimeMs });
+      jsonResponse(res, 200, { data: result.data, lastModified: result.lastModified });
     }
     return true;
   }
 
-  // PUT /api/state
+  // PUT /api/state — delegated to StateWriter
   if (method === 'PUT' && pathname === '/api/state') {
     const body = await parseJsonBody(req);
-    if (!validateStateStructure(body)) {
-      jsonResponse(res, 400, { error: 'Invalid state structure: must include tasks array' });
-      return true;
-    }
     const stateDir = join(projectPath, '.devmanager');
-    await ensureDir(stateDir);
     const statePath = join(stateDir, 'state.json');
 
-    // Optimistic concurrency: if client sends lastModified, reject if file is newer
-    if (body._lastModified) {
-      const clientLastModified = body._lastModified;
-      try {
-        const fileStat = await stat(statePath);
-        if (fileStat.mtimeMs > clientLastModified + 1000) {
-          // File on disk is newer — return 409 with current state
-          const content = await readFile(statePath, 'utf-8');
-          const currentData = JSON.parse(content);
-          if (!validateStateStructure(currentData)) {
-            jsonResponse(res, 500, { error: 'Corrupt state file on disk' });
-            return true;
-          }
-          jsonResponse(res, 409, {
-            error: 'Conflict: file on disk is newer',
-            data: currentData,
-            lastModified: fileStat.mtimeMs,
-          });
-          return true;
-        }
-      } catch (err) {
-        // File doesn't exist yet, safe to write
-        if (err.code !== 'ENOENT') throw err;
-      }
-    }
+    const result = await stateWriter.writeState(statePath, stateDir, body);
 
-    // Strip internal field and increment version counter before writing
-    const { _lastModified, ...stateData } = body;
-    const versioned = incrementVersion(stateData);
-    await writeFile(statePath, JSON.stringify(versioned, null, 2), 'utf-8');
-    const newStat = await stat(statePath);
-    jsonResponse(res, 200, { ok: true, lastModified: newStat.mtimeMs });
+    if ('error' in result) {
+      jsonResponse(res, 400, { error: result.error });
+    } else if ('conflict' in result) {
+      jsonResponse(res, 409, {
+        error: 'Conflict: file on disk is newer',
+        data: result.data,
+        lastModified: result.lastModified,
+      });
+    } else {
+      jsonResponse(res, 200, { ok: true, lastModified: result.lastModified });
+    }
     return true;
   }
 
-  // GET /api/progress
+  // GET /api/progress — delegated to StateWriter
   if (method === 'GET' && pathname === '/api/progress') {
     const progDir = join(projectPath, '.devmanager', 'progress');
-    const entries = {};
-    try {
-      const files = await readdir(progDir);
-      for (const file of files) {
-        if (!file.endsWith('.json')) continue;
-        try {
-          const content = await readFile(join(progDir, file), 'utf-8');
-          const key = file.replace('.json', '');
-          const parsed = JSON.parse(content);
-          const validated = validateProgressEntry(parsed);
-          if (validated) {
-            entries[key] = validated;
-          } else {
-            console.warn(`[state] Invalid progress file skipped: ${file}`);
-          }
-        } catch (err) {
-          console.error('Failed to parse progress file:', file, err.message);
-        }
-      }
-    } catch (err) {
-      if (err.code !== 'ENOENT') throw err;
-    }
+    const entries = await stateWriter.readProgress(progDir);
     jsonResponse(res, 200, entries);
     return true;
   }
