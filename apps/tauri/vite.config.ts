@@ -24,6 +24,10 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
+    fs: {
+      // Allow serving files from the repo root (shared src/, packages/)
+      allow: [repoRoot],
+    },
   },
   clearScreen: false,
 });
