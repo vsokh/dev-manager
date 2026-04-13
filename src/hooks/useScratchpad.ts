@@ -11,9 +11,18 @@ interface UseScratchpadParams {
 export function useScratchpad({ data, save, showError }: UseScratchpadParams) {
   const [showScratchpad, setShowScratchpad] = useState(false);
   const [splitting, setSplitting] = useState(false);
-  const [arranging, setArranging] = useState(false);
   const [splitResult, setSplitResult] = useState<{ name: string }[] | null>(null);
   const splitResultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const finishSplit = useCallback((newTasks: Array<{ id: number; name: string }>) => {
+    setSplitResult(newTasks.map(t => ({ name: t.name })));
+    if (splitResultTimer.current) clearTimeout(splitResultTimer.current);
+    splitResultTimer.current = setTimeout(() => setSplitResult(null), 8000);
+    setShowScratchpad(false);
+
+    // Arrange in background — don't block the UI
+    api.launch(0, '/orchestrator arrange').catch(() => { /* best-effort */ });
+  }, []);
 
   const createTasksFromResult = useCallback((
     result: { tasks: Array<{ name: string; fullName: string; description: string; group?: string }> },
@@ -46,36 +55,13 @@ export function useScratchpad({ data, save, showError }: UseScratchpadParams) {
     return newTasks;
   }, [save]);
 
-  const arrangeAndFinish = useCallback(async (newTasks: Array<{ name: string }>) => {
-    // Arrange: set dependencies and compute phases before showing results
-    setArranging(true);
-    try {
-      const { pid } = await api.launch(0, '/orchestrator arrange');
-      const start = Date.now();
-      while (Date.now() - start < 120000) {
-        await new Promise(r => setTimeout(r, 3000));
-        try {
-          const procs = await api.listProcesses();
-          if (!procs.some(p => p.pid === pid)) break;
-        } catch { break; }
-      }
-    } catch { /* arrange is best-effort */ }
-
-    setSplitResult(newTasks);
-    if (splitResultTimer.current) clearTimeout(splitResultTimer.current);
-    splitResultTimer.current = setTimeout(() => setSplitResult(null), 8000);
-    setShowScratchpad(false);
-  }, []);
-
   const handleSplitTasks = useCallback(async (text: string, terminal?: boolean) => {
     if (!data) return;
     setSplitting(true);
     try {
       if (terminal) {
-        // Terminal mode: open Claude in a terminal, poll for result file
+        // Terminal mode: open interactive Claude session, poll for result file
         await api.splitTasks(text, true);
-        setSplitting(false);
-        setArranging(true); // reuse arranging state for "waiting for terminal"
 
         const start = Date.now();
         let result = null;
@@ -86,11 +72,8 @@ export function useScratchpad({ data, save, showError }: UseScratchpadParams) {
         }
 
         if (result) {
-          const freshData = data; // data ref from closure
-          const newTasks = createTasksFromResult(result, freshData);
-          if (newTasks) {
-            await arrangeAndFinish(newTasks.map(t => ({ name: t.name })));
-          }
+          const newTasks = createTasksFromResult(result, data);
+          if (newTasks) finishSplit(newTasks);
         } else {
           showError('Split timed out — check the terminal window');
         }
@@ -98,19 +81,19 @@ export function useScratchpad({ data, save, showError }: UseScratchpadParams) {
         // Background mode: server runs Claude and returns result
         const result = await api.splitTasks(text);
         if (result.tasks && result.tasks.length > 0) {
-          const newTasks = createTasksFromResult(result as { tasks: Array<{ name: string; fullName: string; description: string; group?: string }> }, data);
-          if (newTasks) {
-            await arrangeAndFinish(newTasks.map(t => ({ name: t.name })));
-          }
+          const newTasks = createTasksFromResult(
+            result as { tasks: Array<{ name: string; fullName: string; description: string; group?: string }> },
+            data,
+          );
+          if (newTasks) finishSplit(newTasks);
         }
       }
     } catch (err: unknown) {
       showError('Failed to split tasks: ' + (err instanceof Error ? err.message : 'unknown'));
     } finally {
       setSplitting(false);
-      setArranging(false);
     }
-  }, [data, createTasksFromResult, arrangeAndFinish, showError]);
+  }, [data, createTasksFromResult, finishSplit, showError]);
 
-  return { showScratchpad, setShowScratchpad, splitting, arranging, splitResult, setSplitResult, splitResultTimer, handleSplitTasks };
+  return { showScratchpad, setShowScratchpad, splitting, splitResult, setSplitResult, splitResultTimer, handleSplitTasks };
 }
