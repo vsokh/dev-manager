@@ -76,7 +76,7 @@ Rules:
 - Group related tasks under the same epic
 - Use existing epics when they fit, create new ones when needed`;
 
-      // Terminal mode: open Claude in a terminal tab, write result to file
+      // Terminal mode: open interactive Claude session, same as task launch
       if (terminal) {
         const scriptDir = join(projectPath, '.devmanager');
         mkdirSync(scriptDir, { recursive: true });
@@ -89,26 +89,20 @@ Rules:
 
         writeFileSync(promptPath, prompt);
 
+        // Short command for claude — it reads the full prompt from the file
+        const splitCmd = `Read .devmanager/split-prompt.txt for instructions. Follow them to split the notes into tasks. Write ONLY the raw JSON array (no markdown fences) to .devmanager/split-result.txt`;
+
         const os = platform();
         const { spawn: spawnProc } = await import('node:child_process');
 
         if (os === 'win32') {
           const scriptPath = join(scriptDir, 'split-run.ps1');
-          const pf = promptPath.replace(/'/g, "''");
-          const rf = resultPath.replace(/'/g, "''");
-          writeFileSync(scriptPath, [
-            `Write-Host "Splitting scratchpad into tasks..." -ForegroundColor Cyan`,
-            `try {`,
-            `  $prompt = [System.IO.File]::ReadAllText('${pf}')`,
-            `  Write-Host "Running claude ($($prompt.Length) chars)..." -ForegroundColor Gray`,
-            `  Write-Host ""`,
-            `  & claude -p $prompt --output-format text 2>&1 | Tee-Object -FilePath '${rf}'`,
-            `  Write-Host ""`,
-            `  Write-Host "Split complete!" -ForegroundColor Green`,
-            `} catch {`,
-            `  Write-Host "ERROR: $_" -ForegroundColor Red`,
-            `}`,
-          ].join('\n'));
+          // Same escaping as launch.js
+          const safeCmd = splitCmd
+            .replace(/`/g, '``').replace(/\$/g, '`$').replace(/;/g, '`;')
+            .replace(/\|/g, '`|').replace(/&/g, '`&').replace(/\(/g, '`(')
+            .replace(/\)/g, '`)').replace(/'/g, "''").replace(/[\r\n]+/g, ' ');
+          writeFileSync(scriptPath, `& claude --dangerously-skip-permissions '${safeCmd}'\n`);
 
           spawnProc('wt', [
             '-w', '0', 'nt',
@@ -119,23 +113,13 @@ Rules:
         } else if (os === 'darwin') {
           const scriptPath = join(scriptDir, 'split-run.sh');
           const esc = s => s.replace(/"/g, '\\"');
-          writeFileSync(scriptPath, [
-            '#!/bin/bash',
-            'echo "Splitting scratchpad into tasks..."',
-            `cat "${esc(promptPath)}" | claude --output-format text > "${esc(resultPath)}" 2>&1`,
-            'echo "\\nSplit complete!"',
-          ].join('\n'));
+          writeFileSync(scriptPath, `#!/bin/bash\ncd "${esc(projectPath)}" && exec claude --dangerously-skip-permissions "${esc(splitCmd)}"\n`);
           chmodSync(scriptPath, 0o755);
           spawnProc('open', ['-a', 'Terminal', scriptPath], { detached: true, stdio: 'ignore' }).unref();
         } else {
           const scriptPath = join(scriptDir, 'split-run.sh');
           const esc = s => s.replace(/"/g, '\\"');
-          writeFileSync(scriptPath, [
-            '#!/bin/bash',
-            'echo "Splitting scratchpad into tasks..."',
-            `cat "${esc(promptPath)}" | claude --output-format text > "${esc(resultPath)}" 2>&1`,
-            'echo "Split complete!"; exec bash',
-          ].join('\n'));
+          writeFileSync(scriptPath, `#!/bin/bash\ncd "${esc(projectPath)}" && claude --dangerously-skip-permissions "${esc(splitCmd)}"; exec bash\n`);
           chmodSync(scriptPath, 0o755);
           spawnProc('x-terminal-emulator', ['-e', scriptPath], { detached: true, stdio: 'ignore' }).unref();
         }
