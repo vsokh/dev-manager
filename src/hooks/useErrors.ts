@@ -15,8 +15,8 @@ export function useErrors() {
         api.readErrorsLatest(),
         api.readErrorsHistory(),
       ]);
-      setLatest(latestData);
-      setHistory(historyData);
+      setLatest(latestData ?? null);
+      setHistory(historyData ?? []);
     } catch (err) {
       console.error('Failed to read errors:', err);
       setLatest(null);

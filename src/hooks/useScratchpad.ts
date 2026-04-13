@@ -11,6 +11,7 @@ interface UseScratchpadParams {
 export function useScratchpad({ data, save, showError }: UseScratchpadParams) {
   const [showScratchpad, setShowScratchpad] = useState(false);
   const [splitting, setSplitting] = useState(false);
+  const [arranging, setArranging] = useState(false);
   const [splitResult, setSplitResult] = useState<{ name: string }[] | null>(null);
   const splitResultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -44,21 +45,32 @@ export function useScratchpad({ data, save, showError }: UseScratchpadParams) {
         ];
         save({ ...data, tasks: [...data.tasks, ...newTasks], epics: newEpics, activity, scratchpad: '' });
 
+        // Arrange: set dependencies and compute phases before showing results
+        setArranging(true);
+        try {
+          const { pid } = await api.launch(0, '/orchestrator arrange');
+          const start = Date.now();
+          while (Date.now() - start < 120000) {
+            await new Promise(r => setTimeout(r, 3000));
+            try {
+              const procs = await api.listProcesses();
+              if (!procs.some(p => p.pid === pid)) break;
+            } catch { break; }
+          }
+        } catch { /* arrange is best-effort */ }
+
         setSplitResult(newTasks.map(t => ({ name: t.name })));
         if (splitResultTimer.current) clearTimeout(splitResultTimer.current);
         splitResultTimer.current = setTimeout(() => setSplitResult(null), 8000);
         setShowScratchpad(false);
-
-        try {
-          await api.launch(0, '/orchestrator arrange');
-        } catch { /* arrange is best-effort */ }
       }
     } catch (err: unknown) {
       showError('Failed to split tasks: ' + (err instanceof Error ? err.message : 'unknown'));
     } finally {
       setSplitting(false);
+      setArranging(false);
     }
   }, [data, save, showError]);
 
-  return { showScratchpad, setShowScratchpad, splitting, splitResult, setSplitResult, splitResultTimer, handleSplitTasks };
+  return { showScratchpad, setShowScratchpad, splitting, arranging, splitResult, setSplitResult, splitResultTimer, handleSplitTasks };
 }

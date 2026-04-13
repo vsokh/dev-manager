@@ -15,7 +15,7 @@ export function useQuality() {
       const latestData = await api.readQualityLatest();
       setLatest(latestData ? validateQualityReport(latestData) : null);
       const histData = await api.readQualityHistory();
-      setHistory(validateQualityHistory(histData));
+      setHistory(validateQualityHistory(histData ?? []));
     } catch (err) {
       console.error('Failed to read quality:', err);
       setLatest(null);

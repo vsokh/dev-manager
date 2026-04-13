@@ -5,6 +5,7 @@ interface ScratchpadProps {
   onChange: (value: string) => void;
   onSplit: (text: string) => void;
   splitting: boolean;
+  arranging?: boolean;
 }
 
 const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*<>{}[]|/\\~';
@@ -23,7 +24,7 @@ function scrambleText(text: string): string {
   return result;
 }
 
-export function Scratchpad({ value, onChange, onSplit, splitting }: ScratchpadProps) {
+export function Scratchpad({ value, onChange, onSplit, splitting, arranging }: ScratchpadProps) {
   const [localValue, setLocalValue] = useState(value);
   const [progress, setProgress] = useState(0);
   const [scrambledText, setScrambledText] = useState<string | null>(null);
@@ -151,16 +152,16 @@ export function Scratchpad({ value, onChange, onSplit, splitting }: ScratchpadPr
           )}
           <button
             onClick={handleSplit}
-            disabled={!localValue.trim() || splitting}
+            disabled={!localValue.trim() || splitting || arranging}
             className="btn-ghost text-12 font-600"
             style={{
               padding: '4px 12px',
-              color: localValue.trim() && !splitting ? 'var(--dm-accent)' : 'var(--dm-text-muted)',
-              border: `1px solid ${localValue.trim() && !splitting ? 'var(--dm-accent)' : 'var(--dm-border)'}`,
+              color: localValue.trim() && !splitting && !arranging ? 'var(--dm-accent)' : 'var(--dm-text-muted)',
+              border: `1px solid ${localValue.trim() && !splitting && !arranging ? 'var(--dm-accent)' : 'var(--dm-border)'}`,
               borderRadius: '4px',
-              opacity: splitting ? 0.6 : 1,
+              opacity: splitting || arranging ? 0.6 : 1,
             }}
-          >{splitting ? 'Splitting...' : 'Split into tasks'}</button>
+          >{arranging ? 'Arranging...' : splitting ? 'Splitting...' : 'Split into tasks'}</button>
         </div>
       </div>
     </div>

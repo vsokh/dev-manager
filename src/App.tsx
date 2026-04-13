@@ -52,7 +52,7 @@ export function App() {
   const [showSkillsConfig, setShowSkillsConfig] = useState(false);
 
   const [glowTaskId, setGlowTaskId] = useState<number | null>(null);
-  const { showScratchpad, setShowScratchpad, splitting, splitResult, setSplitResult, splitResultTimer, handleSplitTasks } = useScratchpad({ data, save, showError });
+  const { showScratchpad, setShowScratchpad, splitting, arranging, splitResult, setSplitResult, splitResultTimer, handleSplitTasks } = useScratchpad({ data, save, showError });
   const glowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const detailPanelRef = useFocusTrap(selectedTask != null);
@@ -322,6 +322,7 @@ export function App() {
           onScratchpadChange={(text) => save({ ...data, scratchpad: text })}
           onSplit={(text) => { handleSplitTasks(text); }}
           splitting={splitting}
+          arranging={arranging}
         />
       )}
     </div>

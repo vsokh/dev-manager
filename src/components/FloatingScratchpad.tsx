@@ -8,9 +8,10 @@ interface FloatingScratchpadProps {
   onScratchpadChange: (text: string) => void;
   onSplit: (text: string) => void;
   splitting: boolean;
+  arranging?: boolean;
 }
 
-export function FloatingScratchpad({ show, onToggle, scratchpadValue, onScratchpadChange, onSplit, splitting }: FloatingScratchpadProps) {
+export function FloatingScratchpad({ show, onToggle, scratchpadValue, onScratchpadChange, onSplit, splitting, arranging }: FloatingScratchpadProps) {
   return (
     <>
       <button
@@ -51,6 +52,7 @@ export function FloatingScratchpad({ show, onToggle, scratchpadValue, onScratchp
               onChange={onScratchpadChange}
               onSplit={onSplit}
               splitting={splitting}
+              arranging={arranging}
             />
           </div>
         </div>

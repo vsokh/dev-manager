@@ -11,6 +11,13 @@ async function get<T>(path: string): Promise<T> {
   return res.json();
 }
 
+async function getOrNull<T>(path: string): Promise<T | null> {
+  const res = await fetch(BASE_URL + path);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`GET ${path}: ${res.status}`);
+  return res.json();
+}
+
 async function put<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(BASE_URL + path, {
     method: 'PUT',
@@ -100,17 +107,17 @@ export const api = {
   writeSkillsConfig: (config: SkillsConfig) => put<{ ok: true }>('/api/skills-config', config),
 
   // Quality
-  readQualityLatest: () => get<QualityReport | null>('/api/quality/latest'),
-  readQualityHistory: () => get<QualityHistoryEntry[]>('/api/quality/history'),
+  readQualityLatest: () => getOrNull<QualityReport>('/api/quality/latest'),
+  readQualityHistory: () => getOrNull<QualityHistoryEntry[]>('/api/quality/history'),
 
   // Release
-  readReleases: () => get<ReleaseEntry[]>('/api/release/releases'),
-  readStability: () => get<StabilityAssessment | null>('/api/release/stability'),
-  readChangelog: () => get<{ sections: ChangelogSection[] }>('/api/release/changelog'),
+  readReleases: () => getOrNull<ReleaseEntry[]>('/api/release/releases'),
+  readStability: () => getOrNull<StabilityAssessment>('/api/release/stability'),
+  readChangelog: () => getOrNull<{ sections: ChangelogSection[] }>('/api/release/changelog'),
 
   // Errors
-  readErrorsLatest: () => get<ErrorsReport | null>('/api/errors/latest'),
-  readErrorsHistory: () => get<ErrorsHistoryEntry[]>('/api/errors/history'),
+  readErrorsLatest: () => getOrNull<ErrorsReport>('/api/errors/latest'),
+  readErrorsHistory: () => getOrNull<ErrorsHistoryEntry[]>('/api/errors/history'),
 
   // Attachments
   saveAttachment: async (taskId: number, filename: string, blob: Blob): Promise<string> => {
