@@ -83,6 +83,12 @@ export function mergeProgressIntoState(
     }
 
     if (prog.status === 'done') {
+      // Skip if task is already done — prevents duplicate activity entries
+      // when the watcher re-reads stale progress files
+      if (tasks[idx].status === 'done') {
+        staleProgressIds.push(id);
+        continue;
+      }
       tasks[idx] = {
         ...tasks[idx],
         status: 'done',

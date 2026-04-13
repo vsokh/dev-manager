@@ -61,6 +61,21 @@ describe('mergeProgressIntoState', () => {
     expect(result.data.tasks[0].status).toBe('done');
   });
 
+  it('skips duplicate done progress and marks as stale', () => {
+    const state = makeState({
+      tasks: [{ id: 1, name: 'Task 1', status: 'done', completedAt: '2026-01-01' }],
+      activity: [{ id: 'act_1', time: 1, label: 'Task 1 completed', taskId: 1 }],
+    });
+    const progress: Record<string, ProgressEntry> = {
+      '1': { status: 'done', commitRef: 'abc123', completedAt: '2026-01-02' },
+    };
+    const result = mergeProgressIntoState(state, progress);
+    expect(result.staleProgressIds).toEqual([1]);
+    expect(result.needsWrite).toBe(false);
+    // Activity should NOT grow — no duplicate entry
+    expect(result.data.activity).toHaveLength(1);
+  });
+
   it('handles arrange progress entry', () => {
     const state = makeState();
     const progress: Record<string, ProgressEntry> = {
