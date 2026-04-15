@@ -78,10 +78,10 @@ export function getModel(id: string | undefined): ModelConfig {
 }
 
 /** Signals that suggest a task needs the most capable model */
-const OPUS_PATTERNS = /\b(architect|redesign|migration|refactor large|rethink|complex|security audit|breaking change|cross-cutting)\b/i;
+const OPUS_PATTERNS = /\b(architect|redesign|migration|refactor large|rethink|complex|security audit|breaking change|cross-cutting|new system|from scratch|integrate .+ with|authentication|authorization|real-time|concurren|distributed|multi-tenant|database schema|data model|event sourcing|state machine|permission system|billing|payment|deploy pipeline|infrastructure|ci.?cd|end.to.end|full.stack|protocol|api design|sdk|framework|plugin system|extensib|scalab)\b/i;
 
 /** Signals that a task is simple enough for the fast model */
-const SONNET_PATTERNS = /\b(fix typo|rename|bump version|update (text|copy|string|label|readme)|config change|add test|lint|format|style|css|color|padding|margin|font|spacing|icon|image|alt text|placeholder)\b/i;
+const SONNET_PATTERNS = /\b(fix typo|typo|rename|bump version|update (text|copy|string|label|readme|docs|comment)|config change|add test|write test|unit test|lint|format|style|css|color|padding|margin|font|spacing|icon|image|alt text|placeholder|tooltip|aria|log(ging)?|env var|flag|toggle|reorder|swap|move .+ to|extract (component|function|method|constant)|remove unused|delete|clean.?up|sort|dedupe|wording|translation|i18n|responsive|breakpoint|hover|focus|animation|transition|z.index|border|shadow|opacity|readme|changelog|comment|docstring|deprecat)\b/i;
 
 interface TaskHint {
   name?: string;
