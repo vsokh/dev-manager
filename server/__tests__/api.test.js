@@ -257,7 +257,7 @@ describe('GET /api/info', () => {
 
 describe('GET /api/state', () => {
   it('returns state data + lastModified when state.json exists', async () => {
-    const stateData = { project: 'test', tasks: [{ id: 1, name: 'Task 1' }] };
+    const stateData = { project: 'test', tasks: [{ id: 1, name: 'Task 1', status: 'pending' }] };
     await writeFile(join(devmanagerDir, 'state.json'), JSON.stringify(stateData));
 
     const req = mockReq('GET', '/api/state');
