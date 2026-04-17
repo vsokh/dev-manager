@@ -1,4 +1,4 @@
-import { watch, existsSync, renameSync } from 'node:fs';
+import { watch, existsSync, renameSync, readFileSync, writeFileSync, cpSync } from 'node:fs';
 import { readFile, stat, mkdir, copyFile, readdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,12 +6,54 @@ import { WatcherOrchestrator } from 'sync-protocol';
 
 // --- Migrate legacy .devmanager → .maestro ---
 
+const MIGRATE_SUBDIRS = ['attachments', 'backups', 'notes', 'progress', 'quality', 'release', 'errors'];
+
+function isMaestroEffectivelyEmpty(maestroPath) {
+  const stateFile = join(maestroPath, 'state.json');
+  if (!existsSync(stateFile)) return true;
+  try {
+    const state = JSON.parse(readFileSync(stateFile, 'utf-8'));
+    const hasTasks = Array.isArray(state.tasks) && state.tasks.length > 0;
+    const hasQueue = Array.isArray(state.queue) && state.queue.length > 0;
+    const hasFeatures = Array.isArray(state.features) && state.features.length > 0;
+    return !hasTasks && !hasQueue && !hasFeatures;
+  } catch {
+    return true;
+  }
+}
+
 function migrateIfNeeded(projectPath) {
-  const legacy = join(projectPath, '.maestro');
+  const legacy = join(projectPath, '.devmanager');
   const modern = join(projectPath, '.maestro');
-  if (existsSync(legacy) && !existsSync(modern)) {
-    renameSync(legacy, modern);
-    console.log(`Migrated .devmanager → .maestro in ${projectPath}`);
+
+  if (!existsSync(legacy)) return;
+
+  if (!existsSync(modern)) {
+    try {
+      renameSync(legacy, modern);
+      console.log(`Migrated .devmanager → .maestro in ${projectPath}`);
+    } catch (err) {
+      console.error(`Failed to rename .devmanager → .maestro in ${projectPath}:`, err.message);
+    }
+    return;
+  }
+
+  if (!isMaestroEffectivelyEmpty(modern)) return;
+
+  try {
+    const legacyState = join(legacy, 'state.json');
+    if (existsSync(legacyState)) {
+      const content = readFileSync(legacyState, 'utf-8').replace(/\.devmanager\//g, '.maestro/');
+      writeFileSync(join(modern, 'state.json'), content);
+    }
+    for (const name of MIGRATE_SUBDIRS) {
+      const src = join(legacy, name);
+      if (!existsSync(src)) continue;
+      cpSync(src, join(modern, name), { recursive: true, force: false, errorOnExist: false });
+    }
+    console.log(`Merged .devmanager → .maestro in ${projectPath} (preserved existing .maestro/bin/)`);
+  } catch (err) {
+    console.error(`Failed to merge .devmanager → .maestro in ${projectPath}:`, err.message);
   }
 }
 
