@@ -1,3 +1,5 @@
+import { ARTIFACT_CONTRACT_BLOCK } from './skills/artifact-contract.ts';
+
 export const AUTOFIX_SKILL_TEMPLATE: string = `---
 name: autofix
 description: "Reads the codehealth backlog, picks the highest-priority fixable issues, and fixes them in a worktree. TRIGGER on: autofix, fix quality, fix backlog, fix issues, auto fix."
@@ -20,6 +22,8 @@ You read the codehealth backlog, pick the top fixable issues, and delegate fixes
 | \`.maestro/notes/autofix.md\` | Plan + checklist (survives interrupts) | You write |
 
 **NEVER modify state.json.** All communication is through progress files.
+
+${ARTIFACT_CONTRACT_BLOCK}
 
 ## Progress updates
 

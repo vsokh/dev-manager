@@ -20,6 +20,10 @@ vi.mock('../../process.js', () => ({
   }),
 }));
 
+vi.mock('../../artifacts.js', () => ({
+  buildTaskPreamble: vi.fn(async () => ''),
+}));
+
 // Mock index.js
 vi.mock('../../index.js', () => ({
   broadcast: vi.fn(),

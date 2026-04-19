@@ -38,6 +38,15 @@ export interface Task {
   engine?: string;
   model?: string;
   summary?: string;
+  produces?: string[];
+  consumes?: string[];
+  producedArtifacts?: ProducedArtifact[];
+}
+
+export interface ProducedArtifact {
+  path: string;
+  sha: string;
+  bytes: number;
 }
 
 export interface QueueItem {
@@ -73,6 +82,12 @@ export interface ProgressEntry {
   changes?: string[];
   summary?: string;
   taskUpdates?: Record<string, { dependsOn?: number[]; group?: string }>;
+  producedArtifacts?: ProducedArtifact[];
+  artifactCheck?: {
+    ok: boolean;
+    missing?: string[];
+    empty?: string[];
+  };
 }
 
 export interface Feature {

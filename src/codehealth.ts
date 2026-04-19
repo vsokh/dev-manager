@@ -1,3 +1,5 @@
+import { ARTIFACT_CONTRACT_BLOCK } from './skills/artifact-contract.ts';
+
 export const CODEHEALTH_SKILL_TEMPLATE: string = `---
 name: codehealth
 description: "Agent readiness scanner. Measures how verifiable the codebase is — can an agent safely change code, run validation gates, and know the change is correct? Scores 6 dimensions + web app health check. Creates Quality tasks for the orchestrator to fix. TRIGGER on: codehealth, code health, quality audit, code quality, project health, assess quality, audit codebase, quality report, check health, agent readiness, scan, desloppify."
@@ -10,6 +12,8 @@ You measure how **verifiable** this codebase is. The core question: can an AI ag
 The limiter of agent productivity is never the agent — it's the **validation environment**. Codehealth measures that environment across 6 dimensions + a web app health check, tracks trends, and creates tasks for the orchestrator to fix gaps.
 
 **Codehealth does NOT fix code.** It finds gaps in verifiability, scores them, and creates tasks in dev-manager under the "Quality" group. The orchestrator picks them up.
+
+${ARTIFACT_CONTRACT_BLOCK}
 
 Philosophy: a high score means an agent can work autonomously with confidence. A low score means agents need hand-holding because there's no automated way to verify their work. Improving the score creates a feedback loop — better validation leads to better agent output leads to better code.
 
@@ -279,6 +283,7 @@ Every scan reads \\\`backlog.json\\\` and creates/updates tasks in \\\`.maestro/
 | \\\`severity\\\` low | skipped (keep in backlog only) |
 | \\\`effort\\\` small | added to notes: "Quick fix" |
 | \\\`effort\\\` large | added to notes: "Requires planning" |
+| — | \\\`consumes: [".maestro/quality/backlog.json"]\\\` (so the fixer reads the report before acting) |
 
 ### Process
 

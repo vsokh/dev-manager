@@ -1,8 +1,10 @@
 import type { QueueItem, Task } from '../types.js';
+import { resolveArtifactGraph } from '../graph/artifacts.js';
 
 export function sortByDependencies(queueItems: QueueItem[], allTasks: Task[]): QueueItem[] {
   const taskMap = new Map(allTasks.map(t => [t.id, t]));
   const queueIds = new Set(queueItems.map(q => q.task));
+  const artifactDeps = resolveArtifactGraph(allTasks).deps;
 
   const inDegree = new Map<number, number>();
   const edges = new Map<number, number[]>();
@@ -10,16 +12,20 @@ export function sortByDependencies(queueItems: QueueItem[], allTasks: Task[]): Q
     inDegree.set(item.task, 0);
     edges.set(item.task, []);
   }
+  const addEdge = (fromId: number, toId: number) => {
+    if (!queueIds.has(fromId) || !queueIds.has(toId)) return;
+    const list = edges.get(fromId)!;
+    if (list.includes(toId)) return;
+    list.push(toId);
+    inDegree.set(toId, (inDegree.get(toId) || 0) + 1);
+  };
   for (const item of queueItems) {
     const task = taskMap.get(item.task);
     if (task && task.dependsOn) {
-      for (const depId of task.dependsOn) {
-        if (queueIds.has(depId)) {
-          edges.get(depId)!.push(item.task);
-          inDegree.set(item.task, (inDegree.get(item.task) || 0) + 1);
-        }
-      }
+      for (const depId of task.dependsOn) addEdge(depId, item.task);
     }
+    const extra = artifactDeps.get(item.task);
+    if (extra) for (const depId of extra) addEdge(depId, item.task);
   }
 
   const result: QueueItem[] = [];

@@ -1,7 +1,7 @@
 // Core types re-exported from engine
 export type {
   Task, TaskStatus, QueueItem, ProgressEntry, StateData,
-  Activity, Epic, Feature, Attachment, HistoryEntry,
+  Activity, Epic, Feature, Attachment, HistoryEntry, ProducedArtifact,
 } from 'taskgraph';
 export { TASK_STATUSES } from 'taskgraph';
 

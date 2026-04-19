@@ -1,3 +1,5 @@
+import { ARTIFACT_CONTRACT_BLOCK } from './skills/artifact-contract.ts';
+
 export const ORCHESTRATOR_SKILL_TEMPLATE: string = `---
 name: orchestrator
 description: "Tech lead that reads the Dev Manager queue, plans work, delegates to sub-agents, reviews results, and reports back. TRIGGER on: orchestrator, what's next, plan work, project status, execute queue."
@@ -18,6 +20,8 @@ You plan and delegate. You do NOT implement — use sub-agents for code changes.
 | \`.maestro/attachments/{taskId}/\` | Screenshots from manager | Read with Read tool |
 
 **NEVER write activity entries, create tasks, or modify status/name fields in state.json.** The \`arrange\` command may ONLY update \`dependsOn\` and \`group\` fields.
+
+${ARTIFACT_CONTRACT_BLOCK}
 
 ## Progress updates
 
@@ -122,6 +126,8 @@ task-{taskId}-{slug}
 
 ### 5. Delegate to sub-agent
 Write progress: \`"Delegating to sub-agent..."\`
+
+**Before delegating:** if the task has \`consumes\`, read each artifact now and include its contents in the sub-agent prompt under "## Context from upstream tasks". If the task has \`produces\`, tell the sub-agent explicitly which files it MUST author before finishing — \`merge-safe.cjs\` will refuse to mark the task done if any are missing or empty (when \`enforceArtifacts: true\` is set in \`.maestro/config.json\`).
 
 Launch: \`Agent(subagent_type="general-purpose", prompt="...")\`
 

@@ -36,6 +36,10 @@ vi.mock('../process.js', () => ({
   setBroadcast: vi.fn(),
 }));
 
+vi.mock('../artifacts.js', () => ({
+  buildTaskPreamble: vi.fn(async () => ''),
+}));
+
 const mockOpenNativeFolderDialog = vi.fn();
 
 vi.mock('../dialogs.js', () => ({
@@ -968,7 +972,7 @@ describe('POST /api/launch', () => {
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object));
     expect(getJsonResponse(res)).toEqual({ pid: 42 });
     expect(mockLaunchProcess).toHaveBeenCalledWith(
-      tmpDir, 1, '/orchestrator task 1', 'claude', undefined
+      tmpDir, 1, '/orchestrator task 1', 'claude', undefined, undefined
     );
   });
 
@@ -983,7 +987,7 @@ describe('POST /api/launch', () => {
     await handleApi(req, res);
 
     expect(mockLaunchProcess).toHaveBeenCalledWith(
-      tmpDir, 2, '/orchestrator task 2', 'claude', undefined
+      tmpDir, 2, '/orchestrator task 2', 'claude', undefined, undefined
     );
   });
 

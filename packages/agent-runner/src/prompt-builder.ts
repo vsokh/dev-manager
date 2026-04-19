@@ -1,14 +1,28 @@
-import type { EngineAdapter } from './types.js';
+import type { EngineAdapter, EngineAdapterOptions } from './types.js';
+
+function resolveOptions(arg?: string | EngineAdapterOptions): EngineAdapterOptions {
+  if (!arg) return {};
+  if (typeof arg === 'string') return { model: arg };
+  return arg;
+}
+
+function withPreamble(prompt: string, preamble?: string): string {
+  if (!preamble) return prompt;
+  return `${preamble}${prompt}`;
+}
 
 /**
  * Translates slash commands into full LLM prompts for headless execution.
  * Pure function — no I/O.
+ *
+ * @param command - the slash-style command (e.g. "/orchestrator task 12")
+ * @param preamble - optional context string prepended verbatim (e.g. consumed-artifact contents)
  */
-export function buildClaudePrompt(command: string): string {
+export function buildClaudePrompt(command: string, preamble?: string): string {
   const taskMatch = command.match(/^\/orchestrator\s+task\s+(\d+)/);
   if (taskMatch) {
     const taskId = taskMatch[1];
-    return `Read .maestro/state.json, find task #${taskId}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately. Do not wait for user input at any point.
+    return withPreamble(`Read .maestro/state.json, find task #${taskId}, and execute it using the orchestrator skill defined in .claude/skills/orchestrator/SKILL.md. This is a headless execution — skip plan approval, execute the full plan immediately. Do not wait for user input at any point.
 
 CRITICAL — DO NOT WRITE TO .maestro/state.json DIRECTLY. Other agents and the UI write to state.json concurrently. If you overwrite it, you will destroy other agents' work. Instead:
 
@@ -21,7 +35,7 @@ CRITICAL — DO NOT WRITE TO .maestro/state.json DIRECTLY. Other agents and the 
 When the task is complete, write the progress file to .maestro/progress/${taskId}.json with this format:
 {"status":"done","completedAt":"<ISO date>","commitRef":"<short hash>","summary":"<2-3 sentence product-level summary of what was done and what users will see>","filesChanged":<number>}
 
-The summary should be written for a product manager — describe the user-facing outcome, not the code changes.`;
+The summary should be written for a product manager — describe the user-facing outcome, not the code changes.`, preamble);
   }
 
   if (/^\/codehealth/.test(command)) {
@@ -53,28 +67,37 @@ Example: {"status":"done","label":"Arranged 8 tasks into 3 phases","changes":["S
 Be specific about what dependencies you set and what groupings you made.`;
   }
 
-  return command + '\n\nThis is a headless execution. Skip plan approval and execute immediately. Do not wait for user input at any point.';
+  return withPreamble(command + '\n\nThis is a headless execution. Skip plan approval and execute immediately. Do not wait for user input at any point.', preamble);
 }
 
 /**
  * Default engine adapters. Maps engine name to spawn command + args.
  */
 export const DEFAULT_ENGINES: Record<string, EngineAdapter> = {
-  claude: (command: string, model?: string) => ({
-    cmd: 'claude',
-    args: [
-      ...(model ? ['--model', model] : []),
-      '--dangerously-skip-permissions',
-      '-p',
-      buildClaudePrompt(command),
-    ],
-  }),
-  codex: (command: string) => ({
-    cmd: 'codex',
-    args: ['exec', command],
-  }),
-  cursor: (command: string) => ({
-    cmd: 'cursor-agent',
-    args: ['-p', command],
-  }),
+  claude: (command: string, modelOrOptions?: string | EngineAdapterOptions) => {
+    const { model, preamble } = resolveOptions(modelOrOptions);
+    return {
+      cmd: 'claude',
+      args: [
+        ...(model ? ['--model', model] : []),
+        '--dangerously-skip-permissions',
+        '-p',
+        buildClaudePrompt(command, preamble),
+      ],
+    };
+  },
+  codex: (command: string, modelOrOptions?: string | EngineAdapterOptions) => {
+    const { preamble } = resolveOptions(modelOrOptions);
+    return {
+      cmd: 'codex',
+      args: ['exec', preamble ? preamble + command : command],
+    };
+  },
+  cursor: (command: string, modelOrOptions?: string | EngineAdapterOptions) => {
+    const { preamble } = resolveOptions(modelOrOptions);
+    return {
+      cmd: 'cursor-agent',
+      args: ['-p', preamble ? preamble + command : command],
+    };
+  },
 };

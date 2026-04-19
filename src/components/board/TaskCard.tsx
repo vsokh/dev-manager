@@ -95,6 +95,20 @@ export function TaskCard({ task, tasks }: TaskCardProps) {
         )}
         <span className="text-11 font-500" style={{ opacity: 0.4 }}>#{task.id}</span>
         {task.manual ? <span className="manual-badge" title={CARD_MANUAL_TITLE} style={{ padding: '1px 5px' }}>YOU</span> : null}
+        {task.produces && task.produces.length > 0 ? (
+          <span
+            title={`Produces ${task.produces.length} artifact${task.produces.length > 1 ? 's' : ''}`}
+            style={{ opacity: 0.55, fontSize: '11px' }}
+            aria-label="produces artifacts"
+          >&#128196;</span>
+        ) : null}
+        {task.consumes && task.consumes.length > 0 ? (
+          <span
+            title={`Consumes ${task.consumes.length} artifact${task.consumes.length > 1 ? 's' : ''}`}
+            style={{ opacity: 0.55, fontSize: '11px' }}
+            aria-label="consumes artifacts"
+          >&#128229;</span>
+        ) : null}
         {task.name}
       </div>
       {task.description ? (

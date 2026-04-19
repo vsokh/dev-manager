@@ -3,6 +3,22 @@ import { TASK_STATUSES } from '../types.js';
 
 const VALID_PROGRESS_STATUSES = ['in-progress', 'done', 'paused'] as const;
 
+function sanitizeArtifactField(task: Task, field: 'produces' | 'consumes'): Task {
+  if (!(field in task)) return task;
+  const record = task as unknown as Record<string, unknown>;
+  const value = record[field];
+  if (!Array.isArray(value)) {
+    const { [field]: _, ...rest } = record;
+    return rest as unknown as Task;
+  }
+  const clean = (value as unknown[]).filter((p): p is string => typeof p === 'string' && p.length > 0);
+  if (clean.length === 0) {
+    const { [field]: _, ...rest } = record;
+    return rest as unknown as Task;
+  }
+  return { ...task, [field]: clean };
+}
+
 /**
  * Sanitizing validator: returns a clean StateData or null if invalid.
  * Strips invalid tasks, queue items, etc. rather than rejecting outright.
@@ -20,15 +36,19 @@ export function validateState(data: unknown): StateData | null {
         typeof (t as Record<string, unknown>).status === 'string' &&
         (TASK_STATUSES as readonly string[]).includes((t as Record<string, unknown>).status as string)
       ).map(t => {
-        if ('dependsOn' in t) {
-          if (Array.isArray(t.dependsOn)) {
-            const clean = (t.dependsOn as unknown[]).filter(dep => typeof dep === 'number' && isFinite(dep as number));
-            return { ...t, dependsOn: clean.length > 0 ? clean as number[] : undefined };
+        let next: Task = t;
+        if ('dependsOn' in next) {
+          if (Array.isArray(next.dependsOn)) {
+            const clean = (next.dependsOn as unknown[]).filter(dep => typeof dep === 'number' && isFinite(dep as number));
+            next = { ...next, dependsOn: clean.length > 0 ? clean as number[] : undefined };
+          } else {
+            const { dependsOn: _, ...rest } = next;
+            next = rest as Task;
           }
-          const { dependsOn: _, ...rest } = t;
-          return rest as Task;
         }
-        return t;
+        next = sanitizeArtifactField(next, 'produces');
+        next = sanitizeArtifactField(next, 'consumes');
+        return next;
       })
     : [];
 
@@ -89,6 +109,21 @@ export function validateProgress(data: unknown): ProgressEntry | null {
   if (d.taskUpdates && typeof d.taskUpdates === 'object' && !Array.isArray(d.taskUpdates)) {
     entry.taskUpdates = d.taskUpdates as ProgressEntry['taskUpdates'];
   }
+  if (Array.isArray(d.producedArtifacts)) {
+    const clean = (d.producedArtifacts as unknown[]).filter((a): a is { path: string; sha: string; bytes: number } => {
+      if (!a || typeof a !== 'object') return false;
+      const r = a as Record<string, unknown>;
+      return typeof r.path === 'string' && typeof r.sha === 'string' && typeof r.bytes === 'number';
+    });
+    if (clean.length > 0) entry.producedArtifacts = clean;
+  }
+  if (d.artifactCheck && typeof d.artifactCheck === 'object' && !Array.isArray(d.artifactCheck)) {
+    const c = d.artifactCheck as Record<string, unknown>;
+    const check: ProgressEntry['artifactCheck'] = { ok: Boolean(c.ok) };
+    if (Array.isArray(c.missing)) check.missing = c.missing.filter((m): m is string => typeof m === 'string');
+    if (Array.isArray(c.empty)) check.empty = c.empty.filter((m): m is string => typeof m === 'string');
+    entry.artifactCheck = check;
+  }
   return entry;
 }
 
@@ -147,6 +182,18 @@ export function validateStateStrict(data: unknown): { valid: boolean; errors: st
       }
       if (t.status !== undefined) {
         if (!(TASK_STATUSES as readonly string[]).includes(t.status as string)) errors.push(`tasks[${i}].status "${t.status}" is not valid`);
+      }
+      for (const field of ['produces', 'consumes'] as const) {
+        const value = (t as Record<string, unknown>)[field];
+        if (value !== undefined) {
+          if (!Array.isArray(value)) {
+            errors.push(`tasks[${i}].${field} must be an array`);
+          } else {
+            (value as unknown[]).forEach((p, j) => {
+              if (typeof p !== 'string' || !p) errors.push(`tasks[${i}].${field}[${j}] must be a non-empty string`);
+            });
+          }
+        }
       }
     });
   }

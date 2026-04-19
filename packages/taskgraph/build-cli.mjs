@@ -9,6 +9,7 @@ const entries = [
   'src/cli/task-start.ts',
   'src/cli/task-done.ts',
   'src/cli/merge-safe.ts',
+  'src/cli/migrate-artifacts.ts',
 ];
 
 await esbuild.build({

@@ -38,6 +38,22 @@ describe('mergeProgressIntoState', () => {
     expect(result.data.activity.length).toBeGreaterThan(0);
   });
 
+  it('stamps producedArtifacts onto the task when marking done', () => {
+    const state = makeState();
+    const progress: Record<string, ProgressEntry> = {
+      '2': {
+        status: 'done',
+        commitRef: 'abc',
+        completedAt: '2026-01-01',
+        producedArtifacts: [{ path: 'docs/x.md', sha: 'sha1', bytes: 42 }],
+      },
+    };
+    const result = mergeProgressIntoState(state, progress);
+    expect(result.data.tasks.find(t => t.id === 2)!.producedArtifacts).toEqual([
+      { path: 'docs/x.md', sha: 'sha1', bytes: 42 },
+    ]);
+  });
+
   it('updates in-progress task with progress message', () => {
     const state = makeState();
     const progress: Record<string, ProgressEntry> = {

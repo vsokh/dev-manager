@@ -2,7 +2,7 @@
 // Pure functions: state in → new state out. No I/O, no React, no HTTP.
 
 // Types
-export type { Task, TaskStatus, QueueItem, ProgressEntry, StateData, Activity, Epic, Feature, Attachment, HistoryEntry } from './types.js';
+export type { Task, TaskStatus, QueueItem, ProgressEntry, StateData, Activity, Epic, Feature, Attachment, HistoryEntry, ProducedArtifact } from './types.js';
 export { TASK_STATUSES } from './types.js';
 
 // Constants
@@ -23,6 +23,12 @@ export { validateState, validateProgress, validateStateStructure, validateStateS
 
 // Version guards
 export { isStaleVersion, incrementVersion } from './state/version.js';
+
+// Artifact graph
+export { resolveArtifactGraph, applyArtifactDeps } from './graph/artifacts.js';
+export type { ArtifactGraph, ArtifactGraphError, ArtifactGraphErrorKind } from './graph/artifacts.js';
+export { validateProducedArtifacts } from './graph/produced.js';
+export type { ArtifactFileInfo, ProducedValidationResult } from './graph/produced.js';
 
 // Tasks
 export { createActivityList } from './tasks/activity.js';

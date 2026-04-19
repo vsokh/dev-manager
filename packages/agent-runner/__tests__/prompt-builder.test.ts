@@ -33,6 +33,20 @@ describe('buildClaudePrompt', () => {
     expect(prompt).toContain('do something custom');
     expect(prompt).toContain('headless execution');
   });
+
+  it('prepends the preamble for /orchestrator task N', () => {
+    const preamble = '## Context from upstream tasks\n\n### docs/a.md\nhello\n\n---\n\n';
+    const prompt = buildClaudePrompt('/orchestrator task 7', preamble);
+    expect(prompt.startsWith(preamble)).toBe(true);
+    expect(prompt).toContain('task #7');
+  });
+
+  it('prepends the preamble for fallthrough commands', () => {
+    const preamble = 'P\n';
+    const prompt = buildClaudePrompt('freeform', preamble);
+    expect(prompt.startsWith(preamble)).toBe(true);
+    expect(prompt).toContain('headless execution');
+  });
 });
 
 describe('DEFAULT_ENGINES', () => {
@@ -58,5 +72,23 @@ describe('DEFAULT_ENGINES', () => {
     const { cmd, args } = DEFAULT_ENGINES.cursor('some command');
     expect(cmd).toBe('cursor-agent');
     expect(args).toEqual(['-p', 'some command']);
+  });
+
+  it('claude adapter threads the preamble into the -p prompt', () => {
+    const { args } = DEFAULT_ENGINES.claude('/orchestrator task 1', { preamble: 'PREFACE\n' });
+    expect(args[args.indexOf('-p') + 1].startsWith('PREFACE\n')).toBe(true);
+  });
+
+  it('claude adapter still accepts a bare model string (back-compat)', () => {
+    const { args } = DEFAULT_ENGINES.claude('/orchestrator task 1', 'sonnet');
+    expect(args[0]).toBe('--model');
+    expect(args[1]).toBe('sonnet');
+  });
+
+  it('codex/cursor adapters thread the preamble before the command', () => {
+    const codex = DEFAULT_ENGINES.codex('do X', { preamble: 'Y\n' });
+    expect(codex.args).toEqual(['exec', 'Y\ndo X']);
+    const cursor = DEFAULT_ENGINES.cursor('do X', { preamble: 'Y\n' });
+    expect(cursor.args).toEqual(['-p', 'Y\ndo X']);
   });
 });

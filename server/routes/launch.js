@@ -27,6 +27,7 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
   // POST /api/launch
   if (method === 'POST' && pathname === '/api/launch') {
     const { getProcessManager } = await import('../process.js');
+    const { buildTaskPreamble } = await import('../artifacts.js');
     const body = await parseJsonBody(req);
     const { taskId, command, engine, model } = body;
     if (taskId == null || !command) {
@@ -34,7 +35,8 @@ export async function handleLaunch(method, pathname, req, res, url, ctx) {
       return true;
     }
     const pm = getProcessManager();
-    const result = pm.launchProcess(projectPath, taskId, command, engine || 'claude', model || undefined);
+    const preamble = await buildTaskPreamble(projectPath, taskId);
+    const result = pm.launchProcess(projectPath, taskId, command, engine || 'claude', model || undefined, preamble || undefined);
     jsonResponse(res, 200, result);
     return true;
   }

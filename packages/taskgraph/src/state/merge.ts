@@ -97,6 +97,9 @@ export function mergeProgressIntoState(
         branch: prog.branch || tasks[idx].branch || undefined,
         summary: prog.summary || tasks[idx].summary || undefined,
         progress: undefined,
+        producedArtifacts: prog.producedArtifacts && prog.producedArtifacts.length > 0
+          ? prog.producedArtifacts
+          : tasks[idx].producedArtifacts,
       };
       queue = queue.filter(q => q.task !== id);
       const actEntry: Activity = {

@@ -104,7 +104,7 @@ const nodeTimer = {
 
 // --- Helper scripts deployment (infrastructure-only, not part of sync protocol) ---
 
-const HELPER_SCRIPTS = ['task-done.cjs', 'task-start.cjs', 'queue-next.cjs', 'merge-safe.cjs'];
+const HELPER_SCRIPTS = ['task-done.cjs', 'task-start.cjs', 'queue-next.cjs', 'merge-safe.cjs', 'migrate-artifacts.cjs'];
 
 async function ensureHelperScripts(projectPath) {
   const serverDir = dirname(fileURLToPath(import.meta.url));

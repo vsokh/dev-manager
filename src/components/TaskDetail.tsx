@@ -4,6 +4,7 @@ import { Timeline } from './detail/Timeline.tsx';
 import { useAttachments } from '../hooks/useAttachments.ts';
 import { AttachmentsList } from './detail/Attachments.tsx';
 import { Dependencies } from './detail/Dependencies.tsx';
+import { Artifacts } from './detail/Artifacts.tsx';
 import { EpicField } from './detail/EpicField.tsx';
 import { ActionButtons } from './detail/ActionButtons.tsx';
 import { TaskFlags } from './detail/TaskFlags.tsx';
@@ -291,6 +292,8 @@ export function TaskDetail({ task, tasks, epics, notes }: TaskDetailProps) {
       </div>
 
       <AttachmentsList task={task} thumbUrls={thumbUrls} onDeleteAttachment={onDeleteAttachment} />
+
+      <Artifacts task={task} tasks={tasks} />
 
       <Dependencies task={task} tasks={tasks} />
 

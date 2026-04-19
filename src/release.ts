@@ -1,3 +1,5 @@
+import { ARTIFACT_CONTRACT_BLOCK } from './skills/artifact-contract.ts';
+
 export const RELEASE_SKILL_TEMPLATE: string = `---
 name: release
 description: "Release management with versioning, stability assessment, changelog generation, and release gates. TRIGGER on: release, version, changelog, tag, cut release, release status, what version, stability, release gate."
@@ -22,6 +24,8 @@ You manage releases: assess stability, generate changelogs, check release gates,
 | \`package.json\` | Version field | You update (version only) |
 
 **NEVER modify state.json.** All communication is through progress files.
+
+${ARTIFACT_CONTRACT_BLOCK}
 
 ---
 
